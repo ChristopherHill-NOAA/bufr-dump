@@ -50,7 +50,7 @@ obsproc_dump release 3.0.0
  Fixed file changes:
    nam_expdomain_halfdeg_imask.gbl, wave_bufrtab.ascat, bufr_bufrtab.sptrmm,
    wave_bufrtab.erscat, nam_expdomain_guam_halfdeg_imask.gbl,
-   wave_bufrtab.quikscat, wave_landchxh, bufr_bufrtab.windsat
+   wave_bufrtab.quikscat, wave_landchxh, bufr_bufrtab.windsat:
     - Placed into VS/EE for first time. No changes to contents.
 
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
