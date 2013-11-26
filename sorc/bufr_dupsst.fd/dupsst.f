@@ -251,7 +251,10 @@ C  COUNT THE NUMBER OF SUBSETS IN THE FILE TO ALLOCATE SPACE
 C  ---------------------------------------------------------
 
       OPEN(LUBFI,FILE=FILI(1:NBYTES_FILI),FORM='UNFORMATTED')
+      CALL OPENBF(0,'QUIET',1) ! will generate diagnostic print if an
+                               ! embedded BUFR table is read
       CALL UFBTAB(-LUBFI,UFBTAB_8,1,1,MXTB,' ')
+      CALL OPENBF(0,'QUIET',0) ! return to default wrt degree of print
 
       ALLOCATE(TAB_8(MXTS,MXTB),STAT=I);IF(I.NE.0) GOTO 901
       ALLOCATE(IWORK(MXTB)     ,STAT=I);IF(I.NE.0) GOTO 901

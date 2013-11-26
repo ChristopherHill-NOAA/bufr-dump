@@ -465,6 +465,7 @@ C                           "GFS " - GFS network
 C                           "GODA" - GODAS network
 C                           "NAM " - NAM/NDAS network
 C                           "RTMA" - RTMA network
+C                           "URMA" - URMA network
 C                           "RAP " - Rapid Refresh network
 C                           "RUCS" - Surface RUC network
 C                          The network should be placed in columns

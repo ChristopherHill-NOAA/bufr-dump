@@ -1,5 +1,5 @@
 SHELL=		/bin/sh
-LIBS =		-L/nwprod/lib -lw3nco_4 -lw3emc_4 -lbufr_v10.2.3_4_64  
+LIBS =		-L/nwprod/lib -lw3nco_4 -lw3emc_4 -lbufr_4_64  
 FFLAGS=		-O3 -g -traceback 
 LDFLAGS= 
 

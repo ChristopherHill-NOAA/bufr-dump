@@ -1,7 +1,7 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: WAVE_DCODQUIKSCAT
-C   PRGMMR: KEYSER           ORG: NP22        DATE: 2011-08-04
+C   PRGMMR: KEYSER           ORG: NP22        DATE: 2013-11-25
 C
 C ABSTRACT: REPROCESSES QUIKSCAT AND ASCAT (SCATTEROMETER) DATA.  READS
 C   EACH REPORT FROM INPUT BUFR DATA DUMP FILE AND PERFORMS A NUMBER OF
@@ -86,7 +86,10 @@ C            ALL SUBSETS IN A BUFR MESSAGE CONTAIN THE SAME YEAR,
 C            MONTH, DAY AND HOUR AS THAT IN SEC. 1 OF THE BUFR MESSAGE,
 C            IT KEEPS THE OUTPUT FILE MORE COMPACT AND CAUSES NO HARM
 C            SINCE ONLY PREPOBS_PREPDATA ENDS UP READING THIS FILE)
-C 2012-11-20  J. WOOLLEN  INITIAL PORT TO WCOSS 
+C 2012-11-20 J. WOOLLEN  INITIAL PORT TO WCOSS 
+C 2013-11-25 D. KEYSER - ONLY THE FIRST 100 REPORTS WITH AN
+C            UNRECOGNIZED SATELLITE ID ARE NOW PRINTED (TO REDUCE SIZE
+C            OF STDOUT IN SUCH CASES)
 C
 C USAGE:
 C   INPUT FILES:
@@ -361,11 +364,11 @@ C$$$
 
       EQUIVALENCE  (SID,RPID_8)
 
-      CALL W3TAGB('WAVE_DCODQUIKSCAT',2011,0216,0083,'NP22')
+      CALL W3TAGB('WAVE_DCODQUIKSCAT',2013,0329,0083,'NP22')
 
       PRINT *, ' '
       PRINT *, '=====> WELCOME TO PROGRAM WAVE_DCODQUIKSCAT - ',
-     $ 'VERSION: 08/04/2011'
+     $ 'VERSION: 11/25/2013'
       PRINT *, ' '
 
       ITYPE  = 1
@@ -656,13 +659,25 @@ C  CHECK FOR RECOGNIZABLE SAT. ID & TAG USING CHARACTER 8 OF REPORT ID
 C  -------------------------------------------------------------------
 
             IF(ITYPE.EQ.1.AND.NINT(SAIDDT).NE.281)  THEN
-               PRINT '("SATELLITE ID (",I5,") IS NOT RECOGNIZED FOR ",
-     $          "QUIKSCAT REPORTS - SKIP REPORT")',NINT(SAIDDT)
+               if(isaid.le.100) then
+                  PRINT '("SATELLITE ID (",I5,") IS NOT RECOGNIZED FOR",
+     $             " QUIKSCAT REPORTS - SKIP REPORT")',NINT(SAIDDT)
+               else if(isaid.eq.101) then
+                  print '("===> THERE ARE > 100 QUIKSCAT REPORTS WITH ",
+     $             "AN UNRECOGNIZED SATELLITE ID - ONLY 1ST 100 ARE ",
+     $             "PRINTED")'
+               endif
                ISAID = ISAID + 1
                CYCLE LOOP1n1
             ELSE IF(ITYPE.EQ.2.AND.NINT(SAIDDT).NE.004)  THEN
-               PRINT '("SATELLITE ID (",I5,") IS NOT RECOGNIZED FOR ",
-     $          "ASCAT REPORTS - SKIP REPORT")',NINT(SAIDDT)
+               if(isaid.le.100) then
+                  PRINT '("SATELLITE ID (",I5,") IS NOT RECOGNIZED FOR",
+     $             " ASCAT REPORTS - SKIP REPORT")',NINT(SAIDDT)
+               else if(isaid.eq.101) then
+                  print '("===> THERE ARE > 100 ASCAT REPORTS WITH ",
+     $             "AN UNRECOGNIZED SATELLITE ID - ONLY 1ST 100 ARE ",
+     $             "PRINTED")'
+               endif
                ISAID = ISAID + 1
                CYCLE LOOP1n1
             ENDIF
