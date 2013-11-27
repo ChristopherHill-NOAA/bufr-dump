@@ -6,7 +6,7 @@ obsproc_dump release 3.0.0
    bufr_dupmar, bufr_dupmrg, bufr_duprad, bufr_dupshp, bufr_quipc,
    bufr_raddate, bufr_supertmi, prepobs_prepssmi:
     - Placed into VS/EE for first time.  No change to source.  Makefile points
-      to generic bufrlib (always the latest version).
+      to BUFRLIB version 10.2.5 (the newest available at this time).
    bufr_dupair:
     - Placed into VS/EE for first time.  Source changed to now exit gracefully
       if a total of zero input subsets (reports) are read in (before could seg
