@@ -331,6 +331,9 @@
 #      and will be set to their default value in this script if not exported
 #      from the parent script --
 #
+#     EXECBUFR    - string indicating directory path for bufr_combfr
+#                   executable
+#                   Default is "$HOMEobsproc_dump/exec"
 #     EXECPREP    - string indicating directory path for prepobs_prepssmi
 #                   executable
 #                   Default is "$HOMEobsproc_dump/exec"
@@ -1571,6 +1574,7 @@ do
 
 #============================================
 
+         EXECBUFR=${EXECBUFR:-$HOMEobsproc_dump/exec}
          EXECPREP=${EXECPREP:-$HOMEobsproc_dump/exec}
          PARMPREP=${PARMPREP:-$HOMEobsproc_network/parm}
          FIXPREP=${FIXPREP:-$HOMEobsproc_dump/fix}
@@ -1811,7 +1815,7 @@ bufr1
 bufr2
 EOFd
 
-      pgm=`basename  /nwprod/exec/bufr_combfr`
+      pgm=`basename $EXECBUFR/bufr_combfr`
       if [ -s $DATA/prep_step ];then
          set +u
          . $DATA/prep_step
@@ -1823,7 +1827,7 @@ EOFd
       fi
 
       FORT50=combfr.spssmi
-      time -p /nwprod/exec/bufr_combfr <cards > outout 2> errfile
+      time -p $EXECBUFR/bufr_combfr <cards > outout 2> errfile
       err=$?
 ######cat errfile
       cat errfile >> outout
