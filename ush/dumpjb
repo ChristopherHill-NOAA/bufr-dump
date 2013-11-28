@@ -5,7 +5,7 @@
 #
 # Script name:   dumpjb      Dump script to get data from BUFR tanks
 #
-# JIF contact:  Woollen     Org: NP20        Date: 2013-01-22
+# RFC contact:  Keyser      Org: NP22        Date: 2013-11-27
 #
 # Abstract: The dumpjb script is an all-purpose dump utility for
 #   time windowing, geographical filtering, eliminating duplicates,
@@ -256,6 +256,12 @@
 # 2013-01-22  J. Whiting  Final WCOSS port: trapped POE=on option, w/ printed 
 #     notice and graceful exit (this option not currently tested on WCOSS); 
 #     replaced XLF logical unit number clearing w/ appropriate FORTxx logic.
+# 2013-11-27  D. Keyser   Placed into new OBSPROC_DUMP vertical directory
+#     structure/environmental equivalence paradigm. As a result, DUEX (path to
+#     dump executables) no longer defaults to /nwprod/exec but rather to
+#     $HOMEobsproc_dump/exec, and one of the three variables
+#     "obsproc_dump_ver", "HOMEobsproc_dump" or "DUEX" must be defined coming
+#     in or this script will exit abnormally with return code 99.
 #
 #
 # Usage: dumpjb  yyyymmddhh<.hh> hh<.hh> dgrp1 dgrp2 dgrp3 ... dgrpN
@@ -281,6 +287,22 @@
 #                                data groups can be skipped over - see
 #                                variable "SKIP_TTTSSS" below)
 #
+#
+#
+#   %% - Data Groups by Message Type/Subtype
+#   ----------------------------------------
+#   View dump script parameter file valid for this execution of dumpjb
+#   ($LIST as imported or set here) for current list of valid data
+#   group names (in both mnemonic and message type form) and their
+#   descriptions.
+#
+#-----------------------------------------------------------------------
+#   NOTE: If the third argument is a message type (000,001,...), the
+#         arguments following (if any) are interpreted as message
+#         subtypes. This maintains compatibility for users of earlier
+#         versions of dumpjb.
+#-----------------------------------------------------------------------
+#
 #   Modules and files referenced:
 #     scripts     : mpmd.sh
 #     fixed fields: bufr_dumplist
@@ -298,13 +320,32 @@
 #     22 - at least one group had no data dumped
 #     99 - catastrophic problem - thread script abort
 #
+#==============================================================================
+#==============================================================================
+#   One of the three following script variables must be defined or this script
+#   will exit with return code 99.  The last two variables may have operational
+#   defaults defined in the script, subject to the conditions noted below.  If
+#   a user exports non-null values for any of these variables, the user value
+#   will override the default if a default is present.
+#
+#   obsproc_dump_ver - OBSPROC_DUMP version for dump executables (e.g., v3.0.0)
+#                              (there is no default)
+#   HOMEobsproc_dump - path to exec directory containing dump executables
+#                              (default::/nwprod/obsproc_dump.$obsproc_dump_ver
+#                                        ===> valid only if $obsproc_dump_ver
+#                                             defined; else no default)
+#   DUEX             - path to dump executables
+#                              (default::$HOMEobsproc_dump/exec
+#                                        ===> valid only if $HOMEobsproc_dump
+#                                             defined; else no default)
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 #   The following script variables are user controllable with operational
 #   defaults defined in the script. If a user exports non-null values
 #   for any of these variables, the user value will override the default.
 #
 #   envir  - environment under which job runs ('prod' or 'test')
 #                                                   (default:prod)
-#   DUEX   -  directory path to dump executables    (default:/nwprod/exec)
 #   RADX   -  path to RADDATE executable            (default:$DUEX/bufr_raddate)
 #   DMDX   -  path to DUMPMD executable             (default:$DUEX/bufr_dumpmd)
 #   GEOX   -  path to GEOFIL executable             (default:$DUEX/bufr_geofil)
@@ -561,21 +602,8 @@
 #             -- or --
 #
 #             LALO=0             bypasses geographical filtering       (default)
-#
-#
-#   %% - Data Groups by Message Type/Subtype
-#   ----------------------------------------
-#   View dump script parameter file valid for this execution of dumpjb
-#   ($LIST as imported or set here) for current list of valid data
-#   group names (in both mnemonic and message type form) and their
-#   descriptions.
-#
-#-----------------------------------------------------------------------
-#   NOTE: If the third argument is a message type (000,001,...), the
-#         arguments following (if any) are interpreted as message
-#         subtypes. This maintains compatibility for users of earlier
-#         versions of dumpjb.
-#-----------------------------------------------------------------------
+#==============================================================================
+#==============================================================================
 #
 # Attributes:
 #
@@ -598,7 +626,7 @@ echo
 echo "********************************************************************"
 echo "********************************************************************"
 echo "     STARTING EXECUTION OF THE UNIVERSAL DUMP SCRIPT - DUMPJB       "
-echo "                        Version 01-22-2013                          "
+echo "                        Version 11-27-2013                          "
 echo "             Start time: `date`                                     "
 echo "********************************************************************"
 echo "********************************************************************"
@@ -619,7 +647,25 @@ RETG=0
  
 [ -z "$envir" ]  && envir=prod
 [ -z "$DATA" ]   && DATA=`pwd`
-[ -z "$DUEX" ]   && DUEX=/nwprod/exec
+if [[ -z "$DUEX" ]]; then
+  if [[ -z "$HOMEobsproc_dump" ]]; then
+    if [[ -z "$obsproc_dump_ver" ]]; then
+      set +x
+      echo
+      echo "Cannot continue without knowing where to find dump executables."
+      echo "Either obsproc_dump_ver, HOMEobsproc_dump, or DUEX must be defined."
+      echo
+      [ $LOUD = on ] && set -x
+      exit 99
+    fi
+    HOMEobsproc_dump=/nwprod/obsproc_dump.${obsproc_dump_ver}
+  fi
+  DUEX=$HOMEobsproc_dump/exec
+fi
+echo
+echo "All executables used in this run of DUMPJB are found in directory \
+path $DUEX"
+echo
 [ -z "$RADX" ]   && RADX=$DUEX/bufr_raddate
 [ -z "$DMDX" ]   && DMDX=$DUEX/bufr_dumpmd
 [ -z "$GEOX" ]   && GEOX=$DUEX/bufr_geofil
