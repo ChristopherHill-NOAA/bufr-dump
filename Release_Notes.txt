@@ -45,7 +45,11 @@ obsproc_dump release 3.0.0
        These replace /nw${envir} in order to point to files moved from
        horizontal to vertical directory structure.
    dumpjb:
-    - Placed into VS/EE for first time. No change to script.
+    - Placed into VS/EE for first time. As a result, DUEX (path to dump
+      executables) no longer defaults to /nwprod/exec but rather to
+      $HOMEobsproc_dump/exec, and one of the three variables
+      "obsproc_dump_ver", "HOMEobsproc_dump" or "DUEX" must be defined coming
+      in or this script will exit abnormally with return code 99.
       
  Fixed file changes:
    nam_expdomain_halfdeg_imask.gbl, wave_bufrtab.ascat, bufr_bufrtab.sptrmm,
