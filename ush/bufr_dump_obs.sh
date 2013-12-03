@@ -5,7 +5,7 @@
 #               
 # Script name:   bufr_dump_obs.sh   Driver for the obs. data dump util
 #
-# Author:        D.A. Keyser        Org: NP22           Date: 2013-01-17
+# Author:        D.A. Keyser        Org: NP22           Date: 2013-12-02
 #
 # Abstract: This script is a driver for the all-purpose BUFR observation
 #   database tank dump utility, dumpjb.  It's main purpose is to output BUFR
@@ -155,6 +155,18 @@
 #    XLFUNIT_n with FORTn (where n is the unit number connected to the filename
 #    defined by the variable FORTn) - needed because ifort uses FORTn.   
 #    This script is now set to run under ksh shell as the default.
+# 2013-12-02  D.A. Keyser -- Placed into new OBSPROC_DUMP vertical directory
+#    structure/environmental equivalence paradigm. As a result: imports new
+#    environment variable $HOMEobsproc_dump which points to directory path for
+#    generic dump subdirectories under version control (in production this is
+#    normally /nwprod/obsproc_dump.vX.Y.Z where X.Y.Z version number being
+#    used, usually the latest); and imports new environment variable
+#    $HOMEobsproc_network which points to directory path for network-specific
+#    dump subdirectories under version control (in production this is normally
+#    /nwprod/obsproc_NETWORK.vX.Y.Z where NETWORK is, e.g., global, nam, rap,
+#    rtma, urma, and x.y.z is version number being used, usually the latest) -
+#    these replace /nw${envir} in order to point to files moved from horizontal
+#    to vertical directory structure.
 #
 #
 # Usage: bufr_dump_obs.sh  yyyymmddhh hh<.hh> ntype dgrp1 dgrp2 ... dgrpN
@@ -3119,9 +3131,9 @@ if [ "$job" = 'j????' ];then
    run="???"
 elif [[ $job = ndas_dump*_tm??_?? ]];then
    run=ndas
-elif [[ $job = rap_p_dump*_?? ]];then
+elif [[ $job = rap_dump*_pcyc_?? ]];then
    run=rap_p
-elif [[ $job = rap_e_dump*_?? ]];then
+elif [[ $job = rap_dump*_erly_?? ]];then
    run=rap_e
 elif [[ $job = ruc2a_dump*_?? ]];then
    run=ruc2a
@@ -3149,8 +3161,8 @@ cat <<EOFs1 > status.out
 
         THIS CREATION TIME MUST BE EARLIER THAN THE START TIME FOR ANY
     OPERATIONAL ANALYSES JOBS THAT READ FROM THESE OBSERVATIONAL DATA DUMP
-    FILES (i.e., Jobs NAM_PREP, NDAS_PREP, RAP_PREP, RAP_P_PREP, RAP_E_PREP,
-                        RUC2A_PREP,GFS_PREP, GDAS_PREP)
+       FILES (i.e., Jobs NAM_PREP, NDAS_PREP, RAP_PREP, RAP_PREP_PCYC,
+                RAP_PREP_ERLY, RUC2A_PREP, GFS_PREP, GDAS_PREP)
                    
 *******************************************************************************
 
