@@ -1,7 +1,7 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: BUFR_EDTBFR
-C   PRGMMR: KEYSER           ORG: NP22        DATE: 2013-01-22
+C   PRGMMR: KEYSER           ORG: NP22        DATE: 2013-12-12
 C
 C ABSTRACT: APPLIES REAL-TIME INTERACTIVE QUALITY CONTROL FLAGS,
 C   GENERATED FROM EITHER A "REJECT" LIST MAINTAINED BY NCEP/NCO OR
@@ -143,10 +143,12 @@ C     AGAINST THE PRESSURE RANGE IN COLUMNS 55-65
 C 2011-10-17  D. A. KEYSER -- RAP (RAPID REFRESH) NETWORK REPLACES
 C     RUC2A (RAPID UPDATE CYCLE)
 C 2012-11-20  J. WOOLLEN  INITIAL PORT TO WCOSS -- ADAPTED IBM/AIX
-C       GETENV SUBPROGRAM CALL TO INTEL/LINUX SYNTAX; EXPANDED EDIT
-C       DESCRIPTORS TO ACCOMODATE RECOMMENDED FIELD WIDTHS (FORMAT 200)
+C     GETENV SUBPROGRAM CALL TO INTEL/LINUX SYNTAX; EXPANDED EDIT
+C     DESCRIPTORS TO ACCOMODATE RECOMMENDED FIELD WIDTHS (FORMAT 200)
 C 2013-01-22  J. WHITING  FINAL PORT TO WCOSS -- UPDATED DOC BLOCKS;
-C       READY FOR IMPLEMENTATION.
+C     READY FOR IMPLEMENTATION.
+C 2013-12-12  D. A. KEYSER -- RECOGNIZED NEW LEVEL 2 DECODER VAD WINDS
+C     IN MESSAGE TYPE 002, SUBTYPE 017
 C
 C USAGE
 C   INPUT FILES:
@@ -643,7 +645,7 @@ C$$$
      .           'PIBAL                                   ', ! 002.005
      .           'OZONESONDE (LOW-RES)(FROM MET. OF. BUFR)', ! 002.006
      .           'NOAA PROFILER NETWORK (NPN) WINDS       ', ! 002.007
-     .           'NeXRaD VERT. AZIMUTH DISPLAY (VAD) WINDS', ! 002.008
+     .           'NeXRaD VAD WINDS FROM RADAR CODED MESSAG', ! 002.008
      .           'PROFILER WINDS ORIG. FROM IN PIBAL BULL.', ! 002.009
      .           'PROFLR SPECTRAL MOMENTS (NOAA & COOP AG)', ! 002.010
      .           'COOPERATIVE AGENCY PROFILER (CAP) WINDS ', ! 002.011
@@ -652,7 +654,8 @@ C$$$
      .           'HONG KONG PROFILER WINDS                ', ! 002.014
      .           'OZONESONDE (HIGH-RES) (FROM ASCII)      ', ! 002.015
      .           'EUROPEAN PROFILER WINDS                 ', ! 002.016
-     .         4*'                                        ',
+     .           'NeXRaD VAD WINDS FROM LEVEL 2 DECODER   ', ! 002.017
+     .         3*'                                        ',
      .        21*'                                        ',
      .         1*'                                        ',
      .           'MANUAL AIREP FORMAT AIRCRAFT            ', ! 004.001
@@ -711,10 +714,10 @@ C$$$
 
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_EDTBFR',2013,0022,0067,'NP22')
+      CALL W3TAGB('BUFR_EDTBFR',2013,0346,0067,'NP22')
 
       print *
-      print * ,'---> Welcome to BUFR_EDTBFR - Version 01-22-2013'
+      print * ,'---> Welcome to BUFR_EDTBFR - Version 12-12-2013'
       print *
 
       NET = '    '

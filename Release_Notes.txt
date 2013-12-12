@@ -21,8 +21,9 @@ obsproc_dump release 3.0.0
       generic bufrlib (always the latest version).
    bufr_edtbfr:
     - Placed into VS/EE for first time.  Source changed to add URMA as new
-      option for network (comment only).  Makefile points to generic bufrlib
-      (always the latest version).
+      option for network (comment only), and to recognize new level 2 decoder
+      VAD winds in message type 002, subtype 017.  Makefile points to generic
+      bufrlib always the latest version).
    wave_dcodquikscat:
     - Placed into VS/EE for first time.  Source changed to now print only the
       first 100 reports with an unrecognized satellite ID (to reduce size of
