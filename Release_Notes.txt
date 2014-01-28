@@ -78,10 +78,15 @@ files
       VAD winds in message type 002, subtype 017.  Makefile points to generic
       bufrlib always the latest version).
    wave_dcodquikscat:
-    - Placed into VS/EE for first time.  Source changed to now print only the
-      first 100 reports with an unrecognized satellite ID (to reduce size of
-      stdout in such cases).  Makefile points to generic bufrlib (always the
-      latest version).
+    - Placed into VS/EE for first time.  Source changed to:
+          1) Handle OSCAT DATA (although currently, these are not reprocessed).
+          2) Account for new METOP-B satellite (SAID=3) in ASCAT processing.
+          3) Add new namelist switch "ISATSK" which allows all reports from a
+             particular BUFR satellite ID to be skipped (really applies only to
+             ASCAT which is now available from two satellites).
+          4) Now print only the first 100 reports with an unrecognized
+             satellite ID (to reduce size of stdout in such cases).
+    - Makefile points to generic bufrlib (always the latest version).
 
  USH script changes:
    bufr_dump_obs.sh:
@@ -143,7 +148,8 @@ files
    the hourly GOES satellite winds to their production server, and
    simultaneously with the implementations of obsproc_dump_monitor.v1.0.0,
    obsproc_global.v1.0.0, obsproc_nam.v1.0.0, obsproc_rap.v1.0.0,
-   obsproc_rtma.v1.1.0 and obsproc_utma.v1.1.0.
+   obsproc_rtma.v1.1.0, obsproc_utma.v1.1.0, obsproc_satingest.v2.0.0 and
+   obsproc_shared/bufr_cword.v1.0.0.
 
    Since there are no jobs in obsproc_dump, an obsproc_dump.ver file is not
    needed.
