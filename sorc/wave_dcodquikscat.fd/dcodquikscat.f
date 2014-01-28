@@ -1,29 +1,35 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: WAVE_DCODQUIKSCAT
-C   PRGMMR: KEYSER           ORG: NP22        DATE: 2013-11-25
+C   PRGMMR: KEYSER           ORG: NP22        DATE: 2014-01-28
 C
-C ABSTRACT: REPROCESSES QUIKSCAT AND ASCAT (SCATTEROMETER) DATA.  READS
-C   EACH REPORT FROM INPUT BUFR DATA DUMP FILE AND PERFORMS A NUMBER OF
-C   CHECKS, INCLUDING: REPORT DATE CHECKED FOR REALISM, REPORTS
-C   OVER LAND SKIPPED, PROPER NUDGED WIND VECTOR SELECTED (FROM CHOICE
-C   OF 4 FOR QUIKSCAT OR 2 OR 4 FOR ASCAT, NOTE: INCREASED FROM 2 TO 4
-C   FOR ASCAT ON 9/14/2010), REPORTS WITH MISSING SELECTED NUDGED WIND
-C   VECTOR SKIPPED, REPORTS WITH MISSING MODEL WIND DIRECTION AND SPEED
-C   ARE SKIPPED, QUIKSCAT (ONLY) REPORTS WITH PROBABILITY OF RAIN
-C   GREATER THAN SPECIFIED LIMIT ARE SKIPPED (OPTIONAL), QUIKSCAT
-C   (ONLY) REPORTS AT THE EDGES OF THE ORBITAL SWATH (AS SPECIFIED BY
-C   UPPER AND LOWER CELL NUMBER LIMITS) ARE SKIPPED (OPTIONAL), ASCAT
-C   (ONLY) REPORTS WITH ONE OR MORE "CRITICAL" WIND VECTOR CELL QUALITY
-C   FLAGS SET ARE SKIPPED (OPTIONAL). REPORTS PASSING CHECKS ARE
-C   SUPEROBED ONTO A USER-SPECIFIED LAT/LON GRID ACCORDING TO SATELLITE
-C   ID (OPTIONAL) AND THEN REPROCESSED INTO A BUFR FILE WHICH WILL
-C   LATER BE READ BY THE PROGRAM PREPOBS_PREPDATA. ALSO, A UNIQUE ID IS
-C   GENERATED HERE FOR EACH REPORT AND THEN ENCODED INTO THE OUTPUT
-C   REPROCESSED BUFR FILE. THE REPROCESSED BUFR FILE CONTAINS ONLY
-C   THOSE DATA NEEDED FOR PREPBUFR PROCESSING AND LATER ASSIMILATION
-C   INTO THE NCEP ANALYSES. A USER-SPECIFIED SWITCH ALLOWS REPORTS TO
-C   BE SELECTED BY LOCATION (LAT/LON BOUNDARY).
+C ABSTRACT: REPROCESSES QUIKSCAT, ASCAT AND OSCAT (SCATTEROMETER) DATA.
+C   (NOTE: CURRENTLY, OSCAT DATA IS NOT REPROCESSED AND SO IS NOT READ
+C   BY THIS CODE.  LOGIC IS IN PLACE TO DO SO IF IT EVER DOES NEED TO
+C   BE REPROCESSED HERE.) READS EACH REPORT FROM INPUT BUFR DATA DUMP
+C   FILE AND PERFORMS A NUMBER OF CHECKS, INCLUDING: REPORT DATE
+C   CHECKED FOR REALISM, REPORTS OVER LAND SKIPPED, PROPER NUDGED WIND
+C   VECTOR SELECTED (FROM CHOICE OF 4 FOR QUIKSCAT, 2 OR 4 FOR ASCAT,
+C   AND ???? FOR OSCAT: NOTE: INCREASED FROM 2 TO 4 FOR ASCAT ON
+C   9/14/2010), REPORTS WITH MISSING SELECTED NUDGED WIND VECTOR
+C   SKIPPED, REPORTS WITH MISSING MODEL WIND DIRECTION AND SPEED ARE
+C   SKIPPED, QUIKSCAT OR OSCAT (ONLY) REPORTS WITH PROBABILITY OF RAIN
+C   GREATER THAN SPECIFIED LIMIT ARE SKIPPED (OPTIONAL), QUIKSCAT OR
+C   OSCAT (ONLY) REPORTS AT THE EDGES OF THE ORBITAL SWATH (AS
+C   SPECIFIED BY UPPER AND LOWER CELL NUMBER LIMITS) ARE SKIPPED
+C   (OPTIONAL), ASCAT (ONLY) REPORTS WITH ONE OR MORE "CRITICAL" WIND
+C   VECTOR CELL QUALITY FLAGS SET ARE SKIPPED (OPTIONAL). REPORTS
+C   PASSING CHECKS ARE SUPEROBED ONTO A USER-SPECIFIED LAT/LON GRID
+C   ACCORDING TO SATELLITE ID (OPTIONAL) AND THEN REPROCESSED INTO A
+C   BUFR FILE WHICH WILL LATER BE READ BY EITHER THE PROGRAM
+C   PREPOBS_PREPDATA (CURRENTLY QUIKSCAT AND ASCAT), OR DIRECTLY BY THE
+C   ANALYSIS ITSELF (CURRENTLY OSCAT). ALSO, A UNIQUE ID IS GENERATED
+C   HERE FOR EACH REPORT AND THEN ENCODED INTO THE OUTPUT REPROCESSED
+C   BUFR FILE. THE REPROCESSED BUFR FILE CONTAINS ONLY THOSE DATA
+C   NEEDED FOR EITHER PREPBUFR PROCESSING AND LATER ASSIMILATION INTO
+C   THE NCEP ANALYSES OR FOR THE ANALYSIS ITSELF. A USER-SPECIFIED
+C   SWITCH ALLOWS REPORTS TO BE SELECTED BY LOCATION (LAT/LON
+C   BOUNDARY).
 C
 C PROGRAM HISTORY LOG:
 C
@@ -86,8 +92,19 @@ C            ALL SUBSETS IN A BUFR MESSAGE CONTAIN THE SAME YEAR,
 C            MONTH, DAY AND HOUR AS THAT IN SEC. 1 OF THE BUFR MESSAGE,
 C            IT KEEPS THE OUTPUT FILE MORE COMPACT AND CAUSES NO HARM
 C            SINCE ONLY PREPOBS_PREPDATA ENDS UP READING THIS FILE)
-C 2012-11-20 J. WOOLLEN  INITIAL PORT TO WCOSS 
-C 2013-11-25 D. KEYSER - ONLY THE FIRST 100 REPORTS WITH AN
+C 2012-11-20 J. WOOLLEN - INITIAL PORT TO WCOSS
+C 2014-01-28 D. KEYSER  -  NOW HANDLES OSCAT AS WELL AS QUIKSCAT AND
+C            ASCAT DATA (ALTHOUGH CURRENTLY, OSCAT DATA IS NOT
+C            REPROCESSED AND SO IS NOT READ BY THIS CODE); MODIFIED TO
+C            ACCOUNT FOR NEW METOP-B SATELLITE (SAID=3) IN ASCAT
+C            PROCESSING, ADDED UPDATED PRINT STATEMENTS SUMMARIZING
+C            COUNTS BY SATELLITE FOR ASCAT, NO LONGER OUTPUTS SATELLITE
+C            ID FOR ASCAT SUPEROBS (SINCE THEY COULD BE A MIXTURE OF
+C            METOP-A AND -B); ADDED NEW NAMELIST SWITCH "ISATSK" WHICH
+C            ALLOWS ALL REPORTS FROM A PARTICULAR BUFR SATELLITE ID TO
+C            BE SKIPPED {APPLIES TO ASCAT WHICH CAN NOW BE FROM
+C            SATELLITE ID 3 (METOP-B OR 4 (METOP-A}, DEFAULT IS 99999,
+C            NO REPORTS SKIPPED; ONLY THE FIRST 100 REPORTS WITH AN
 C            UNRECOGNIZED SATELLITE ID ARE NOW PRINTED (TO REDUCE SIZE
 C            OF STDOUT IN SUCH CASES)
 C
@@ -96,7 +113,8 @@ C   INPUT FILES:
 C     UNIT 05  - INPUT DATA CARDS IN THE FORM OF A NAMELIST (SEE
 C              - REMARKS)
 C     UNIT 11  - NCEP BUFR DATA DUMP CONTAINING ORIGINAL FORM OF
-C                QUIKSCAT ("QKSCAT") OR ASCAT ("ASCATT") DATA
+C                QUIKSCAT ("QKSCAT"), ASCAT ("ASCATT") OR OSCAT
+C                ("OSCATT") DATA
 C     UNIT 19  - 0.5 x 0.5 DEG LAT/LON LAND/SEA MASK (INTEGER(4))
 C     UNIT 20  - BUFR MNEMONIC TABLE (NEEDED TO PRODUCE REPROCESSED
 C                NCEP BUFR FILE)
@@ -107,12 +125,14 @@ C     UNIT 51  - TEXT LISTING OF ALL REPORTS ENCODED TO UNIT 52
 C              - (GENERATED ONLY WHEN INPUT NAMELIST VARIABLE "IPRINT"
 C              - IS 1)
 C     UNIT 52  - NCEP BUFR DATA DUMP CONTAINING FINAL (REPROCESSED)
-C                FORM OF QUIKSCAT ("QKSWND") OR ASCAT ("ASCATW") WIND
-C                DATA WITH UNIQUE REPORT IDS (AND POSSIBLY SUPEROBED)
+C                FORM OF QUIKSCAT ("QKSWND"), ASCAT ("ASCATW") OR OSCAT
+C                ("OSCATW") WIND DATA WITH UNIQUE REPORT IDS (AND
+C                POSSIBLY SUPEROBED)
 C
 C   SUBPROGRAMS CALLED:
 C     LIBRARY
-C       W3LIB    - W3TAGB   W3TAGE   ERREXIT  W3FC05   W3FC06
+C       W3NCO    - W3TAGB   W3TAGE   ERREXIT
+C       W3EMC    - W3FC05   W3FC06
 C       BUFRLIB  - DATELEN  DUMPBF   OPENBF   OPENMG   MINIMG  CLOSMG
 C                - UFBREP   UFBINT   WRITSB   UFBCNT   CLOSBF  IREADMG
 C                - UPFTBV   IBFMS    OPENMB
@@ -122,7 +142,7 @@ C     COND =   0 - SUCCESSFUL RUN
 C          =  55 - ERROR READING LAND/SEA MASK (OR FILE EMPTY OR
 C                  INCOMPLETE)
 C          =  60 - INPUT SWITCH "ITYPE" IS NOT RECOGNIZED {NEITHER "1"
-C                  (QUIKSCAT) NOR "2" (ASCAT)}
+C                  (QUIKSCAT), "2" (ASCAT) NOR "3" (OSCAT)}
 C          =  61 - ERROR OBTAINING CENTER DATE FROM FIRST BUFR MESSAGE
 C                  IN UNIT 11
 C          =  62 - ERROR OBTAINING DUMP DATE FROM SECOND BUFR MESSAGE
@@ -138,12 +158,13 @@ C
 C     QSCDAT_8 contains along-track row number, across-swath cell
 C            number, model wind direction at 10 m, model wind speed
 C            at 10m, and index of selected wind vector
-C            (along-track row number only available for QUIKSCAT)
+C            (along-track row number only available for QUIKSCAT and
+C             OSCAT)
 C      DATA QSCSTR/'ATRN CTCN MWD10 MWS10 ISWV '/
 C
 C     XLOCDT_8 contains the report latitude and longitude.
-C      DATA LOCSTR  /'CLAT CLON '/   - for ASCAT
-C      DATA LOCSTRH /'CLATH CLONH '/ - for QUIKSCAT
+C      DATA LOCSTR  /'CLAT CLON '/   - for QUIKSCAT and OSCAT
+C      DATA LOCSTRH /'CLATH CLONH '/ - for ASCAT
 C
 C     QUIKSCAT:
 C     WINDAT_8 contains 4 sets of wind information, corresponding to
@@ -160,7 +181,14 @@ C            direction at 10 m, backscatter distance and likelihood
 C            computed for solution
 C      DATA SCWSTR /'WS10 WD10 BSCD LKCS '/
 C
-C     QUIKSCAT:
+C     OSCAT::
+C     WINDAT_8 contains 4 sets of wind information, corresponding to
+C            the 4 "views."  Each set comprises: wind speed at 10 m,
+C            and wind direction at 10 m (plus two missing "NUL" values
+C            as "place holders")
+C      DATA SCWSTRo /'WS10 WD10 NUL NUL '/
+C
+C     QUIKSCAT and OSCAT:
 C     RAINDT_8 contains the seawinds probability of rain
 C      DATA RAINST/'SPRR '/
 C
@@ -184,22 +212,24 @@ C        ADATA(8)  -- LONGITUDE ("CLON")
 C        ADATA(9)  -- WIND SPEED AT 10 METERS ("WS10")
 C        ADATA(10) -- WIND DIRECTION AT 10 METERS ("WD10")
 C      *-ADATA(11) -- ACROSS-SWATH CELL NUMBER (1-72) ("CTCN")
-C      *-ADATA(12) -- QUIKSCAT: ALONG-TRACK ROW NUMBER ("ATRN")
+C      *-ADATA(12) -- QUIKSCAT and OSCAT: ALONG-TRACK ROW # ("ATRN")
 C                  -- ASCAT:    BACKSCATTER DISTANCE ("BSCD")
-C      *-ADATA(13) -- QUIKSCAT: SEAWINDS PROBABILITY OF RAIN
+C      *-ADATA(13) -- QUIKSCAT and OSCAT: SEAWINDS PROBABILITY OF RAIN
 C                               (0.0 TO 1.0) ("SPRR")
 C                  -- ASCAT:    WIND VECTOR CELL QUALITY FLAG ("WVCQ")
-C        ADATA(14) -- SATELLITE ID (EITHER 281 FOR QUIKSCAT OR 004 FOR
-C                      ASCAT) ("SAID")
+C      %-ADATA(14) -- SATELLITE ID (EITHER 281 FOR QUIKSCAT, 004 OR 003
+C                      FOR ASCAT, OR 421 FOR OSCAT) ("SAID")
 C      $-ADATA(15) -- NUMBER OF OBSERVATIONS THAT WENT INTO MAKING A
 C                      SUPEROB ("ACAV")
 C      #-ADATA(16) -- REPORT ID ("RPID")
-C      *-ADATA(17) -- QUIKSCAT: NULL (MISSING) ("NUL")
+C      *-ADATA(17) -- QUIKSCAT and OSCAT: NULL (MISSING) ("NUL")
 C                  -- ASCAT:    LIKELIHOOD COMPUTED FOR SOLUTION
 C                                ("LKCS")
 C      
 C          ALL ABOVE ARE MEANS FOR SUPEROBS
 C      * - NOT STORED FOR SUPEROBS
+C      % - NOT STORED FOR ASCAT SUPEROBS, STORED FOR QUIKSCAT AND OSCAT
+C           SUPEROBS
 C      $ - STORED AS 1 FOR NON-SUPEROBS
 C      # - REPORT ID MADE UP AS FOLLOWS:
 C            Superobs:
@@ -208,17 +238,24 @@ C              Characters 2-7: Index which incrementally counts reports
 C            Non-superobs:
 C              Characters 1-7: Index which incrementally counts reports
 C            Character 8: Indicator for satellite id ("Q" - 281,
-C                          "A" - 004)
+C                          "A" - 004 or 003, "O" - 421)
 C
 C
 C   VARIABLES READ IN NAMELIST "RDATA":
 C
 C    ITYPE  - IF = 1 QUIKSCAT DATA (DEFAULT)
 C             IF = 2 ASCAT DATA
+C             IF = 3 OSCAT DATA
 C    IPRINT - IF = 0 (DEFAULT) WILL NOT PRINT LISTING OF ALL
 C             PROCESSED REPORTS TO UNIT 51; IF = 1 WILL PRINT
 C             LISTING TO UNIT 51
 CC
+C    ISATSK - ALL REPORTS WITH THIS BUFR SATELLITE ID ARE SKIPPED
+C             {CURRENTLY SHOULD APPLY ONLY TO ASCAT WHICH CAN COME FROM
+C              EITHER METOP-2(A) (SATELLITE ID 4) OR METOP-1(B)
+C              (SATELLITE ID 3)}, ONLY ONE VALUE POSSIBLE
+C                                    (DEFAULT=99999, NO REPORTS SKIPPED)
+C             
 C    ISUPOB - SUPEROB SWITCH
 C        ISUPOB = 0 -- SUPEROBS ARE NOT GENERATED; ALL REPROCESSED
 C                      REPORTS PASSING CHECKS ARE PACKED INTO OUTPUT
@@ -242,7 +279,8 @@ C             SUPEROB IS NOT GENERATED FOR THIS BOX}         (DEFAULT=1)
 C
 C    (NOTE: DELAT, DELON AND LIMCNT APPLY ONLY WHEN ISUPOB = 1)
 CC
-C    IQCPOR - PROBABILITY OF RAIN QUALITY CONTROL SWITCH (QUIKSCAT ONLY)
+C    IQCPOR - PROBABILITY OF RAIN QUALITY CONTROL SWITCH (QUIKSCAT AND
+C              OSCAT ONLY)
 C        IQCPOR = 0 -- NO QUALITY CONTROL W.R.T. PROBABILITY OF RAIN
 C                      IS PERFORMED (SHOULD ALWAYS BE SET TO THIS FOR
 C                      ASCAT)
@@ -253,7 +291,7 @@ C    PORLIM - IF IQCPOR=1, ALL REPORTS WITH PROBABILITY OF RAIN
 C             GREATER THAN THIS VALUE ARE SKIPPED          (DEFAULT=.10)
 CC
 C    IQCEDG - ORBITAL SWATH EDGE QUALITY CONTROL SWITCH BASED ON CELL
-C             NUMBER (QUIKSCAT ONLY)
+C             NUMBER (QUIKSCAT AND OSCAT ONLY)
 C        IQCEDG = 0 -- NO QUALITY CONTROL WITH RESPECT TO CELL NUMBER
 C                      IS PERFORMED (SHOULD ALWAYS BE SET TO THIS FOR
 C                      ASCAT)
@@ -264,15 +302,15 @@ C                      CONSIDERED TO BE ON THE EDGE OF THE ORBITAL
 C                      SWATH AND ARE SKIPPED (DEFAULT)
 C    IEDLLM - IF IQCEDG=1, ALL REPORTS WITH CELL NUMBER LESS THAN OR
 C             EQUAL TO THIS ARE SKIPPED (RANGE 1-72, MUST BE LESS THAN
-C             IEDULM) (QUIKSCAT ONLY)                        (DEFAULT=8)
+C             IEDULM) (QUIKSCAT AND OSCAT ONLY)              (DEFAULT=8)
 C    IEDULM - IF IQCEDG=1, ALL REPORTS WITH CELL NUMBER GREATER THAN OR
 C             EQUAL TO THIS ARE SKIPPED (RANGE 1-72, MUST BE GREATER
-C             THAN IEDLLM) (QUIKSCAT ONLY)                  (DEFAULT=64)
+C             THAN IEDLLM) (QUIKSCAT AND OSCAT ONLY)        (DEFAULT=64)
 CC
 C    IQCWVC - WIND VECTOR CELL QUALITY FLAG SWITCH (ASCAT ONLY)
 C        IQCWVC = 0 -- THE WIND VECTOR CELL QUALITY FLAGS ARE NOT
 C                      CHECKED (SHOULD ALWAYS BE SET TO THIS FOR
-C                      QUIKSCAT)                               (DEFAULT)
+C                      QUIKSCAT OR OSCAT)                      (DEFAULT)
 C        IQCPOR = 1 -- "CRITICAL" WIND VECTOR CELL QUALITY FLAGS ARE
 C                      CHECKED AND REPORTS WITH ANY ONE OF THESE FLAGS
 C                      SET ARE SKIPPED
@@ -295,7 +333,7 @@ C
 C          
 C ATTRIBUTES:
 C   LANGUAGE: FORTRAN 90
-C   MACHINE : IBM-SP
+C   MACHINE : NCEP WCOSS
 C
 C$$$
 
@@ -305,14 +343,14 @@ C$$$
 
       LOGICAL NO_LATLON_CHECK
       logical  six,seven,eight,nine,fourteen 
-      CHARACTER*8  CTYPE(2)
-      DATA CTYPE/'QUIKSCAT',' ASCAT  '/
-      CHARACTER*6  CTYPE1(2)
-      DATA CTYPE1/'QKSCAT','ASCATT'/
-      CHARACTER*6  CTYPE2(2)
-      DATA CTYPE2/'QKSWND','ASCATW'/
-      CHARACTER*6  CTYPE3(2)
-      DATA CTYPE3/'Q','A'/
+      CHARACTER*8  CTYPE(3)
+      DATA CTYPE/'QUIKSCAT',' ASCAT  ',' OSCAT  '/
+      CHARACTER*6  CTYPE1(3)
+      DATA CTYPE1/'QKSCAT','ASCATT','OSCATT'/
+      CHARACTER*6  CTYPE2(3)
+      DATA CTYPE2/'QKSWND','ASCATW','OSCATW'/
+      CHARACTER*6  CTYPE3(3)
+      DATA CTYPE3/'Q','A','O'/
       CHARACTER*8  SUBSET,SUBOUT,SID
       CHARACTER*30 DATSTR
       DATA DATSTR/'YEAR MNTH DAYS HOUR MINU SECO '/
@@ -326,6 +364,8 @@ C$$$
       DATA SCWSTR /'WS10 WD10 BSCD LKCS '/
       CHARACTER*20 SCWSTRH
       DATA SCWSTRH/'WS10H WD10H NUL NUL '/
+      CHARACTER*20 SCWSTRo
+      DATA SCWSTRo/'WS10 WD10 NUL NUL '/
       CHARACTER*5  RAINST
       DATA RAINST/'SPRR '/
       CHARACTER*5  QUALST
@@ -353,26 +393,27 @@ C$$$
      $ SUMUCO(720,360),SUMVCO(720,360)
 
       INTEGER  NOBS(720,360),ICDATE(5),IDDATE(5),IDATE(8),
-     $ NDATE(8),IBIT(MXIB),icount(23),ISWV_COUNT(5),ISWV_COUNT_good(4)
+     $ NDATE(8),IBIT(MXIB),icount(23),ISWV_COUNT(5),ISWV_COUNT_good(4),
+     $ ICNTS(3:4),NOBSS(720,360,3:4)
 
-      NAMELIST/RDATA/ITYPE,IPRINT,ISUPOB,DELAT,DELON,LIMCNT,IQCPOR,
-     $ PORLIM,
-     $ IQCEDG,IQCWVC,IEDLLM,IEDULM,LATS,LATN,LONW,LONE
+      NAMELIST/RDATA/ITYPE,IPRINT,ISATSK,ISUPOB,DELAT,DELON,LIMCNT,
+     $ IQCPOR,PORLIM,IQCEDG,IQCWVC,IEDLLM,IEDULM,LATS,LATN,LONW,LONE
 
       DATA LUNIN /11/,LUNOUT/52/,LUNTAB/20/,ifirst/0/
       DATA BMISS/10E10/
 
       EQUIVALENCE  (SID,RPID_8)
 
-      CALL W3TAGB('WAVE_DCODQUIKSCAT',2013,0329,0083,'NP22')
+      CALL W3TAGB('WAVE_DCODQUIKSCAT',2014,0028,0083,'NP22')
 
       PRINT *, ' '
       PRINT *, '=====> WELCOME TO PROGRAM WAVE_DCODQUIKSCAT - ',
-     $ 'VERSION: 11/25/2013'
+     $ 'VERSION: 01/28/2014'
       PRINT *, ' '
 
       ITYPE  = 1
       IPRINT = 0
+      ISATSK = 99999
       ISUPOB = 1
       DELAT  = 1.0
       DELON  = 1.0
@@ -434,6 +475,7 @@ C  INITALIZE ALL SUMS AS ZERO
 C  --------------------------
 
       NOBS   = 0
+      NOBSS  = 0
       SUMTIM = 0
       SUMLAT = 0
       SUMLON = 0
@@ -442,11 +484,13 @@ C  --------------------------
 
       ICNT   = 0
       ICNTT  = 0
+      ICNTS  = 0
       ITOBS  = 0
 
       IBADD  = 0
       IWVEC  = 0
       ISAID  = 0
+      ISAIDSK  = 0
       IGRD   = 0
       ILALO  = 0
       ILAND  = 0
@@ -481,7 +525,7 @@ ccc      WRITE(6,6111)  (LSTHXH_4(I,J),J=1,61)
 
 C--------------------------------------------------------------
 
-      IF(ITYPE.EQ.1.OR.ITYPE.EQ.2) THEN
+      IF(ITYPE.EQ.1.OR.ITYPE.EQ.2.OR.ITYPE.EQ.3) THEN
          WRITE(6,600) CTYPE(ITYPE)
   600    FORMAT(/' GET ',A,' DATA FROM BUFR DATA DUMP'/)
       ELSE
@@ -551,9 +595,9 @@ C  ------------------------------------------
       CALL OPENBF(LUNIN,'IN',LUNIN)
 
 
-C  OPEN OUTPUT BUFR FILE WHICH WILL CONTAIN REPROCESSED QUIKSCAT OR
-C   ASCAT DATA
-C  ----------------------------------------------------------------
+C  OPEN OUTPUT BUFR FILE WHICH WILL CONTAIN REPROCESSED QUIKSCAT, ASCAT
+C   OR OSCAT DATA
+C  --------------------------------------------------------------------
 
       CALL OPENBF(LUNOUT,'OUT',LUNTAB)
       WRITE(6,101) LUNOUT,LUNTAB
@@ -561,14 +605,15 @@ C  ----------------------------------------------------------------
      $ ' FOR OUTPUT; BUFR MNEMONIC TABLES A,B,D IN UNIT',I3/13X,'READ ',
      $ 'IN AND ENCODED INTO BEGINNING MESSAGES OF OUTPUT DATA SET'/)
 
-      PRINT 106, ITYPE,IPRINT,ISUPOB,DELAT,DELON,LIMCNT,IQCPOR,PORLIM,
-     $ IQCEDG,IQCWVC,IEDLLM,IEDULM,LATS,LATN,LONW,LONE,NO_LATLON_CHECK
+      PRINT 106, ITYPE,IPRINT,ISATSK,ISUPOB,DELAT,DELON,LIMCNT,IQCPOR,
+     $ PORLIM,IQCEDG,IQCWVC,IEDLLM,IEDULM,LATS,LATN,LONW,LONE,
+     $ NO_LATLON_CHECK
   106 FORMAT(/5X,'USER SPEC. SWITCHES: ITYPE=',I2,'; IPRINT=',I2,
-     $ '; ISUPOB=',I2,'; DELAT=',F5.1,'; DELON=',F5.1,'; LIMCNT=',I3/5X,
-     $ 'IQCPOR=',I2,'; PORLIM=',F6.3,'; IQCEDG=',I2,'; IQCWVC=',I2,
-     $ '; IEDLLM=',I2,'; IEDULM=',I2,'; LATITUDE BDRY:',I4,' TO',I4,
-     $ ' (S-N)'/5X,'LONGITUDE BDRY:',I4,' TO',I4,' (W-E) DEG. W.'/5X,
-     $ 'NO_LATLON_CHECK:',L4/)
+     $ '; ISATSK=',I3,'; ISUPOB=',I2,'; DELAT=',F5.1,'; DELON=',F5.1,
+     $ '; LIMCNT=',I3/5X,'IQCPOR=',I2,'; PORLIM=',F6.3,'; IQCEDG=',I2,
+     $ '; IQCWVC=',I2,'; IEDLLM=',I2,'; IEDULM=',I2,'; LATITUDE BDRY:',
+     $ I4,' TO',I4,' (S-N)'/5X,'LONGITUDE BDRY:',I4,' TO',I4,' (W-E) ',
+     $ 'DEG. W.'/5X,'NO_LATLON_CHECK:',L4/)
 
 C  TRANSFER CENTER & DUMP DATE FROM INPUT BUFR FILE TO OUTPUT BUFR FILE
 C  --------------------------------------------------------------------
@@ -629,9 +674,13 @@ C  --------------------------------
             RAINDT_8 = BMISS
             QUALDT_8 = BMISS
             CALL UFBINT(LUNIN,QSCDAT_8, 5,  1,IRET,QSCSTR)
-            IF(ITYPE.EQ.1)  THEN
+            IF(ITYPE.EQ.1 .OR. ITYPE.EQ.3)  THEN
                CALL UFBINT(LUNIN,XLOCDT_8, 2,  1,IRET,LOCSTR)
-               CALL UFBREP(LUNIN,WINDAT_8, 4,255,INSWV,SCWSTRH)
+               IF(ITYPE.EQ.1)  THEN
+                  CALL UFBREP(LUNIN,WINDAT_8, 4,255,INSWV,SCWSTRH)
+               ELSE
+                  CALL UFBREP(LUNIN,WINDAT_8, 4,255,INSWV,SCWSTRo)
+               END IF
                CALL UFBINT(LUNIN,RAINDT_8, 1,  1,IRET,RAINST)
                IF(INSWV.NE.4)  THEN
                   PRINT '("NUMBER OF INPUT WIND VECTORS (",I5,") IS ",
@@ -669,7 +718,8 @@ C  -------------------------------------------------------------------
                endif
                ISAID = ISAID + 1
                CYCLE LOOP1n1
-            ELSE IF(ITYPE.EQ.2.AND.NINT(SAIDDT).NE.004)  THEN
+            ELSE IF(ITYPE.EQ.2.AND.(NINT(SAIDDT).NE.004.AND.
+     $                              NINT(SAIDDT).NE.003))  THEN
                if(isaid.le.100) then
                   PRINT '("SATELLITE ID (",I5,") IS NOT RECOGNIZED FOR",
      $             " ASCAT REPORTS - SKIP REPORT")',NINT(SAIDDT)
@@ -678,9 +728,27 @@ C  -------------------------------------------------------------------
      $             "AN UNRECOGNIZED SATELLITE ID - ONLY 1ST 100 ARE ",
      $             "PRINTED")'
                endif
+            ELSE IF(ITYPE.EQ.3.AND.NINT(SAIDDT).NE.421)  THEN
+               if(isaid.le.100) then
+                  PRINT '("SATELLITE ID (",I5,") IS NOT RECOGNIZED FOR",
+     $             " OSCAT REPORTS - SKIP REPORT")',NINT(SAIDDT)
+               else if(isaid.eq.101) then
+                  print '("===> THERE ARE > 100 OSCAT REPORTS WITH ",
+     $             "AN UNRECOGNIZED SATELLITE ID - ONLY 1ST 100 ARE ",
+     $             "PRINTED")'
+               endif
                ISAID = ISAID + 1
                CYCLE LOOP1n1
             ENDIF
+
+C  CHECK TO SEE IF THIS REPORT SHOULD BE SKIPPED BASED ON ITS SAT. ID
+C  ------------------------------------------------------------------
+
+            IF(NINT(SAIDDT).EQ.ISATSK)  THEN
+               ISAIDSK = ISAIDSK + 1
+               CYCLE LOOP1n1
+            ENDIF
+       
             SID(8:8) = CTYPE3(ITYPE)
 
 C  CHECK REPORT WITH INVALID LAT/LON LOCATION
@@ -784,13 +852,13 @@ C  ---------------------------------------------------
             nine     = .false.
             fourteen = .false.
 
-            IF(ITYPE.EQ.1)  THEN
+            IF(ITYPE.EQ.1 .OR. ITYPE.EQ.3)  THEN
 
                IF(IQCPOR.EQ.1)  THEN
 
 C  CHECK THAT THE PROBABILITY OF RAIN IS LESS THAN OR EQUAL TO PORLIM
 C   (MISSING PROBABILITY OF RAIN IS TREATED AS POB 100%)
-C   (QUIKSCAT ONLY)
+C   (QUIKSCAT AND OSCAT ONLY)
 C  ------------------------------------------------------------------
 
                   IF(RAINDT_8.GT.PORLIM)  THEN
@@ -803,7 +871,7 @@ C  ------------------------------------------------------------------
 
 C  CHECK THAT THE REPORT IS NOT ON THE EDGE OF THE ORBITAL SWATH
 C   AS DEFINED BY ITS CELL NUMBER AND THE SPECIFIED LIMITS
-C   (QUIKSCAT ONLY)
+C   (QUIKSCAT AND OSCAT ONLY)
 C  -------------------------------------------------------------
 
                   IF(NINT(QSCDAT_8(2)).LE.IEDLLM.OR.NINT(QSCDAT_8(2))
@@ -932,8 +1000,11 @@ C  SUM UP VALUES WITHIN THE GRID BOX ILM, JLM
 C  ------------------------------------------
 
                NOBS(JLM,ILM) = NOBS(JLM,ILM)+1
+               IF(ITYPE.EQ.2)  NOBSS(JLM,ILM,NINT(SAIDDT)) =
+     $                         NOBSS(JLM,ILM,NINT(SAIDDT)) + 1
+
                ITOBS =
-     $          ITOBS + 1
+     $          ITOBS + 1  ! this line may not be needed, DAK
                SUMTIM(JLM,ILM) =
      $          SUMTIM(JLM,ILM) + REAL(ITIME)
                SUMLAT(JLM,ILM) =
@@ -960,7 +1031,7 @@ C  ---------------------------------------------------------
                ADATA_8(9)    = WS_8(ISWV)
                ADATA_8(10)   = WD_8(ISWV)
                ADATA_8(11)   = QSCDAT_8(2)
-               IF(ITYPE.EQ.1)  THEN
+               IF(ITYPE.EQ.1 .OR. ITYPE.EQ.3)  THEN
                   ADATA_8(12)   = QSCDAT_8(1)
                   ADATA_8(13)   = RAINDT_8
                ELSE
@@ -972,11 +1043,12 @@ C  ---------------------------------------------------------
                ADATA_8(15)   = 1_8
                ICNT = MIN(9999999,ICNT+1)
                ICNTT = ICNTT + 1
+               IF(ITYPE.EQ.2) ICNTS(NINT(SAIDDT))=ICNTS(NINT(SAIDDT))+ 1
                WRITE(SID(1:7),'(I7.7)')  ICNT
                ADATA_8(16)   = RPID_8
 
                IF(IPRINT.EQ.1)  THEN
-                  IF(ITYPE.EQ.1)  THEN
+                  IF(ITYPE.EQ.1 .OR. ITYPE.EQ.3)  THEN
                      if(ifirst.eq.0) then
                         WRITE(51,9601)
  9601 FORMAT(' YEAR MM DD HH mm ss   CLAT    CLON     WS10   WD10   ',
@@ -1020,12 +1092,12 @@ C  ---------------------------------------------------------
                   END IF
                END IF
 
-C  ENCODE THE REPROCESSED QUIKSCAT OR ASCAT WIND DATA INTO A SUBSET
-C   (REPORT)
+C  ENCODE THE REPROCESSED QUIKSCAT, ASCAT OR OSCAT WIND DATA INTO A
+C   SUBSET (REPORT)
 C  ----------------------------------------------------------------
 
                CALL UFBINT(LUNOUT,ADATA_8,8,1,IRET,OUTST1)
-               IF(ITYPE.EQ.1)  THEN
+               IF(ITYPE.EQ.1 .OR. ITYPE.EQ.3)  THEN
                   CALL UFBINT(LUNOUT,ADATA_8(9),8,1,IRET,OUTST2Q)
                ELSE
                   CALL UFBINT(LUNOUT,ADATA_8(9),9,1,IRET,OUTST2A)
@@ -1080,6 +1152,11 @@ C  -----------------------------------------------------------------
 
                IF(NOBS(KJ,KNDX).LT.LIMCNT)  CYCLE LOOP2n1
                ITOBS = ITOBS + NOBS(KJ,KNDX)
+               IF(ITYPE.EQ.2)  THEN
+                  DO ISAT = 3,4
+                     ICNTS(ISAT) = ICNTS(ISAT) + NOBSS(KJ,KNDX,ISAT)
+                  ENDDO
+               END IF
                XMUL = REAL(NOBS(KJ,KNDX))
 
 C  CALC. MEAN WIND SPEED, WIND DIRECTION, TIME, LATITUDE AND
@@ -1129,7 +1206,7 @@ C  --------------------------------------------------------------
                ADATA(8) = AVGLON
                ADATA(9) = AVGWS
                ADATA(10)= AVGWD
-               ADATA(14)= SAIDDT_8
+               IF(ITYPE.NE.2)  ADATA(14)= SAIDDT_8
                ADATA(15)= NOBS(KJ,KNDX)
                ICNT = MIN(999999,ICNT+1)
                ICNTT = ICNTT + 1
@@ -1139,7 +1216,7 @@ C  --------------------------------------------------------------
                ADATA_8(17) = ADATA(17)
 
                IF(IPRINT.EQ.1)  THEN
-                  IF(ITYPE.EQ.1)  THEN
+                  IF(ITYPE.EQ.1 .OR. ITYPE.EQ.3)  THEN
                      if(ifirst.eq.0) then
                         WRITE(51,9601)
                         ifirst = 1
@@ -1160,12 +1237,12 @@ C  --------------------------------------------------------------
                   END IF
                END IF
 
-C  ENCODE THE REPROCESSED QUIKSCAT OR ASCAT WIND DATA INTO A SUBSET
-C   (REPORT)
+C  ENCODE THE REPROCESSED QUIKSCAT, ASCAT OR OSCAT WIND DATA INTO A
+C   SUBSET (REPORT)
 C  ----------------------------------------------------------------
 
                CALL UFBINT(LUNOUT,ADATA_8,8,1,IRET,OUTST1)
-               IF(ITYPE.EQ.1)  THEN
+               IF(ITYPE.EQ.1 .OR. ITYPE.EQ.3)  THEN
                   CALL UFBINT(LUNOUT,ADATA_8(9),8,1,IRET,OUTST2Q)
                ELSE
                   CALL UFBINT(LUNOUT,ADATA_8(9),9,1,IRET,OUTST2A)
@@ -1189,8 +1266,8 @@ C***********************************************************************
 
       END IF
 
-C  CLOSE INPUT AND OUTPUT NCEP OUIKSCAT OR ASCAT BUFR DATA SETS
-C  ------------------------------------------------------------
+C  CLOSE INPUT AND OUTPUT NCEP OUIKSCAT, ASCAT OR OSCAT BUFR DATA SETS
+C  -------------------------------------------------------------------
                                                                         
       CALL CLOSBF(LUNIN)
       WRITE(6,102) LUNIN
@@ -1205,9 +1282,9 @@ C  ------------------------------------------------------------
       CALL CLOSBF(LUNOUT)
       WRITE(6,102) LUNOUT
 
-      WRITE(6,699) CTYPE(ITYPE),IRD,IBADD,IWVEC,ISAID,IGRD,ILALO,ILAND,
-     $ IBADW,IMSG,IMSDM,IMSSM,NINT(PORLIM*100.),IRAIN,IEDGE,isix,iseven,
-     $ ieight,inine,ifourteen,CTYPE(ITYPE),IGOOD
+      WRITE(6,699) CTYPE(ITYPE),IRD,IBADD,IWVEC,ISAID,ISATSK,ISAIDSK,
+     $ IGRD,ILALO,ILAND,IBADW,IMSG,IMSDM,IMSSM,NINT(PORLIM*100.),IRAIN,
+     $ IEDGE,isix,iseven,ieight,inine,ifourteen,CTYPE(ITYPE),IGOOD
   699 FORMAT(//5X,'*** PROCESSING ENDED NORMALLY ***'//
      $ ' >>>  TOTAL NUMBER OF INPUT ',A,' REPORTS READ ',26('.'),I7,
      $ '  <<<'//
@@ -1215,6 +1292,8 @@ C  ------------------------------------------------------------
      $ 12X,'- Number skipped due to unexpected # input wind vectors',
      $ 9('.'),I7//
      $ 12X,'- Number skipped due to unrecognized satellite id ',14('.'),
+     $ I7//
+     $ 12X,'- Number skipped due to having satellite id ',I3,1X,16('.'),
      $ I7//
      $ 12X,'- Number skipped due to invalid lat/lon location ',15('.'),
      $ I7//
@@ -1269,19 +1348,28 @@ C  ------------------------------------------------------------
 C  IF SUPEROBING WAS DONE, PRODUCE FINAL COUNTS OF ORIGINAL REPORTS
 C  ----------------------------------------------------------------
 
-         PRINT 114, NINT(SAIDDT),ITOBS
+         PRINT 114
   114 FORMAT(/30X,'+++ NO. OF ORIGINAL REPORTS THAT WERE USED TO ',
-     $ 'GENERATE SUPEROBS +++'/
-     $ /45X,'FROM SATELLITE ID',I4,' ...... ',I10/)
+     $ 'GENERATE SUPEROBS +++'/)
+         IF(ITYPE.NE.2) THEN
+            PRINT 214, NINT(SAIDDT),ITOBS
+  214 FORMAT(45X,'FROM SATELLITE ID',I4,' ...... ',I10)
+         ELSE
+            DO ISAT = 3,4
+               IF(ICNTS(ISAT).GT.0) PRINT 214, ISAT,ICNTS(ISAT)
+            ENDDO
+            PRINT 215, ICNTS(3)+ICNTS(4)
+  215 FORMAT(/30X,'TOTAL ..................... ',I10)
+         END IF
+         PRINT *
 cdak     PRINT 115
   115    FORMAT(5X,'NOBS:')
 cdak     PRINT 116, NOBS
   116    FORMAT(1X,30I4)
-         PRINT 110, CTYPE(ITYPE),NINT(SAIDDT),ICNTT,CTYPE(ITYPE),ICNTT,
+         PRINT 110, CTYPE(ITYPE),ICNTT,
      $    (1.-FLOAT(ICNTT)/FLOAT(ITOBS))*100.
-  110 FORMAT(/27X,'+++  NUMBER OF REPROCESSED ',A,' WIND REPORTS ',
-     $ 'WRITTEN TO OUTPUT FILE +++'//
-     $ 40X,'>>>  FROM SATELLITE ID',I4,' ...... ',I7,'  <<<'//
+  110 FORMAT(/27X,'+++++++++++++++++++++++++++++++++++++++++++++++++',
+     $ '++++++++++++++++++++++++++'//
      $ ' >>>  TOTAL NUMBER OF REPROCESSED ',A,' WIND REPORTS ',
      $ 'WRITTEN ..',I7,'  <<<'//
      $ 'percentage compression is ',F6.2,'%'//
@@ -1289,11 +1377,19 @@ cdak     PRINT 116, NOBS
 
       ELSE
 
-         PRINT 111, CTYPE(ITYPE),NINT(SAIDDT),ICNTT,CTYPE(ITYPE),ICNTT
+         PRINT 111, CTYPE(ITYPE)
   111 FORMAT(/27X,'+++  NUMBER OF REPROCESSED ',A,' WIND REPORTS ',
-     $ 'WRITTEN TO OUTPUT FILE +++'//
-     $ 40X,'>>>  FROM SATELLITE ID',I4,' ...... ',I7,'  <<<'//
-     $ ' >>>  TOTAL NUMBER OF REPROCESSED ',A,' WIND REPORTS ',
+     $ 'WRITTEN TO OUTPUT FILE +++'/)
+         IF(ITYPE.NE.2) THEN
+            PRINT 211, NINT(SAIDDT),ICNTT
+  211 FORMAT(40X,'>>>  FROM SATELLITE ID',I4,' ...... ',I7,'  <<<')
+         ELSE
+            DO ISAT = 3,4
+               IF(ICNTS(ISAT).GT.0) PRINT 211, ISAT,ICNTS(ISAT)
+            ENDDO
+         END IF
+         PRINT 212, CTYPE(ITYPE),ICNTT
+  212 FORMAT(/' >>>  TOTAL NUMBER OF REPROCESSED ',A,' WIND REPORTS ',
      $ 'WRITTEN ..',I7,'  <<<'//
      $ 44X,'*****  PROGRAM SUCCESSFULLY COMPLETED  *****'/)
 
