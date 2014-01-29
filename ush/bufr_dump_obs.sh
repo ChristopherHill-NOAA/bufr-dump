@@ -723,7 +723,7 @@
 #          005.070 (infmo)      NAM,NDAS+,RAP,RUC       All
 #          005.071 (h20mo)      NAM,NDAS+,RAP,RUC       All
 #          006.002 (radw25)     RAP,RUC                 00,12
-
+#
 #          006.011 (rd2w01)     NAM                     00
 #          006.041 (rd2r01)     NAM                     00
 #          006.017 (rd2w07)     NAM                     06
