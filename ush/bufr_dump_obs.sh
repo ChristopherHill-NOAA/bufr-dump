@@ -155,18 +155,15 @@
 #    XLFUNIT_n with FORTn (where n is the unit number connected to the filename
 #    defined by the variable FORTn) - needed because ifort uses FORTn.   
 #    This script is now set to run under ksh shell as the default.
-# 2013-12-02  D.A. Keyser -- Placed into new OBSPROC_DUMP vertical directory
-#    structure/environmental equivalence paradigm. As a result: imports new
-#    environment variable $HOMEobsproc_dump which points to directory path for
-#    generic dump subdirectories under version control (in production this is
-#    normally /nwprod/obsproc_dump.vX.Y.Z where X.Y.Z version number being
-#    used, usually the latest); and imports new environment variable
+# 2013-12-02  D.A. Keyser -- Imports new environment variable $HOMEobsproc_dump
+#    which points to root directory path for dump subdirectories (in production
+#    this is normally /nwprod/obsproc_dump.vX.Y.Z where X.Y.Z version number
+#    being used, usually the latest); and imports new environment variable
 #    $HOMEobsproc_network which points to directory path for network-specific
-#    dump subdirectories under version control (in production this is normally
+#    dump subdirectories (in production this is normally
 #    /nwprod/obsproc_NETWORK.vX.Y.Z where NETWORK is, e.g., global, nam, rap,
 #    rtma, urma, and x.y.z is version number being used, usually the latest) -
-#    these replace /nw${envir} in order to point to files moved from horizontal
-#    to vertical directory structure.
+#    these replace /nw${envir}.
 #
 #
 # Usage: bufr_dump_obs.sh  yyyymmddhh hh<.hh> ntype dgrp1 dgrp2 ... dgrpN
@@ -227,17 +224,16 @@
 #                   relative to the analysis time, it is a qualifier in the
 #                   output data dump file names (e.g., "tm12", "tm09",
 #                   "tm06", "tm03", "tm00")
-#     $HOMEobsproc_dump    - string indicating directory path to generic dump
-#                            subdirectories under version control
-#                            (in production this is normally
+#     $HOMEobsproc_dump    - string indicating root directory path to dump
+#                            subdirectories (in production this is normally
 #                            /nwprod/obsproc_dump.vX.Y.Z where X.Y.Z is
 #                            version number being used, usually the latest)
 #     $HOMEobsproc_network - string indicating directory path to network-
-#                            specific dump subdirectories under version control
-#                            (in production this is normally
-#                            /nwprod/obsproc_NETWORK.vX.Y.Z where NETWORK is,
-#                            e.g., global, nam, rap, rtma, urma, and x.y.z is
-#                            version number being used, usually the latest)
+#                            specific dump subdirectories (in production this
+#                            is normally /nwprod/obsproc_NETWORK.vX.Y.Z where
+#                            NETWORK is, e.g., global, nam, rap, rtma, urma,
+#                            and x.y.z is version number being used, usually
+#                            the latest)
 #
 #     These will be set to their default value in this script if not exported
 #      from the parent script --

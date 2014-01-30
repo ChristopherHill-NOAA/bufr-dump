@@ -256,12 +256,11 @@
 # 2013-01-22  J. Whiting  Final WCOSS port: trapped POE=on option, w/ printed 
 #     notice and graceful exit (this option not currently tested on WCOSS); 
 #     replaced XLF logical unit number clearing w/ appropriate FORTxx logic.
-# 2013-11-27  D. Keyser   Placed into new OBSPROC_DUMP vertical directory
-#     structure/environmental equivalence paradigm. As a result, DUEX (path to
-#     dump executables) no longer defaults to /nwprod/exec but rather to
-#     $HOMEobsproc_dump/exec, and one of the three variables
-#     "obsproc_dump_ver", "HOMEobsproc_dump" or "DUEX" must be defined coming
-#     in or this script will exit abnormally with return code 99.
+# 2013-11-27  D. Keyser   DUEX (path to dump executables) no longer defaults to
+#     /nwprod/exec but rather to $HOMEobsproc_dump/exec, and one of the three
+#     variables "obsproc_dump_ver", "HOMEobsproc_dump" or "DUEX" must be
+#     defined coming in or this script will exit abnormally with return code
+#     99.
 #
 #
 # Usage: dumpjb  yyyymmddhh<.hh> hh<.hh> dgrp1 dgrp2 dgrp3 ... dgrpN
