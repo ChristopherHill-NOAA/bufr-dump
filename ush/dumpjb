@@ -626,7 +626,7 @@ echo "********************************************************************"
 echo "********************************************************************"
 echo "     STARTING EXECUTION OF THE UNIVERSAL DUMP SCRIPT - DUMPJB       "
 echo "                        Version 11-27-2013                          "
-echo "             Start time: `date`                                     "
+echo "             Start time: `date -u`                                     "
 echo "********************************************************************"
 echo "********************************************************************"
 
@@ -1275,7 +1275,7 @@ else
    echo "Script $thread"
 fi
 echo "Executing on node  \`hostname -s\`"
-echo "Starting time: \`date\`"
+echo "Starting time: \`date -u\`"
 echo "********************************************************************"
 echo
 [ "$POE" = 'on' -a "$LOUD" = 'on' ]  &&  env | grep MP_
@@ -1399,7 +1399,7 @@ else
    echo "Script $thread"
 fi
 echo "Finished executing on node  \`hostname -s\`"
-echo "Ending time  : \`date\`"
+echo "Ending time  : \`date -u\`"
 echo "********************************************************************"
  } > $DIRD/$FILO.out 2>&1
 
@@ -1449,7 +1449,7 @@ elif [ $POE = on ]; then
 
 echo
 echo "--------------------------------------------------------------------"
-echo "Invoking Poe: `date`"
+echo "Invoking Poe: `date -u`"
 echo
 if [ -s $DATA_DUMPJB/poe.cmd ]; then
    POE_OPTS="-ilevel 2 -labelio no -stdoutmode ordered"
@@ -1469,7 +1469,7 @@ else
    echo
 fi
 echo
-echo "Ending Poe  : `date`"
+echo "Ending Poe  : `date -u`"
 echo "--------------------------------------------------------------------"
 echo
 echo
@@ -1816,7 +1816,7 @@ echo
 echo "********************************************************************"
 echo "********************************************************************"
 echo "                THIS EXECUTION OF DUMPJB IS FINISHED                "
-echo "               End time: `date`                                     "
+echo "               End time: `date -u`                                     "
 echo "********************************************************************"
 echo "********************************************************************"
 echo
