@@ -339,7 +339,7 @@
 #      and will be set to their default value in this script if not exported
 #      from the parent script --
 #
-#     EXECBUFR    - string indicating directory path for bufr_combfr
+#     EXECbufr    - string indicating directory path for bufr_combfr
 #                   executable
 #                   Default is "$HOMEobsproc_dump/exec"
 #     EXECPREP    - string indicating directory path for prepobs_prepssmi
@@ -511,52 +511,52 @@
 #      and will be set to their default value in this script if not exported
 #      from the parent script --
 #
-#     EXECBUFR    - string indicating directory path for bufr_supertmi
+#     EXECbufr    - string indicating directory path for bufr_supertmi
 #                   executable
 #                   Default is "$HOMEobsproc_dump/exec"
-#     FIXBUFR     - string indicating directory path for bufr_supertmi fixed
+#     FIXbufr     - string indicating directory path for bufr_supertmi fixed
 #                   fields (mnemonic bufrtable file)
 #                   Default is "$HOMEobsproc_dump/fix"
-#     PARMBUFR    - string indicating directory path for bufr_supertmi data
+#     PARMbufr    - string indicating directory path for bufr_supertmi data
 #                   cards
 #                   Default is "$HOMEobsproc_network/parm"
 #     DTMX        - string indicating executable path for bufr_supertmi
 #                   program
-#                   Default is "$EXECBUFR/bufr_supertmi"
+#                   Default is "$EXECbufr/bufr_supertmi"
 #     DTMC        - string indicating data card path for bufr_supertmi
 #                   program
-#                   Default is "$PARMBUFR/bufr_supertmi.${NET}.parm"
+#                   Default is "$PARMbufr/bufr_supertmi.${NET}.parm"
 #                   {If $DTMC not found, reverts to using internal "herefile"}
 #     DTMT        - string indicating mnemonic bufrtable file path for
 #                   bufr_supertmi program
-#                   Default is "$FIXBUFR/bufr_bufrtab.sptrmm"
+#                   Default is "$FIXbufr/bufr_bufrtab.sptrmm"
 #
 #     These apply ONLY for imported shell variable "prepwindsat" set to YES
 #      and will be set to their default value in this script if not exported
 #      from the parent script --
 #
-#     EXECBUFR    - string indicating directory path for bufr_dcodwindsat
+#     EXECbufr    - string indicating directory path for bufr_dcodwindsat
 #                   executable
 #                   Default is "$HOMEobsproc_dump/exec"
-#     FIXBUFR     - string indicating directory path for bufr_dcodwindsat fixed
+#     FIXbufr     - string indicating directory path for bufr_dcodwindsat fixed
 #                   fields (mnemonic bufrtable file)
 #                   Default is "$HOMEobsproc_dump/fix"
-#     PARMBUFR    - string indicating directory path for bufr_dcodwindsat data
+#     PARMbufr    - string indicating directory path for bufr_dcodwindsat data
 #                   cards
 #                   Default is "$HOMEobsproc_network/parm"
 #     DWSX        - string indicating executable path for bufr_dcodwindsat
 #                   program
-#                   Default is "$EXECBUFR/bufr_dcodwindsat"
+#                   Default is "$EXECbufr/bufr_dcodwindsat"
 #     DWSC        - string indicating data card path for bufr_dcodwindsat
 #                   program
-#                   Default is "$PARMBUFR/bufr_dcodwindsat.${NET}.parm"
+#                   Default is "$PARMbufr/bufr_dcodwindsat.${NET}.parm"
 #                   {If $DWSC not found, reverts to using internal "herefile"}
 #     DWST        - string indicating mnemonic bufrtable file path for
 #                   bufr_dcodwindsat program
-#                   Default is "$FIXBUFR/bufr_bufrtab.windsat"
+#                   Default is "$FIXbufr/bufr_bufrtab.windsat"
 #     LANDC_DWS   - string indicating 0.5 x 0.5 degree land/sea tag (mask)
 #                   fixed file path for bufr_dcodwindsat program
-#                   Default is "$FIXBUFR/wave_landchxh"
+#                   Default is "$FIXbufr/wave_landchxh"
 #
 #
 #   Modules and files referenced:
@@ -1582,7 +1582,7 @@ do
 
 #============================================
 
-         EXECBUFR=${EXECBUFR:-$HOMEobsproc_dump/exec}
+         EXECbufr=${EXECbufr:-$HOMEobsproc_dump/exec}
          EXECPREP=${EXECPREP:-$HOMEobsproc_dump/exec}
          PARMPREP=${PARMPREP:-$HOMEobsproc_network/parm}
          FIXPREP=${FIXPREP:-$HOMEobsproc_dump/fix}
@@ -1823,7 +1823,7 @@ bufr1
 bufr2
 EOFd
 
-      pgm=`basename $EXECBUFR/bufr_combfr`
+      pgm=`basename $EXECbufr/bufr_combfr`
       if [ -s $DATA/prep_step ];then
          set +u
          . $DATA/prep_step
@@ -1835,7 +1835,7 @@ EOFd
       fi
 
       FORT50=combfr.spssmi
-      time -p $EXECBUFR/bufr_combfr <cards > outout 2> errfile
+      time -p $EXECbufr/bufr_combfr <cards > outout 2> errfile
       err=$?
 ######cat errfile
       cat errfile >> outout
@@ -2666,21 +2666,21 @@ status1.out
             tmiOU=${COMSP}sptrmm.${tmmark}.bufr_d
 
 #============================================
-            EXECBUFR=${EXECBUFR:-$HOMEobsproc_dump/exec}
-            FIXBUFR=${FIXBUFR:-$HOMEobsproc_dump/fix}
-            PARMBUFR=${PARMBUFR:-$HOMEobsproc_network/parm}
+            EXECbufr=${EXECbufr:-$HOMEobsproc_dump/exec}
+            FIXbufr=${FIXbufr:-$HOMEobsproc_dump/fix}
+            PARMbufr=${PARMbufr:-$HOMEobsproc_network/parm}
 
-            DTMT=${DTMT:-$FIXBUFR/bufr_bufrtab.sptrmm}
-            DTMX=${DTMX:-$EXECBUFR/bufr_supertmi}
-            DTMC=${DTMC:-$PARMBUFR/bufr_supertmi.${NET}.parm}
+            DTMT=${DTMT:-$FIXbufr/bufr_bufrtab.sptrmm}
+            DTMX=${DTMX:-$EXECbufr/bufr_supertmi}
+            DTMC=${DTMC:-$PARMbufr/bufr_supertmi.${NET}.parm}
 
             set +x
             echo
-            echo "EXECBUFR = " $EXECBUFR
+            echo "EXECbufr = " $EXECbufr
             echo
-            echo "FIXBUFR  = " $FIXBUFR
+            echo "FIXbufr  = " $FIXbufr
             echo
-            echo "PARMBUFR  = " $PARMBUFR
+            echo "PARMbufr  = " $PARMbufr
             echo
             set -x
 
@@ -2848,23 +2848,23 @@ dump) due to above PGM FAIL --> non-fatal"
             wnsOU=${COMSP}wdsatr.${tmmark}.bufr_d
 
 #============================================
-            EXECBUFR=${EXECBUFR:-$HOMEobsproc_dump/exec}
-            FIXBUFR=${FIXBUFR:-$HOMEobsproc_dump/fix}
-            PARMBUFR=${PARMBUFR:-$HOMEobsproc_network/parm}
+            EXECbufr=${EXECbufr:-$HOMEobsproc_dump/exec}
+            FIXbufr=${FIXbufr:-$HOMEobsproc_dump/fix}
+            PARMbufr=${PARMbufr:-$HOMEobsproc_network/parm}
 
-            DWST=${DWST:-$FIXBUFR/bufr_bufrtab.windsat}
-            DWSX=${DWSX:-$EXECBUFR/bufr_dcodwindsat}
-            DWSC=${DWSC:-$PARMBUFR/bufr_dcodwindsat.${NET}.parm}
+            DWST=${DWST:-$FIXbufr/bufr_bufrtab.windsat}
+            DWSX=${DWSX:-$EXECbufr/bufr_dcodwindsat}
+            DWSC=${DWSC:-$PARMbufr/bufr_dcodwindsat.${NET}.parm}
 
-            LANDC_DWS=${LANDC_DWS:-$FIXBUFR/wave_landchxh}
+            LANDC_DWS=${LANDC_DWS:-$FIXbufr/wave_landchxh}
 
             set +x
             echo
-            echo "EXECBUFR = " $EXECBUFR
+            echo "EXECbufr = " $EXECbufr
             echo
-            echo "FIXBUFR  = " $FIXBUFR
+            echo "FIXbufr  = " $FIXbufr
             echo
-            echo "PARMBUFR  = " $PARMBUFR
+            echo "PARMbufr  = " $PARMbufr
             echo
             set -x
 
