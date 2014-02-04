@@ -49,6 +49,7 @@ files
   obsproc_dump/sorc/wave_dcodquikscat.fd/dcodquikscat.f
   obsproc_dump/sorc/wave_dcodquikscat.fd/makefile
   obsproc_dump/ush/bufr_dump_obs.sh
+  obsproc_dump/ush/check_tanks.sh
   obsproc_dump/ush/dumpjb
 
 ( * - not changed)
@@ -89,23 +90,34 @@ files
 
  USH script changes:
    bufr_dump_obs.sh:
-    - Changes to handle files now under Vertical Directory Structure:
-       - Imports new environment variable $HOMEobsproc_dump which points to
-         directory path for generic dump subdirectories under version control
-         (in production this is normally /nwprod/obsproc_dump.vX.Y.Z where
-         X.Y.Z version number being used, usually the latest).
-       - Imports new environment variable $HOMEobsproc_network which points to
-         directory path for network-specific dump subdirectories under version
-         control (in production this is normally /nwprod/obsproc_NETWORK.vX.Y.Z
-         where NETWORK is, e.g., global, nam, rap, rtma, urma, and x.y.z is
-         version number being used, usually the latest)
-       These replace /nw${envir} in order to point to files moved from
-       horizontal to vertical directory structure.
+    - Imports new environment variable $HOMEobsproc_dump which points to
+      directory path for generic dump subdirectories under version control (in
+      production this is normally /nwprod/obsproc_dump.vX.Y.Z where X.Y.Z
+      version number being used, usually the latest).  This replaces
+      /nw${envir}.
+    - Imports new environment variable $HOMEobsproc_network which points to
+      directory path for network-specific dump subdirectories under version
+      control (in production this is normally /nwprod/obsproc_NETWORK.vX.Y.Z
+      where NETWORK is, e.g., global, nam, rap, rtma, urma, and x.y.z is
+      version number being used, usually the latest).  This replaces
+      /nw${envir}.
+   check_tanks.sh:
+    - Environment variable $LIST (complete path to bufr_dumplist fixed file) no
+      longer defaults to /nwprod/fix/bufr_dumplist but rather to
+      $FIXobsproc_shared_bufr_dumplist/bufr_dumplist.
    dumpjb:
-    - DUEX (path to dump executables) no longer defaults to /nwprod/exec but
-      rather to $HOMEobsproc_dump/exec.  One of the three variables
-      "obsproc_dump_ver", "HOMEobsproc_dump" or "DUEX" must be defined coming
-      in or this script will exit abnormally with return code 99.
+    - Environment variable $DUEX (path to directory containing dump
+      executables) no longer defaults to /nwprod/exec but rather to
+      $HOMEobsproc_dump/exec.  One of the three variables "obsproc_dump_ver",
+      "HOMEobsproc_dump" or "DUEX" must be defined coming in or this script
+      will exit abnormally with return code 99.
+    - Environment variable $DFIX (path to directory bufr_dumplist fixed file)
+      no longer defaults to /nwprod/fix but rather to
+      $HOMEobsproc_shared_bufr_dumplist/fix.  One of the four variables
+      "obsproc_shared_bufr_dumplist_ver", "HOMEobsproc_shared_bufr_dumplist",
+      "DFIX" or "LIST" must be defined coming in or this script will exit
+      abnormally with return code 99.
+
       
  Fixed file changes:
    nam_expdomain_halfdeg_imask.gbl, wave_bufrtab.ascat, bufr_bufrtab.sptrmm,
