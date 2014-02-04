@@ -5,7 +5,7 @@
 #
 # Script name:   dumpjb      Dump script to get data from BUFR tanks
 #
-# RFC contact:  Keyser      Org: NP22        Date: 2013-11-27
+# RFC contact:  Keyser      Org: NP22        Date: 2014-02-04
 #
 # Abstract: The dumpjb script is an all-purpose dump utility for
 #   time windowing, geographical filtering, eliminating duplicates,
@@ -256,11 +256,18 @@
 # 2013-01-22  J. Whiting  Final WCOSS port: trapped POE=on option, w/ printed 
 #     notice and graceful exit (this option not currently tested on WCOSS); 
 #     replaced XLF logical unit number clearing w/ appropriate FORTxx logic.
-# 2013-11-27  D. Keyser   DUEX (path to dump executables) no longer defaults to
-#     /nwprod/exec but rather to $HOMEobsproc_dump/exec, and one of the three
-#     variables "obsproc_dump_ver", "HOMEobsproc_dump" or "DUEX" must be
-#     defined coming in or this script will exit abnormally with return code
-#     99.
+# 2014-02-04  D. Keyser   "DUEX" (path to directory containing dump
+#     executables) no longer defaults to /nwprod/exec but rather to
+#     $HOMEobsproc_dump/exec, and one of the three variables
+#     "obsproc_dump_ver", "HOMEobsproc_dump", or "DUEX" itself must be defined
+#     coming in or this script will exit abnormally with return code 99.
+#     "DFIX" (path to directory bufr_dumplist fixed file) no longer defaults to
+#     /nwprod/fix but rather to $HOMEobsproc_shared_bufr_dumplist/fix, and one
+#     of the four variables "obsproc_shared_bufr_dumplist_ver",
+#     "HOMEobsproc_shared_bufr_dumplist", "DFIX" itself,  or "LIST" (which
+#     remains defined as the complete path to, and including, the bufr_dumplist
+#     fixed file) must be defined coming in or this script will exit abnormally
+#     with return code 99.
 #
 #
 # Usage: dumpjb  yyyymmddhh<.hh> hh<.hh> dgrp1 dgrp2 dgrp3 ... dgrpN
@@ -329,16 +336,48 @@
 #
 #   obsproc_dump_ver - OBSPROC_DUMP version for dump executables (e.g., v3.0.0)
 #                              (there is no default)
-#   HOMEobsproc_dump - path to exec directory containing dump executables
+#.............................................................................
+#   HOMEobsproc_dump - path to home directory, up to, but not containing,
+#                      "exec" subdirectory which contains dump executables
 #                              (default::/nwprod/obsproc_dump.$obsproc_dump_ver
 #                                        ===> valid only if $obsproc_dump_ver
 #                                             defined; else no default)
-#   DUEX             - path to dump executables
+#.............................................................................
+#   DUEX             - path to directory containing dump executables
 #                              (default::$HOMEobsproc_dump/exec
 #                                        ===> valid only if $HOMEobsproc_dump
 #                                             defined; else no default)
-#------------------------------------------------------------------------------
-#------------------------------------------------------------------------------
+#==============================================================================
+#==============================================================================
+#   One of the four following script variables must be defined or this script
+#   will exit with return code 99.  The last three variables may have
+#   operational defaults defined in the script, subject to the conditions noted
+#   below.  If a user exports non-null values for any of these variables, the
+#   user value will override the default if a default is present.
+#
+#   obsproc_shared_bufr_dumplist_ver - OBSPROC_SHARED_BUFR_DUMPLIST version for
+#                                      bufr_dumplist fixed file (e.g., v1.0.0)
+#              (there is no default)
+#.............................................................................
+#   HOMEobsproc_shared_bufr_dumplist - path to home directory, up to but not
+#                                      containing, "fix" subdirectory which
+#                                      contains bufr_dumplist fixed file
+#              (default::/nwprod/obsproc_dump.$obsproc_shared_bufr_dumplist_ver
+#                        ===> valid only if $obsproc_shared_bufr_dumplist_ver
+#                             defined; else no default)
+#.............................................................................
+#   DFIX                             - path to directory containing
+#                                      bufr_dumplist fixed file
+#              (default::$HOMEobsproc_shared_bufr_dumplist/fix
+#                        ===> valid only if $HOMEobsproc_shared_bufr_dumplist
+#                             defined; else no default)
+#.............................................................................
+#   LIST                             - complete path to (and including)
+#                                      bufr_dumplist fixed file
+#              (default::$DFIX/bufr_dumplist
+#                        ===> valid only if $DFIX defined; else no default)
+#==============================================================================
+#==============================================================================
 #   The following script variables are user controllable with operational
 #   defaults defined in the script. If a user exports non-null values
 #   for any of these variables, the user value will override the default.
@@ -360,10 +399,6 @@
 #   QPCX   -  path to QUIPC  executable             (default:$DUEX/bufr_quipc)
 #   CHKX   -  path to CHKBFR executable             (default:$DUEX/bufr_chkbfr)
 #   COMX   -  path to COMBFR executable             (default:$DUEX/bufr_combfr)
-#   DFIX   -  directory path to dump script fixed files
-#                                                   (default:/nwprod/fix)
-#   LIST   -  directory path/filename of dump script dumplist file
-#                                                   (def:$DFIX/bufr_dumplist)
 #   LALO   -  geographical data filter              (default:0  (off))
 #   DTIM_earliest_TTTSSS (where TTT is BUFR data type and SSS is BUFR data
 #    subtype in the list to dump, either specified explicitly or contained in
@@ -625,7 +660,7 @@ echo
 echo "********************************************************************"
 echo "********************************************************************"
 echo "     STARTING EXECUTION OF THE UNIVERSAL DUMP SCRIPT - DUMPJB       "
-echo "                        Version 11-27-2013                          "
+echo "                        Version 02-04-2014                          "
 echo "             Start time: `date -u`                                     "
 echo "********************************************************************"
 echo "********************************************************************"
@@ -661,10 +696,13 @@ if [[ -z "$DUEX" ]]; then
   fi
   DUEX=$HOMEobsproc_dump/exec
 fi
+set +x
 echo
-echo "All executables used in this run of DUMPJB are found in directory \
-path $DUEX"
+echo "All executables used in this run of DUMPJB are found in directory path"
+echo "$DUEX"
 echo
+[ $LOUD = on ] && set -x
+
 [ -z "$RADX" ]   && RADX=$DUEX/bufr_raddate
 [ -z "$DMDX" ]   && DMDX=$DUEX/bufr_dumpmd
 [ -z "$GEOX" ]   && GEOX=$DUEX/bufr_geofil
@@ -680,8 +718,37 @@ echo
 [ -z "$QPCX" ]   && QPCX=$DUEX/bufr_quipc
 [ -z "$CHKX" ]   && CHKX=$DUEX/bufr_chkbfr
 [ -z "$COMX" ]   && COMX=$DUEX/bufr_combfr
-[ -z "$DFIX" ]   && DFIX=/nwprod/fix
-[ -z "$LIST" ]   && LIST=$DFIX/bufr_dumplist
+
+#  define the path to the bufr_dumplist file
+#  -----------------------------------------
+ 
+if [[ -z "$LIST" ]]; then
+  if [[ -z "$DFIX" ]]; then
+    if [[ -z "$HOMEobsproc_shared_bufr_dumplist" ]]; then
+      if [[ -z "$obsproc_shared_bufr_dumplist_ver" ]]; then
+        set +x
+        echo
+        echo "Cannot continue without knowing where to find bufr_dumplist file."
+        echo "Either obsproc_shared_bufr_dumplist_ver, \
+HOMEobsproc_shared_bufr_dumplist, DFIX, or LIST must be defined."
+        echo
+        [ $LOUD = on ] && set -x
+        exit 99
+      fi
+      HOMEobsproc_shared_bufr_dumplist=\
+/nwprod/obsproc_shared/bufr_dumplist.${obsproc_shared_bufr_dumplist_ver}
+    fi
+    DFIX=$HOMEobsproc_shared_bufr_dumplist/fix
+  fi
+  LIST=$DFIX/bufr_dumplist
+fi
+set +x
+echo
+echo "The bufr_dumplist file used in this run of DUMPJB is found in path"
+echo "$LIST"
+echo
+[ $LOUD = on ] && set -x
+
 [ -z "$LALO" ]   && LALO=0
 [ -z "$DCOMROOT" ] && DCOMROOT=/dcom
 [ -z "$TANK" ]   && TANK=${DCOMROOT}/us007003
