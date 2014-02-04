@@ -32,8 +32,10 @@
 #         (working direct. in this script is $DATA/check_tanks_<dump mnemonic>)
 #  TANK - path to database tanks up to the YYYYMMDD
 #         (default is /dcom/us007003)
-#  LIST - path to BUFR dumplist file
-#         (default is /nwprod/fix/bufr_dumplist)
+#  LIST - complete path to bufr_dumplist fixed file
+#         (default is $FIXobsproc_shared_bufr_dumplist/bufr_dumplist)
+#         (If $LIST not imported, then $FIXobsproc_shared_bufr_dumplist MUST
+#          BE PASSED INTO THIS SCRIPT)
 #  utilscript - path to utility scripts
 #         (default is /nwprod/util/ush)
 #  cycle - e.g., t12z
@@ -64,7 +66,7 @@ rm *
 
 TANK=${TANK:-/dcom/us007003}
 
-LIST=${LIST:-/nwprod/fix/bufr_dumplist}
+LIST=${LIST:-$FIXobsproc_shared_bufr_dumplist/bufr_dumplist}
 
 utilscript=${utilscript:-/nwprod/util/ush}
 
