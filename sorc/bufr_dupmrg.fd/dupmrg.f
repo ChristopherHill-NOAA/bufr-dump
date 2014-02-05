@@ -392,10 +392,8 @@ cppppp
          NUM_TABLES = MAX(NUM_TABLES,INT(REC_8(3,I)))
       ENDDO
 
-      print *
-      print *, 'The number of embedded BUFR tables (including at the ',
-     $ 'top of the file) read in is ',NUM_TABLES
-      print *
+      print'(/"The number of embedded BUFR tables (including at the '//
+     $ 'top of the file) read in is ",I0/)', NUM_TABLES
 
 C  RESOLVE LAT/LON CORRECTIONS POSSIBLE IN DROPSONDE DATA
 C  ------------------------------------------------------
@@ -539,10 +537,10 @@ cpppp
    30       CONTINUE
             NTABLES = NTABLES + 1
             IF(NTABLES.GT.5)  THEN
-               PRINT *, 'The number of different embedded BUFR tables ',
-     $          'generating parts within the same "report" exceeds the',
-     $          ' limit of 5 - no more separate, new reports can be ',
-     $          'generated'
+               PRINT'("The number of different embedded BUFR tables '//
+     $          'generating parts within the same ""report"" exceeds '//
+     $          'the limit of 5 - no more separate, new reports can '//
+     $          'be generated")'
                GO TO 10
             ENDIF
             CALL UARINI
@@ -642,8 +640,8 @@ c   with this one - in order to create a single new report (which will
 C   have a duplicate location/obs-time with the previous report)
 C --------------------------------------------------------------------
 
-               PRINT *, ' ... begin process of merging parts with new',
-     $          ' BUFR table into a separate, new report'
+               PRINT'(" ... begin process of merging parts with new '//
+     $          'BUFR table into a separate, new report")'
                NPAR = NPAR - NCOUNT
                GO TO 30
             ENDIF
@@ -754,9 +752,9 @@ C  -----------
 
   902 CONTINUE
 
-      PRINT *, '#####BUFR_DUPMRG - BAD RETURN FROM BUFRLIB ROUTINE '//
-     . 'RDMEMM - REQ. MEMORY MSG NO. TO READ IN (',I,') > NO. OF '//
-     . 'MSGS IN MEMORY'
+      PRINT'("#####BUFR_DUPMRG - BAD RETURN FROM BUFRLIB ROUTINE '//
+     . 'RDMEMM - REQ. MEMORY MSG NO. TO READ IN (",I0,") > NO. OF '//
+     . 'MSGS IN MEMORY")', I
       CALL W3TAGE('BUFR_DUPMRG')
       CALL ERREXIT(99)
 

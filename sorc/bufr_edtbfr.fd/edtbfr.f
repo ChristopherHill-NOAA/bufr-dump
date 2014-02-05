@@ -1181,8 +1181,8 @@ C  -------------------------------------------------------------------
          IF(ICOMP.EQ.1) THEN
             PRINT'(5X,"INPUT AND OUTPUT BUFR FILE MESSAGES   ",
      .       "C O M P R E S S E D")'
-            PRINT *, '-----BUFR_EDTBFR (UFBTAB) SHOULD BE ABLE TO ',
-     .            'PROCESS COMPRESSED BUFR MESSAGES -- CONTINUE'
+            PRINT'("-----BUFR_EDTBFR (UFBTAB) SHOULD BE ABLE TO '//
+     .       'PROCESS COMPRESSED BUFR MESSAGES -- CONTINUE")'
             CALL SYSTEM('[ -n "$jlogfile" ] && $DATA/postmsg'//
      .       ' "$jlogfile" "***WARNING: COMPRESSED BUFR MESSAGES, '//
      .      'UFBTAB IN PROGRAM BUFR_SDMEDIT SHOULD STILL WORK HOWEVER"')
@@ -1823,8 +1823,8 @@ C  -----
       CALL W3TAGE('BUFR_EDTBFR')
       CALL ERREXIT(99)
 902   CONTINUE
-      PRINT *, '#####ERROR READING BUFR MESSAGE TYPE/SUBTYPE ',
-     . '(INTERNAL) FROM INPUT DUMP FILE NAME - STOP 99'
+      PRINT'("#####ERROR READING BUFR MESSAGE TYPE/SUBTYPE (INTERNAL)'//
+     . ' FROM INPUT DUMP FILE NAME - STOP 99")'
       CALL SYSTEM('[ -n "$jlogfile" ] && $DATA/postmsg "$jlogfile" '//
      . '"**ERROR IN PROGRAM BUFR_SDMEDIT - ABNORMAL EXIT"')
       CALL W3TAGE('BUFR_EDTBFR')

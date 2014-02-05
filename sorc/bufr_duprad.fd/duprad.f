@@ -354,10 +354,8 @@ C  -------------------------------------------------------------------
          ELSE
             MXTB_NEW=MXTB*1.20
          ENDIF
-         PRINT *
-         PRINT *, '~~> INPUT FILE MAY BE GROWING AS THIS PROGRAM RUNS,',
-     $    ' BUMP UP MXTB FROM ',MXTB,' TO ',MXTB_NEW
-         PRINT *
+         PRINT'(/"~~> INPUT FILE MAY BE GROWING AS THIS PROGRAM RUNS,'//
+     $    ' BUMP UP MXTB FROM ",I0," TO ",I0/)', MXTB,MXTB_NEW
          MXTB = MAX(MXTB,MXTB_NEW)
       ENDIF
 

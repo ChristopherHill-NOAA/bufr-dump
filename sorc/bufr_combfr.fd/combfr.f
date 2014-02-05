@@ -161,10 +161,8 @@ C  Center and dump times not found in unit 17, "dummy" messages can't
 C   be generated
 C  ------------------------------------------------------------------
 
-      PRINT *
-      PRINT *, '+++ WARNING: CENTER AND/OR DUMP DATE NOT FOUND IN ',
-     $ 'UNIT 17 - "DUMMY" MESSAGES NOT WRITTEN TO TOP OF OUTPUT FILE'
-      PRINT *
+      PRINT'(/"+++ WARNING: CENTER AND/OR DUMP DATE NOT FOUND IN UNIT'//
+     . ' 17 - ""DUMMY"" MESSAGES NOT WRITTEN TO TOP OF OUTPUT FILE"/)'
 
 9     CONTINUE
 
@@ -174,10 +172,8 @@ C  --------------------------------------
       DO
          READ(5,'(A)',END=1) THIS_FILI
          IF(NFIL+1.GT.NFILES) THEN
-            PRINT *
-            PRINT *, '### BUFR_COMBFR: THE NUMBER OF INPUT FILES ',
-     $       'EXCEEDS THE LIMIT OF ',NFILES,' -- STOP 99'
-            PRINT *
+            PRINT'(/"### BUFR_COMBFR: THE NUMBER OF INPUT FILES '//
+     .       'EXCEEDS THE LIMIT OF ",I0," -- STOP 99"/)', NFILES
             CALL W3TAGE('BUFR_COMBFR')
             CALL ERREXIT(99)
          ENDIF
@@ -227,10 +223,8 @@ C  ------------------------------------------------------------------
          ENDIF
       ENDDO
 
-      PRINT *
-      PRINT *, '+++ WARNING: CANNOT FIND A BUFR TABLE TO WRITE INTO ',
-     $ 'OUTPUT FILE - OUTPUT FILE MUST BE EMPTY!!'
-      PRINT *
+      PRINT'(/"+++ WARNING: CANNOT FIND A BUFR TABLE TO WRITE INTO '//
+     $ 'OUTPUT FILE - OUTPUT FILE MUST BE EMPTY!!"/)'
 
     2 CONTINUE
 

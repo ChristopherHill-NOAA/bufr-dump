@@ -238,14 +238,13 @@ C         -------------------------------------------------------------
                CALL OPENBF(LUNIN,'IN',LUNIN)
                CALL OPENBF(LUNDX,'IN',LUNIN)
                CHECK_FILE = .TRUE.
-               print *, '        File ',FILENAME(1:NBYTES_FILE),' is ',
-     .          'first to contain internal dictionary msgs - copy them',
-     .          ' to "check" file'
-               print *
+               print'("        File ",A," is first to contain '//
+     .          'internal dictionary msgs - copy them to ""check"" '//
+     .          'file"/)', FILENAME(1:NBYTES_FILE)
             ELSE
-               print *, '        File ',FILENAME(1:NBYTES_FILE),' does',
-     .          ' not contain internal dictionary msgs - must be empty'
-               print *
+               print'("        File ",A," does not contain internal '//
+     .          'dictionary msgs - must be empty"/)',
+     .          FILENAME(1:NBYTES_FILE)
             ENDIF
          ELSE
 
@@ -254,10 +253,8 @@ C       DICTIONARY MESSAGES FROM "CHECK" FILE
 C      ------------------------------------------------------
 
             CALL OPENBF(LUNIN,'IN',LUNDX)
-            print *
-            print *, '--> Open file ',FILENAME(1:NBYTES_FILE),' using',
-     .       ' dictionary msgs from "check" file'
-            print *
+            print'(/"--> Open file ",A," using dictionary msgs from '//
+     .       '""check"" file"/)', FILENAME(1:NBYTES_FILE)
          ENDIF
 
          DO  I=4,10

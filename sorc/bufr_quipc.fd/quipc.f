@@ -516,8 +516,8 @@ C  ---------------------------------------------------------------------
          IF(ICOMP.EQ.1) THEN
             PRINT'(5X,"INPUT AND OUTPUT BUFR FILE MESSAGES   ",
      .       "C O M P R E S S E D")'
-            PRINT *, '#####BUFR_QUIPC (UFBTAB) CANNOT PROCESS ',
-     .               'COMPRESSED BUFR MESSAGES -- FATAL ERROR'
+            PRINT'("#####BUFR_QUIPC (UFBTAB) CANNOT PROCESS '//
+     .       'COMPRESSED BUFR MESSAGES -- FATAL ERROR")'
             IDUMMY=SYSTEM('[ -n "$jlogfile" ] && $DATA/postmsg'//
      .       ' "$jlogfile" "**ERROR IN PROGRAM BUFR_QUIPC - '//
      .       'ABNORMAL EXIT"')
@@ -741,22 +741,22 @@ C  -----
       STOP
 
 900   CONTINUE
-      PRINT *, '#####E-O-F OR ERROR READING TIME WINDOW FROM STANDARD ',
-     . 'INPUT - STOP 99'
+      PRINT'("#####E-O-F OR ERROR READING TIME WINDOW FROM STANDARD '//
+     . 'INPUT - STOP 99")'
       IDUMMY=SYSTEM('[ -n "$jlogfile" ] && $DATA/postmsg "$jlogfile" '//
      . '"**ERROR IN PROGRAM BUFR_QUIPC - ABNORMAL EXIT"')
       CALL W3TAGE('BUFR_QUIPC')
       CALL ERREXIT(99)
 901   CONTINUE
-      PRINT *, '#####ERROR READING WORKING INPUT DUMP FILE NAME FROM ',
-     . 'STANDARD INPUT - STOP 99'
+      PRINT'("#####ERROR READING WORKING INPUT DUMP FILE NAME FROM '//
+     . 'STANDARD INPUT - STOP 99")'
       IDUMMY=SYSTEM('[ -n "$jlogfile" ] && $DATA/postmsg "$jlogfile" '//
      . '"**ERROR IN PROGRAM BUFR_QUIPC - ABNORMAL EXIT"')
       CALL W3TAGE('BUFR_QUIPC')
       CALL ERREXIT(99)
 902   CONTINUE
-      PRINT *, '#####ERROR READING BUFR MESSAGE TYPE/SUBTYPE ',
-     . '(INTERNAL) FROM INPUT DUMP FILE NAME - STOP 99'
+      PRINT'("#####ERROR READING BUFR MESSAGE TYPE/SUBTYPE '//
+     . '(INTERNAL) FROM INPUT DUMP FILE NAME - STOP 99")'
       IDUMMY=SYSTEM('[ -n "$jlogfile" ] && $DATA/postmsg "$jlogfile" '//
      . '"**ERROR IN PROGRAM BUFR_QUIPC - ABNORMAL EXIT"')
       CALL W3TAGE('BUFR_QUIPC')
@@ -1099,9 +1099,9 @@ C  -------------------------------------------------------------------
      .       "QMPR changed from ",F3.0," to ",F3.0)', qms_8(1),ufbint_8
             IPQM(4) = IPQM(4) + 1
          ELSE
-            print *, '   ... report has a corrected PMSL, but since ',
-     .       'its QMPR has already been set to ',IQMPR,' it is not '
-            print *, '       changed to 4 here'
+            print'("   ... report has a corrected PMSL, but since its'//
+     .       ' QMPR has already been set to ",I0," it is not"/7X,'//
+     .       '"changed to 4 here")', IQMPR
          ENDIF
          PMSL_COR = .TRUE.
          ICOR(3) = ICOR(3) + 1
@@ -1118,9 +1118,9 @@ C  -------------------------------------------------------------------
      .       "QMAT changed from ",F3.0," to ",F3.0)', qms_8(3),ufbint_8
             ITQM(4) = ITQM(4) + 1
          ELSE
-            print *, '   ... report has a corrected TMDB, but since ',
-     .       'its QMAT has already been set to ',IQMAT,' it is not ',
-     .       'changed to 4 here'
+            print'("   ... report has a corrected TMDB, but since its'//
+     .       ' QMAT has already been set to ",I0," it is not changed '//
+     .       'to 4 here")', IQMAT
          ENDIF
          ICOR(4) = ICOR(4) + 1
       ENDIF
@@ -1143,10 +1143,9 @@ C  -------------------------------------------------------------------
      .       qms_8(2),ufbint_8
             ITQM(4) = ITQM(4) + 1
          ELSE
-            print *, '   ... report has a corrected WDIR and WSPD, ',
-     .       'but since its QMWN has already been set to ',IQMWN,' it ',
-     .       'is not'
-            print *, '       changed to 4 here'
+            print'("   ... report has a corrected WDIR and WSPD, but '//
+     .       'since its QMWN has already been set to ",I0," it is '//
+     .       'not"/7X,"changed to 4 here")', IQMWN
          ENDIF
          ICOR(5) = ICOR(5) + 1
       ENDIF
@@ -1178,10 +1177,9 @@ C  -------------------------------------------------------------
      .       "and/or SST2, QMST changed from ",F3.0," to ",F3.0)',
      .       qms_8(4),ufbint_8
          ELSE
-            print *, '   ... report has a corrected SST1 and/or SST2,',
-     .       ' but since its QMST has already been set to ',IQMST,' it',
-     .       ' is not'
-            print *, '       changed to 4 here'
+            print'("   ... report has a corrected SST1 and/or SST2,'//
+     .       ' but since its QMST has already been set to ",I0," it '//
+     .       ' is not"/7X,"changed to 4 here")', IQMST
          ENDIF
          ICOR(7) = ICOR(7) + 1
       ENDIF
@@ -1244,11 +1242,10 @@ C  --------------------------------------------------------------------
      .          obs_8(2)*0.01,ufbint_8*0.01,obs_8(8)
                ICOR(8) = ICOR(8) + 1
             ELSE
-               print *, '   ... although PMSL corrected, DO NOT ',
-     .          'correct this report''s PRES since it is in the Great ',
-     .          'Lakes -- this'
-               print *, '       may cause problems esp. since qm is ',
-     .          'set to 4!!!'
+               print'("   ... although PMSL corrected, DO NOT correct'//
+     .          ' this report''s PRES since it is in the Great Lakes '//
+     .          '-- this"/7X,"may cause problems esp. since qm is set'//
+     .          ' to 4!!!")'
             ENDIF
          ENDIF
       ENDIF

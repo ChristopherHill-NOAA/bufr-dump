@@ -204,8 +204,8 @@ C  -----------------------------------------------------------------
                PRINT'(/"INPUT BUFR FILE",I2," MESSAGES   '//
      .          'C O M P R E S S E D"/"FIRST MESSAGE TYPE FOUND IS",'//
      .          'I5/)', I,MSGT
-               PRINT *, '#####BUFR_DUPSHP (UFBTAB) CANNOT PROCESS ',
-     .            'COMPRESSED BUFR MESSAGES -- FATAL ERROR'
+               PRINT'("#####BUFR_DUPSHP (UFBTAB) CANNOT PROCESS '//
+     .            'COMPRESSED BUFR MESSAGES -- FATAL ERROR")'
                CALL W3TAGE('BUFR_DUPSHP')
                CALL ERREXIT(99)
             ELSE  IF(ICOMP.EQ.0) THEN

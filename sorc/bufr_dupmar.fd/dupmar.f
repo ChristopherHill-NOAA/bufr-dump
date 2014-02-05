@@ -530,10 +530,8 @@ cppppp
          NUM_TABLES = MAX(NUM_TABLES,INT(REC_8(3,N)))
       ENDDO
 
-      print *
-      print *, 'The number of embedded BUFR tables (including at the ',
-     $ 'top of the file) read in is ',NUM_TABLES
-      print *
+      print'(/"The number of embedded BUFR tables (including at the '//
+     $ 'top of the file) read in is ",I0/)', NUM_TABLES
       IF(NUM_TABLES.GT.1) THEN
 
 C  Alert dumpjb that dup-check code BUFR_DUPCOR must be executed after
@@ -643,9 +641,9 @@ C  --------------------------------------------------------------------
      . 'generated from different BUFR tables (',I3,' and ',I3,') - ',
      . 'DO NOT attempt to merge'/)
             NSKIP = NSKIP + 1
-           print *, 'A LATER UPDATE TO THIS CODE SHOULD RESULT IN THIS',
-     .      ' NEVER HAPPENING - CONTACT DENNIS KEYSER IF YOU SEE THIS ',
-     .      'PRINTOUT!'
+           print'("A LATER UPDATE TO THIS CODE SHOULD RESULT IN THIS '//
+     .      'NEVER HAPPENING - CONTACT DENNIS KEYSER IF YOU SEE THIS '//
+     .      ' PRINTOUT!")'
             print *
          ENDIF
          IF(IDUP .and. NINT(REC_8(3,IREC)).EQ.NINT(REC_8(3,JREC))) THEN
@@ -1013,9 +1011,9 @@ C  -----------
 
   902 CONTINUE
 
-      PRINT *, '#####BUFR_DUPMAR - BAD RETURN FROM BUFRLIB ROUTINE '//
-     . 'RDMEMM - REQ. MEMORY MSG NO. TO READ IN (',I,') > NO. OF '//
-     . 'MSGS IN MEMORY'
+      PRINT'("#####BUFR_DUPMAR - BAD RETURN FROM BUFRLIB ROUTINE '//
+     . 'RDMEMM - REQ. MEMORY MSG NO. TO READ IN (",I0,") > NO. OF '//
+     . 'MSGS IN MEMORY")', I
       CALL W3TAGE('BUFR_DUPMAR')
       CALL ERREXIT(99)
 

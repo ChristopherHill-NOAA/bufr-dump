@@ -264,10 +264,9 @@ C  --------------------------------------------------------------
      .          '.. WESTERN LONGITUDE (0-360 W) .......... ',F6.1/)
          IF(RLONE.GT.RLONW) ISWT=1
       ELSE  IF(IBOX.EQ.2)  THEN
-         print *, 'GEOGRAPHICAL FILTERING IS PERFORMED USING 0.5 ',
-     .            'DEGREE GLOBAL LAT/LON GRID POINT MASK FILE'
-         print *, CARD(2:NBYTES_CARD)
-         print *
+         print'("GEOGRAPHICAL FILTERING IS PERFORMED USING 0.5 DEGREE'//
+     .    ' GLOBAL LAT/LON GRID POINT MASK FILE"/A/)',
+     .     CARD(2:NBYTES_CARD)
       ELSE
          PRINT 252
   252    FORMAT('GEOGRAPHICAL FILTERING NOT PERFORMED HERE'/)
@@ -590,8 +589,9 @@ C$$$
 
       IF(IFIRST.EQ.0) THEN
          IF(DEL.NE..25.AND.DEL.NE..5.AND.DEL.NE.1..AND.DEL.NE.2.) THEN
-            PRINT *, '#####BUFR_GEOFIL - LATITUDE SPACING IN MASK (=',
-     $       DEL,') NOT VALID - MUST BE EITHER 0.25, 0.5, 1.0 OR 2.0'
+            PRINT'("#####BUFR_GEOFIL - LATITUDE SPACING IN MASK (="'//
+     $       'G0,") NOT VALID - MUST BE EITHER 0.25, 0.5, 1.0 OR 2.0")',
+     $       DEL
             CALL W3TAGE('BUFR_GEOFIL')
             CALL ERREXIT(99)
          ENDIF

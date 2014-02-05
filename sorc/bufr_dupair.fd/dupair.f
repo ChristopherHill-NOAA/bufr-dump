@@ -207,9 +207,9 @@ C  --------------------------------------------------
 
 2     CONTINUE
       IF(.NOT.AIRCFT) THEN
-         PRINT*
-         PRINT*,'BUFR_DUPAIR: NO AIRCRAFT TO CHECK'
-         PRINT*
+         PRINT *
+         PRINT *,'BUFR_DUPAIR: NO AIRCRAFT TO CHECK'
+         PRINT *
          CALL W3TAGE('BUFR_DUPAIR')
          STOP
       ELSE
@@ -269,8 +269,8 @@ C  -----------------------------------------------------------------
                PRINT'(/"INPUT BUFR FILE",I2," MESSAGES   '//
      .          'C O M P R E S S E D"/"FIRST MESSAGE TYPE FOUND IS",'//
      .          'I5/)', I,MSGT
-               PRINT *, '#####BUFR_DUPAIR (UFBTAB) CANNOT PROCESS ',
-     .            'COMPRESSED BUFR MESSAGES -- FATAL ERROR'
+               PRINT'("#####BUFR_DUPAIR (UFBTAB) CANNOT PROCESS '//
+     .            'COMPRESSED BUFR MESSAGES -- FATAL ERROR")'
                CALL W3TAGE('BUFR_DUPAIR')
                CALL ERREXIT(99)
             ELSE  IF(ICOMP.EQ.0) THEN

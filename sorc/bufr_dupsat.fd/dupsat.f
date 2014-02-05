@@ -591,11 +591,9 @@ C  -------------------------------------------------------------------
      .          4X,'.. WESTERN LONGITUDE (0-360 W) .......... ',F6.1/)
          IF(RLONE.GT.RLONW) ISWT=1
       ELSE  IF(IBOX.EQ.2)  THEN
-         print *
-         print *, 'GEOGRAPHICAL FILTERING IS PERFORMED USING 0.5 ',
-     .            'DEGREE GLOBAL LAT/LON GRID POINT MASK FILE'
-         print *, CARD(2:NBYTES_CARD)
-         print *
+         print'(/"GEOGRAPHICAL FILTERING IS PERFORMED USING 0.5 '//
+     .    'DEGREE GLOBAL LAT/LON GRID POINT MASK FILE"/A/)',
+     .    CARD(2:NBYTES_CARD)
       ELSE
          PRINT 252
   252    FORMAT(3X,'GEOGRAPHICAL FILTERING NOT PERFORMED HERE'/)
@@ -789,10 +787,9 @@ ccccc          print *, 'After  correction: LON = ',ALONGITUDE_8
       ENDDO
 
       IF(ILON_CHG.EQ.1) THEN
-         PRINT *
-         PRINT *, '~~> At least one report has had its longitude ',
-     $    'corrected from 180E --> 360E to 0W --> -180W (BUFR standard)'
-         PRINT *
+         PRINT'(/"~~> At least one report has had its longitude '//
+     $    'corrected from 180E --> 360E to 0W --> -180W (BUFR '//
+     $    'standard)"/)'
          CALL SYSTEM('[ -n "$jlogfile" ] && $DATA/postmsg'//
      $    ' "$jlogfile" "***WARNING: AT LEAST 1 REPORT HAS HAD ITS'//
      $    ' LONGITUDE CORRECTED FROM 180E --> 360E TO 0W --> -180W'//
@@ -843,10 +840,8 @@ C  ------------------------------------
 
             JDUP(IREC) = 3
             IF(IFIRST_M.EQ.0) THEN
-               PRINT *
-               PRINT *, '~~> Will print first 100 reports with missing',
-     $                  ' latitude or longitude ...'
-               PRINT *
+               PRINT'(/"~~> Will print first 100 reports with missing'//
+     $          ' latitude or longitude ..."/)'
                CALL SYSTEM('[ -n "$jlogfile" ] && $DATA/postmsg'//
      $          ' "$jlogfile" "***WARNING: AT LEAST 1 REPORT HAS A'//
      $          ' MISSING LAT/LON, TYPE="'//SUBSET)
@@ -871,10 +866,8 @@ C  -----------------------------------------
 
             JDUP(IREC) = 7
             IF(IFIRSTU.EQ.0) THEN
-               PRINT *
-               PRINT *, '~~> Will print first 100 reports with ',
-     $                  'unreasonable latitude or longitude ...'
-               PRINT *
+               PRINT'(/"~~> Will print first 100 reports with '//
+     $          'unreasonable latitude or longitude ..."/)'
                CALL SYSTEM('[ -n "$jlogfile" ] && $DATA/postmsg'//
      $          ' "$jlogfile" "***WARNING: AT LEAST 1 REPORT HAS A'//
      $          ' UNREASONABLE LAT/LON, TYPE="'//SUBSET)
@@ -2468,8 +2461,9 @@ C$$$
 
       IF(IFIRST.EQ.0) THEN
          IF(DEL.NE..25.AND.DEL.NE..5.AND.DEL.NE.1..AND.DEL.NE.2.) THEN
-            PRINT *, '#####BUFR_DUPSAT - LATITUDE SPACING IN MASK (=',
-     $       DEL,') NOT VALID - MUST BE EITHER 0.25, 0.5, 1.0 OR 2.0'
+            PRINT'("#####BUFR_DUPSAT - LATITUDE SPACING IN MASK (="'//
+     $       'G0,") NOT VALID - MUST BE EITHER 0.25, 0.5, 1.0 OR 2.0")',
+     $       DEL
             CALL W3TAGE('BUFR_DUPSAT')
             CALL ERREXIT(99)
          ENDIF

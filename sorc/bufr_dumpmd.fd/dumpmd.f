@@ -193,8 +193,8 @@ C  Dump time not found in unit 17, "dummy" messages can't be generated
 C  -------------------------------------------------------------------
 
       PRINT *
-      PRINT *, '+++ WARNING: CENTER AND/OR DUMP DATE NOT FOUND IN ',
-     $ 'UNIT 17 - "DUMMY" MESSAGES NOT WRITTEN TO TOP OF OUTPUT FILE'
+      PRINT'("+++ WARNING: CENTER AND/OR DUMP DATE NOT FOUND IN UNIT '//
+     $ '17 - ""DUMMY"" MESSAGES NOT WRITTEN TO TOP OF OUTPUT FILE")'
       PRINT *
 
 9     CONTINUE
