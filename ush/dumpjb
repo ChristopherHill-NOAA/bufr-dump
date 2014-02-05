@@ -470,16 +470,15 @@
 #   TMPDIR -  The root directory tree for the path to temporary work files
 #                             (For checkout:
 #                                If the parent script has not
-#                                modified TMPDIR from its global value of
-#                                either "/nfstmp", "/gpfstmp" or "/stmp" and if
+#                                modified TMPDIR from a global value of either
+#                                "/nfstmp", "/gpfstmp" or "/stmp" and if
 #                                the global variable $USER exists, and it
 #                                always should, then set to:
 #                                     /stmp/$USER (on machines where /stmp
-#                                                  exists, e.g., Mist)
+#                                                  exists, e.g., CCS, WCOSS)
 #                                            or to
 #                                     /gpfstmp/$USER (on machines where
-#                                                     /gpfstmp exists, e.g.,
-#                                                     White/Blue)
+#                                                     /gpfstmp exists)
 #                                If the parent script has modified TMPDIR from
 #                                its global value, then:        default:$TMPDIR)
 #                             (For production: Always             default:$DATA)
@@ -757,7 +756,7 @@ echo
 [ -z "$MPMD" ]   && MPMD=/nwprod/util/ush/mpmd.sh
 
 [ -z "$TMPDIR" ] && TMPDIR=/stmp    # must set TMPDIR if it does not exist
-                                      #  (this should occur only for CRON jobs)
+                                      #  (this may occur only for CRON jobs??)
 
 # Important point: TMPDIR should never default to $DATA for checkout runs
 #  because it is never known what the user has set DATA to and this could
@@ -770,10 +769,10 @@ if [ $user6 = nwprod -o $user8 = climprod ]; then
 # Set TMPDIR to $DATA for production runs
    TMPDIR=$DATA
 else
-# If the parent script has not modified TMPDIR from its global value of either
+# If the parent script has not modified TMPDIR from a global value of either
 #  "/nfstmp", "/gpfstmp" or "/stmp", set TMPDIR to either /stmp/$USER (on
-#  machines where /stmp exists, e.g., Mist) or to /gpfstmp/$USER (on machines
-#  where /gpfstmp exists, e.g., White/Blue) for checkout runs
+#  machines where /stmp exists, e.g., CCS, WCOSS) or to /gpfstmp/$USER (on
+#  machines where /gpfstmp exists) for checkout runs
    if [ \( "$TMPDIR" = '/nfstmp' -o "$TMPDIR" = '/gpfstmp' -o \
            "$TMPDIR" = '/stmp' \) -a -n "$USER" ]; then
       if [ -d /stmp ]; then
