@@ -153,12 +153,14 @@ files
 
  Special Instructions:
  ---------------------
-   This must be implemented at EXACTLY the same time as NESDIS' promotion of
-   the hourly GOES satellite winds to their production server, and
-   simultaneously with the implementations of obsproc_dump_monitor.v1.0.0,
-   obsproc_global.v1.0.0, obsproc_nam.v1.0.0, obsproc_rap.v1.0.0,
-   obsproc_rtma.v1.1.0, obsproc_utma.v1.1.0, obsproc_satingest.v2.0.0,
-   obsproc_shared/bufr_cword.v1.0.0 and obsproc_shared/bufr_dumplist.v1.0.0.
+   This must be implemented simultaneously with the implementations of
+   obsproc_dump_monitor.v1.0.0, obsproc_global.v1.0.0, obsproc_nam.v1.0.0,
+   obsproc_rap.v1.0.0, obsproc_rtma.v1.1.0, obsproc_urma.v1.1.0,
+   obsproc_satingest.v2.0.0, obsproc_shared/bufr_cword.v1.0.0 and
+   obsproc_shared/bufr_dumplist.v1.0.0.
+
+   It should be implemented PRIOR to NESDIS' promotion of their hourly GOES
+   satellite winds to their production server,
 
    Since there are no jobs in obsproc_dump, an obsproc_dump.ver file is not
    needed.
