@@ -1,7 +1,7 @@
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 obsproc_dump release 3.0.0 --> released Jan ??, 2014
 
-files
+files:
   obsproc_dump/fix/bufr_bufrtab.sptrmm
   obsproc_dump/fix/bufr_bufrtab.windsat
   obsproc_dump/fix/nam_expdomain_guam_halfdeg_imask.gbl
