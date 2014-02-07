@@ -55,6 +55,36 @@ files:
 ( * - not changed)
 
 
+ USH script changes:
+   bufr_dump_obs.sh:
+    - Imports new environment variable $HOMEobsproc_dump which points to
+      directory path for generic dump subdirectories under version control (in
+      production this is normally /nwprod/obsproc_dump.vX.Y.Z where X.Y.Z
+      version number being used, usually the latest).  This replaces
+      /nw${envir}.
+    - Imports new environment variable $HOMEobsproc_network which points to
+      directory path for network-specific dump subdirectories under version
+      control (in production this is normally /nwprod/obsproc_NETWORK.vX.Y.Z
+      where NETWORK is, e.g., global, nam, rap, rtma, urma, and x.y.z is
+      version number being used, usually the latest).  This replaces
+      /nw${envir}.
+   check_tanks.sh:
+    - Environment variable $LIST (complete path to bufr_dumplist fixed file) no
+      longer defaults to /nwprod/fix/bufr_dumplist but rather to
+      $FIXobsproc_shared_bufr_dumplist/bufr_dumplist.
+   dumpjb:
+    - Environment variable $DUEX (path to directory containing dump
+      executables) no longer defaults to /nwprod/exec but rather to
+      $HOMEobsproc_dump/exec.  One of the three variables "obsproc_dump_ver",
+      "HOMEobsproc_dump" or "DUEX" must be defined coming in or this script
+      will exit abnormally with return code 99.
+    - Environment variable $DFIX (path to directory bufr_dumplist fixed file)
+      no longer defaults to /nwprod/fix but rather to
+      $HOMEobsproc_shared_bufr_dumplist/fix.  One of the four variables
+      "obsproc_shared_bufr_dumplist_ver", "HOMEobsproc_shared_bufr_dumplist",
+      "DFIX" or "LIST" must be defined coming in or this script will exit
+      abnormally with return code 99.
+      
  Source code changes:
    bufr_chkbfr, bufr_combfr, bufr_dcodwindsat, bufr_dumpmd, bufr_dupair,
    bufr_dupcor, bufr_dupmar, bufr_dupmrg, bufr_duprad, bufr_dupsat,
@@ -88,37 +118,6 @@ files:
           4) Now print only the first 100 reports with an unrecognized
              satellite ID (to reduce size of stdout in such cases).
 
- USH script changes:
-   bufr_dump_obs.sh:
-    - Imports new environment variable $HOMEobsproc_dump which points to
-      directory path for generic dump subdirectories under version control (in
-      production this is normally /nwprod/obsproc_dump.vX.Y.Z where X.Y.Z
-      version number being used, usually the latest).  This replaces
-      /nw${envir}.
-    - Imports new environment variable $HOMEobsproc_network which points to
-      directory path for network-specific dump subdirectories under version
-      control (in production this is normally /nwprod/obsproc_NETWORK.vX.Y.Z
-      where NETWORK is, e.g., global, nam, rap, rtma, urma, and x.y.z is
-      version number being used, usually the latest).  This replaces
-      /nw${envir}.
-   check_tanks.sh:
-    - Environment variable $LIST (complete path to bufr_dumplist fixed file) no
-      longer defaults to /nwprod/fix/bufr_dumplist but rather to
-      $FIXobsproc_shared_bufr_dumplist/bufr_dumplist.
-   dumpjb:
-    - Environment variable $DUEX (path to directory containing dump
-      executables) no longer defaults to /nwprod/exec but rather to
-      $HOMEobsproc_dump/exec.  One of the three variables "obsproc_dump_ver",
-      "HOMEobsproc_dump" or "DUEX" must be defined coming in or this script
-      will exit abnormally with return code 99.
-    - Environment variable $DFIX (path to directory bufr_dumplist fixed file)
-      no longer defaults to /nwprod/fix but rather to
-      $HOMEobsproc_shared_bufr_dumplist/fix.  One of the four variables
-      "obsproc_shared_bufr_dumplist_ver", "HOMEobsproc_shared_bufr_dumplist",
-      "DFIX" or "LIST" must be defined coming in or this script will exit
-      abnormally with return code 99.
-
-      
  Fixed file changes:
    nam_expdomain_halfdeg_imask.gbl, wave_bufrtab.ascat, bufr_bufrtab.sptrmm,
    wave_bufrtab.erscat, nam_expdomain_guam_halfdeg_imask.gbl,
