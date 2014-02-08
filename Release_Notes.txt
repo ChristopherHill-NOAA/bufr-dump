@@ -48,6 +48,11 @@ files:
   obsproc_dump/sorc/prepobs_prepssmi.fd/prepssmi.f
   obsproc_dump/sorc/wave_dcodquikscat.fd/dcodquikscat.f
   obsproc_dump/sorc/wave_dcodquikscat.fd/makefile
+  obsproc_dump/sorc/build.sh
+  obsproc_dump/sorc/install.sh
+  obsproc_dump/sorc/load_libs.rc
+  obsproc_dump/sorc/README.build
+  obsproc_dump/sorc/setlibs.rc
   obsproc_dump/ush/bufr_dump_obs.sh
   obsproc_dump/ush/check_tanks.sh
   obsproc_dump/ush/dumpjb
@@ -86,6 +91,22 @@ files:
       abnormally with return code 99.
       
  Source code changes:
+   build.sh in sorc directory:
+    - New. Used to build one or all executables in the sorc directory.  Reads
+      either load_libs.rc or setlibs.rc file to to point to library version
+      numbers needed by makefiles.
+   install.sh in sorc directory:
+    - New. Used to install (move) one or more executables (after build) in
+      exec
+      directory assumed to be in same root directory as sorc.
+   load_libs.rc in sorc directory:
+    - New. Read by build.sh - contains library version numbers needed by
+      makefiles.  (Not read if setlibs.rc is read.)
+   README.build in sorc directory:
+    - New. Documentation on using build.sh and install.sh.
+   setlibs.rc in sorc directory:
+    - New. Read by build.sh - contains library version numbers needed by
+      makefiles.  (Not read if load_libs.rc is read.)
    bufr_chkbfr, bufr_combfr, bufr_dcodwindsat, bufr_dumpmd, bufr_dupair,
    bufr_dupcor, bufr_dupmar, bufr_dupmrg, bufr_duprad, bufr_dupsat,
    bufr_dupshp, bufr_dupsst, bufr_edtbfr, bufr_geofil, bufr_quipc,
