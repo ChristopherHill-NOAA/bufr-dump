@@ -1,5 +1,5 @@
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-obsproc_dump release 3.0.0 --> released Jan ??, 2014
+obsproc_dump release 3.0.0 --> released Feb 8, 2014
 
 files:
   obsproc_dump/fix/bufr_bufrtab.sptrmm
