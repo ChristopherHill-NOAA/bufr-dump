@@ -49,6 +49,7 @@ files:
   obsproc_dump/sorc/wave_dcodquikscat.fd/dcodquikscat.f
   obsproc_dump/sorc/wave_dcodquikscat.fd/makefile
   obsproc_dump/sorc/build.sh
+  obsproc_dump/sorc/clean.sh
   obsproc_dump/sorc/install.sh
   obsproc_dump/sorc/load_libs.rc
   obsproc_dump/sorc/README.build
@@ -92,13 +93,15 @@ files:
       
  Source code changes:
    build.sh in sorc directory:
-    - New. Used to build one or all executables in the sorc directory.  Reads
-      either load_libs.rc or setlibs.rc file to to point to library version
-      numbers needed by makefiles.
+    - New. Used to build one or all executables in the *.fd sub-directories of
+      the sorc directory.  Reads either load_libs.rc or setlibs.rc file to
+      point to library version numbers needed by makefiles.
+   clean.sh in sorc directory:
+    - New. Used to "make clean" one or more *.fd sub-directories in the sorc
+      directory (generally after a build).
    install.sh in sorc directory:
-    - New. Used to install (move) one or more executables (after build) in
-      exec
-      directory assumed to be in same root directory as sorc.
+    - New. Used to install (move) one or more executables (after build) in exec
+      directory (assumed to be in same root directory as sorc).
    load_libs.rc in sorc directory:
     - New. Read by build.sh - contains library version numbers needed by
       makefiles.  (Not read if setlibs.rc is read.)

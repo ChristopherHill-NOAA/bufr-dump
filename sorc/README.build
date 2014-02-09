@@ -29,11 +29,20 @@ directories back from each code directory).  If you don't trust install scripts
 and targets, don't use 'em.
 
 
+To clean directories
+  sh clean.sh <some_code.fd ...>
+or 
+  sh clean.sh
+to clean all.
+
+
 Examples:
   build.sh
   install.sh
+  clean.sh
 -or-
   build.sh bufr_dupsat.fd  bufr_dupsst.fd
   install.sh bufr_dupsat.fd  bufr_dupsst.fd
+  clean.sh bufr_dupsat.fd  bufr_dupsst.fd
   
 
