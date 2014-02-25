@@ -1,4 +1,16 @@
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+obsproc_dump release X.X.X --> released ??? ??, 2014
+
+ USH script changes:
+   dumpjb:
+    - Update default temporary directory location in response to recent 
+      scrub directory changes on WCOSS.  Clean up related logic and remove 
+      references to scrub dirs that no longer exist.  New scrub dir /stmpp1
+      was chosen as the default (if needed) since that is on the filesystem 
+      currently used by most WCOSS developers.
+
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 obsproc_dump release 3.0.0 --> released Feb 8, 2014
 
 files:

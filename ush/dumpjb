@@ -268,6 +268,9 @@
 #     remains defined as the complete path to, and including, the bufr_dumplist
 #     fixed file) must be defined coming in or this script will exit abnormally
 #     with return code 99.
+# 2014-02-18  D. Stokes  Update default temporary directory location in response
+#     to fileset changes on WCOSS.  Clean up related logic and remove references
+#     to /gpfstmp and /nfstmp which had been used on systems since retired.
 #
 #
 # Usage: dumpjb  yyyymmddhh<.hh> hh<.hh> dgrp1 dgrp2 dgrp3 ... dgrpN
@@ -467,21 +470,15 @@
 #             in the script parameters).
 #   TANK   -  directory path to database         (default:${DCOMROOT}/us007003)
 #   DATA   -  directory path to user data destination              (default:pwd)
-#   TMPDIR -  The root directory tree for the path to temporary work files
-#                             (For checkout:
-#                                If the parent script has not
-#                                modified TMPDIR from a global value of either
-#                                "/nfstmp", "/gpfstmp" or "/stmp" and if
-#                                the global variable $USER exists, and it
-#                                always should, then set to:
-#                                     /stmp/$USER (on machines where /stmp
-#                                                  exists, e.g., CCS, WCOSS)
-#                                            or to
-#                                     /gpfstmp/$USER (on machines where
-#                                                     /gpfstmp exists)
-#                                If the parent script has modified TMPDIR from
-#                                its global value, then:        default:$TMPDIR)
-#                             (For production: Always             default:$DATA)
+#   TMPDIR -  The root directory tree for the path to temporary work files.
+#             (only used if DATA_DUMPJB is not imported)
+#             For production: Forced to $DATA.
+#             For checkout:  If imported value is a known main shared directory 
+#                such as /stmpp1, and if the global variable $USER exists, and it 
+#                always should, then append $USER:
+#                   $TMPDIR/$USER 
+#                This is intended to reduce the metadata load in the main 
+#                temporary directories.
 #   DATA_DUMPJB - directory path to working directories
 #                  (def:$TMPDIR/dumpjb.`hostname -s`.`date -u +%Y%m%d%H%M%S`.$$)
 #      WARNING 1: This script removes all files in DATA_DUMPJB prior to
@@ -755,47 +752,37 @@ echo
 [ -z "$QPRM" ]   && QPRM=${DCOMROOT}/us007003/quips
 [ -z "$MPMD" ]   && MPMD=/nwprod/util/ush/mpmd.sh
 
-[ -z "$TMPDIR" ] && TMPDIR=/stmp    # must set TMPDIR if it does not exist
-                                      #  (this may occur only for CRON jobs??)
-
+if [ -n "$DATA_DUMPJB" ]; then
+  data_dumpjb_imported=YES
+else # put DATA_DUMPJB under $TMPDIR
+  data_dumpjb_imported=NO
+  user6=`echo "$USER" | cut -c1-6`
+  user8=`echo "$USER" | cut -c1-8`
+  if [ $user6 = nwprod -o $user8 = climprod ]; then  # production run
+    TMPDIR=$DATA
+  else
 # Important point: TMPDIR should never default to $DATA for checkout runs
 #  because it is never known what the user has set DATA to and this could
 #  quickly fill up a file system if it is not a temp system that is
 #  regularly cleaned out.
-
-user6=`echo "$USER" | cut -c1-6`
-user8=`echo "$USER" | cut -c1-8`
-if [ $user6 = nwprod -o $user8 = climprod ]; then
-# Set TMPDIR to $DATA for production runs
-   TMPDIR=$DATA
-else
-# If the parent script has not modified TMPDIR from a global value of either
-#  "/nfstmp", "/gpfstmp" or "/stmp", set TMPDIR to either /stmp/$USER (on
-#  machines where /stmp exists, e.g., CCS, WCOSS) or to /gpfstmp/$USER (on
-#  machines where /gpfstmp exists) for checkout runs
-   if [ \( "$TMPDIR" = '/nfstmp' -o "$TMPDIR" = '/gpfstmp' -o \
-           "$TMPDIR" = '/stmp' \) -a -n "$USER" ]; then
-      if [ -d /stmp ]; then
-         TMPDIR=/stmp/$USER
-      else
-         TMPDIR=/gpfstmp/$USER
-      fi
-      mkdir -p $TMPDIR
-   fi
-fi
-
-data_dumpjb_imported=YES
-if [ -z "$DATA_DUMPJB" ]; then
-   if [ -d $TMPDIR/dumpjb.`hostname -s`.`date -u +%Y%m%d%H%M%S`.$$ ]; then
-      echo
-      echo "THE directory path to working directories, \
-$TMPDIR/dumpjb.`hostname -s`.`date -u +%Y%m%d%H%M%S`.$$ "
-      echo " already exists -- this should never happen -- try running again"
-      echo
-      exit 99
-   fi
-   DATA_DUMPJB=$TMPDIR/dumpjb.`hostname -s`.`date -u +%Y%m%d%H%M%S`.$$
-   data_dumpjb_imported=NO
+   [ -z "$TMPDIR" ] && TMPDIR=/stmpp1/$USER
+#  If TMPDIR is set to a common root location (an old convention), set it
+#  instead to a subdirectory beneath that with name $USER if defined.
+#  This will help to minimize the number of subdirectories directly under 
+#  the root scrub dir.
+    case ${TMPDIR%\/} in     # a trailing slash is ignored
+      /stmp | /stmp?? | /ptmp | /ptmp?? )
+          [ -n "$USER" ] && TMPDIR=${TMPDIR%\/}/$USER;;
+    esac
+  fi
+  DATA_DUMPJB=$TMPDIR/dumpjb.`hostname -s`.`date -u +%Y%m%d%H%M%S`.$$
+  if [ -d $DATA_DUMPJB ]; then
+    echo
+    echo "THE directory path to working directories, DATA_DUMPJB "
+    echo " already exists -- this should never happen -- try running again"
+    echo
+    exit 99
+  fi
 fi
 rm -rf   $DATA_DUMPJB
 mkdir -p $DATA_DUMPJB
@@ -803,7 +790,8 @@ err=$?
 if [ $err -ne 0 ]; then
    echo
    echo "Cannot create directory path to working directories,"
-   echo "  $DATA_DUMPJB -- perhaps file system is full"
+   echo "  $DATA_DUMPJB -- perhaps file system is full, does not exist, or"
+   echo "  $USER does not have write permissions or has hit quota."
    echo
    exit 99
 fi
