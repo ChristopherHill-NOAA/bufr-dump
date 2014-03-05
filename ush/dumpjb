@@ -474,7 +474,7 @@
 #             (only used if DATA_DUMPJB is not imported)
 #             For production: Forced to $DATA.
 #             For checkout:  If imported value is a known main shared directory 
-#                such as /stmpp1, and if the global variable $USER exists, and it 
+#                such as /stmpd1, and if the global variable $USER exists, and it 
 #                always should, then append $USER:
 #                   $TMPDIR/$USER 
 #                This is intended to reduce the metadata load in the main 
@@ -765,7 +765,7 @@ else # put DATA_DUMPJB under $TMPDIR
 #  because it is never known what the user has set DATA to and this could
 #  quickly fill up a file system if it is not a temp system that is
 #  regularly cleaned out.
-   [ -z "$TMPDIR" ] && TMPDIR=/stmpp1/$USER
+   [ -z "$TMPDIR" ] && TMPDIR=/stmpd1/$USER
 #  If TMPDIR is set to a common root location (an old convention), set it
 #  instead to a subdirectory beneath that with name $USER if defined.
 #  This will help to minimize the number of subdirectories directly under 

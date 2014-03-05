@@ -92,7 +92,7 @@ files:
       abnormally with return code 99.
     - Update default temporary directory location in response to recent 
       scrub directory changes on WCOSS.  Clean up related logic and remove 
-      references to scrub dirs that no longer exist.  New scrub dir /stmpp1
+      references to scrub dirs that no longer exist.  New scrub dir /stmpd1
       was chosen as the default (if needed) since that is on the filesystem 
       currently used by most WCOSS developers.
       
