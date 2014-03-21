@@ -271,6 +271,8 @@
 # 2014-02-18  D. Stokes  Update default temporary directory location in response
 #     to fileset changes on WCOSS.  Clean up related logic and remove references
 #     to /gpfstmp and /nfstmp which had been used on systems since retired.
+# 2014-03-16  D. Stokes  Remove default TMPDIR setting.  Script will fail with
+#     status 99 if TMPDIR is referecneced but not imported.
 #
 #
 # Usage: dumpjb  yyyymmddhh<.hh> hh<.hh> dgrp1 dgrp2 dgrp3 ... dgrpN
@@ -479,6 +481,7 @@
 #                   $TMPDIR/$USER 
 #                This is intended to reduce the metadata load in the main 
 #                temporary directories.
+#             WARNING:  TMPDIR must be imported if DATA_DUMPJB is not.
 #   DATA_DUMPJB - directory path to working directories
 #                  (def:$TMPDIR/dumpjb.`hostname -s`.`date -u +%Y%m%d%H%M%S`.$$)
 #      WARNING 1: This script removes all files in DATA_DUMPJB prior to
@@ -650,16 +653,17 @@ set -a
 ##          "on" AT THE HIGHEST (JOB) SCRIPT LEVEL.
 ###############
 [ -z "$LOUD" ] && LOUD=off
-[ $LOUD = on ] && set -x
 
+set +x
 echo
 echo "********************************************************************"
 echo "********************************************************************"
 echo "     STARTING EXECUTION OF THE UNIVERSAL DUMP SCRIPT - DUMPJB       "
 echo "                        Version 02-04-2014                          "
-echo "             Start time: `date -u`                                     "
+echo "             Start time: `date -u`                                  "
 echo "********************************************************************"
 echo "********************************************************************"
+[ $LOUD = on ] && set -x
 
 RETC=0
 RETG=0
@@ -765,7 +769,27 @@ else # put DATA_DUMPJB under $TMPDIR
 #  because it is never known what the user has set DATA to and this could
 #  quickly fill up a file system if it is not a temp system that is
 #  regularly cleaned out.
-   [ -z "$TMPDIR" ] && TMPDIR=/stmpd1/$USER
+   if [ -z "$TMPDIR" ]; then
+      set +x
+      echo
+      echo "*******************************************************************"
+      echo "***********************   DUMPJB FAILED!!   ***********************"
+      echo
+      echo "Please do one of the following:                                    " 
+      echo "     -- export DATA_DUMPJB to point to a specific directory for    " 
+      echo "        dumpjb to write it's working files, or;                    "
+      echo "     -- export TMPDIR which should point to your own scrub space   "
+      echo "        and a unique subdirectory will be created below.           "
+      echo "                                                                   "
+      echo "If you set both, DATA_DUMPJB takes precedence and that directory   "
+      echo "will remain after dumpjb is done."
+      echo "                                                                   "
+      echo "***********************   DUMPJB FAILED!!   ***********************"
+      echo "*******************************************************************"
+      echo 
+      [ $LOUD = on ] && set -x
+      exit 99
+   fi
 #  If TMPDIR is set to a common root location (an old convention), set it
 #  instead to a subdirectory beneath that with name $USER if defined.
 #  This will help to minimize the number of subdirectories directly under 
@@ -777,10 +801,12 @@ else # put DATA_DUMPJB under $TMPDIR
   fi
   DATA_DUMPJB=$TMPDIR/dumpjb.`hostname -s`.`date -u +%Y%m%d%H%M%S`.$$
   if [ -d $DATA_DUMPJB ]; then
+    set +x
     echo
-    echo "THE directory path to working directories, DATA_DUMPJB "
+    echo "The directory path to working directories, DATA_DUMPJB "
     echo " already exists -- this should never happen -- try running again"
     echo
+    [ $LOUD = on ] && set -x
     exit 99
   fi
 fi
@@ -788,28 +814,34 @@ rm -rf   $DATA_DUMPJB
 mkdir -p $DATA_DUMPJB
 err=$?
 if [ $err -ne 0 ]; then
+   set +x
    echo
    echo "Cannot create directory path to working directories,"
    echo "  $DATA_DUMPJB -- perhaps file system is full, does not exist, or"
    echo "  $USER does not have write permissions or has hit quota."
    echo
+   [ $LOUD = on ] && set -x
    exit 99
 fi
 [ -z "$FORM" ] && FORM=ibm
 [ -z "$BACK" ] && BACK=on
 [ -z "$POE" ]  && POE=off
 if [ "$POE" = 'on' -a "$BACK" = 'on' ]; then
+   set +x
    echo
    echo "YOU have set both POE and BACK to on - choose one or the other!!"
    echo "Recommend exporting BACK=on and POE=off to run this script faster"
    echo
+   [ $LOUD = on ] && set -x
    exit 99
 fi
 if [ "$POE" = 'on' ]; then
+   set +x
    echo
    echo "YOU have set POE to on - this option is not currently supported!"
    echo "Recommend exporting BACK=on and POE=off to run this script."
    echo
+   [ $LOUD = on ] && set -x
    exit 99
 fi
 
@@ -1864,6 +1896,7 @@ fi
 #  the end of the DUMP script - exit with a RETC return code
 #  ---------------------------------------------------------
 
+set +x
 echo
 echo "Dump processing completed with return code $RETC"
 echo
@@ -1874,4 +1907,5 @@ echo "               End time: `date -u`                                     "
 echo "********************************************************************"
 echo "********************************************************************"
 echo
+[ $LOUD = on ] && set -x
 exit $RETC
