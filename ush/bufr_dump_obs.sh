@@ -1496,7 +1496,7 @@ do
 ######cp  $DATA/${n}.${FORM} ${COMSP}${n}.${tmmark}.bufr_d
       mv  $DATA/${n}.${FORM} ${COMSP}${n}.${tmmark}.bufr_d
       errmvt=$?
-      rm  $DATA/${n}.${FORM}
+######rm  $DATA/${n}.${FORM}
       errmvl=$errmv
       errmv=`expr $errmvl + $errmvt`
    else
