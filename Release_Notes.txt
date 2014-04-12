@@ -139,6 +139,10 @@ files:
    wave_dcodquikscat:
     - Source changed to:
           1) Handle OSCAT DATA (although currently, these are not reprocessed).
+               Monitoring (RTDM) System graphics.
+      N O T I C E:  By the time this was implemented, OSCAT data were no longer
+                    available.  The instrument stopped working on 2/20/14 and
+                    was declared as "Dead" on 4/3/14.
           2) Account for new METOP-B satellite (SAID=3) in ASCAT processing.
           3) Add new namelist switch "ISATSK" which allows all reports from a
              particular BUFR satellite ID to be skipped (really applies only to
