@@ -1,4 +1,134 @@
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+obsproc_dump release ?.?.? --> released ??? ?, 2014
+
+files:
+  obsproc_dump/fix/bufr_bufrtab.sptrmm
+  obsproc_dump/fix/bufr_bufrtab.windsat
+  obsproc_dump/fix/nam_expdomain_guam_halfdeg_imask.gbl
+  obsproc_dump/fix/nam_expdomain_halfdeg_imask.gbl
+  obsproc_dump/fix/wave_bufrtab.ascat
+  obsproc_dump/fix/wave_bufrtab.erscat
+  obsproc_dump/fix/wave_bufrtab.quikscat
+  obsproc_dump/fix/wave_landchxh
+  obsproc_dump/sorc/bufr_chkbfr.fd/chkbfr.f
+  obsproc_dump/sorc/bufr_chkbfr.fd/makefile
+  obsproc_dump/sorc/bufr_combfr.fd/combfr.f
+  obsproc_dump/sorc/bufr_combfr.fd/makefile
+  obsproc_dump/sorc/bufr_dcodwindsat.fd/dcodwindsat.f
+  obsproc_dump/sorc/bufr_dcodwindsat.fd/makefile
+  obsproc_dump/sorc/bufr_dumpmd.fd/dumpmd.f
+  obsproc_dump/sorc/bufr_dumpmd.fd/makefile
+  obsproc_dump/sorc/bufr_dupair.fd/dupair.f
+  obsproc_dump/sorc/bufr_dupair.fd/makefile
+  obsproc_dump/sorc/bufr_dupcor.fd/dupcor.f
+  obsproc_dump/sorc/bufr_dupcor.fd/makefile
+  obsproc_dump/sorc/bufr_dupmar.fd/dupmar.f
+  obsproc_dump/sorc/bufr_dupmar.fd/makefile
+  obsproc_dump/sorc/bufr_dupmrg.fd/dupmrg.f
+  obsproc_dump/sorc/bufr_dupmrg.fd/makefile
+  obsproc_dump/sorc/bufr_duprad.fd/duprad.f
+  obsproc_dump/sorc/bufr_duprad.fd/makefile
+  obsproc_dump/sorc/bufr_dupsat.fd/dupsat.f
+  obsproc_dump/sorc/bufr_dupsat.fd/makefile
+  obsproc_dump/sorc/bufr_dupshp.fd/dupshp.f
+  obsproc_dump/sorc/bufr_dupshp.fd/makefile
+  obsproc_dump/sorc/bufr_dupsst.fd/dupsst.f
+  obsproc_dump/sorc/bufr_dupsst.fd/makefile
+ *obsproc_dump/sorc/bufr_edtbfr.fd/edtbfr.f
+  obsproc_dump/sorc/bufr_edtbfr.fd/makefile
+  obsproc_dump/sorc/bufr_geofil.fd/geofil.f
+  obsproc_dump/sorc/bufr_geofil.fd/makefile
+  obsproc_dump/sorc/bufr_quipc.fd/makefile
+  obsproc_dump/sorc/bufr_quipc.fd/quipc.f
+  obsproc_dump/sorc/bufr_raddate.fd/makefile
+  obsproc_dump/sorc/bufr_raddate.fd/raddate.f
+  obsproc_dump/sorc/bufr_supertmi.fd/makefile
+  obsproc_dump/sorc/bufr_supertmi.fd/supertmi.f
+  obsproc_dump/sorc/prepobs_prepssmi.fd/makefile
+  obsproc_dump/sorc/prepobs_prepssmi.fd/prepssmi.f
+  obsproc_dump/sorc/wave_dcodquikscat.fd/dcodquikscat.f
+  obsproc_dump/sorc/wave_dcodquikscat.fd/makefile
+  obsproc_dump/sorc/build.sh
+  obsproc_dump/sorc/clean.sh
+  obsproc_dump/sorc/install.sh
+  obsproc_dump/sorc/load_libs.rc
+  obsproc_dump/sorc/README.build
+  obsproc_dump/sorc/setlibs.rc
+  obsproc_dump/ush/bufr_dump_obs.sh
+  obsproc_dump/ush/check_tanks.sh
+ *obsproc_dump/ush/dumpjb
+
+( * - changed)
+
+
+ USH script changes:
+   dumpjb:
+    - Remove default setting for environment variable $TMPDIR.  This script
+      will now fail with status 99 if TMPDIR is referenced but not imported.
+      A diagnostic message will be posted to stdout in this case.  The
+      executing script must now either export TMPDIR to dumpjb (where TMPDIR
+      should point to its own scrub space) or, as before, export DATA_DUMPJB to
+      point to a specific directory for dumpjb to write its working files to.
+      BENEFIT:  The root of the WCOSS temporary scrub space is now different
+                for different user groups, thus a default common to all users
+                can no longer be specified in dumpjb.
+    - The execution trace has been turned off for a few of the informational
+      echo blocks to make them stand out as intended, even when the LOUD option
+      is on.  This was missed in earlier versions.
+
+ Source code changes:
+   bufr_edtbfr:
+    - Source changed to increase maximum number of time- and report type-
+      relevant entries allowed in the SDMEDIT flag file from 1000 to 2000
+      (parameter "MEDT").
+      BENEFIT: This is needed now that more surface SYNOP, METAR and MESONET
+               reports are being added to the sdmedit file.
+
+
+ Output changes:
+ ---------------
+   All jobs executing this version of obsproc_dump:
+    - ???????????????????????????
+
+ Compute Resource Information:
+ -----------------------------
+   ???????????????????????????
+!!!
+In tests I ran last month, doubling MEDT (from 1000 to 2000) did result in just about a doubling in memory required by bufr_edtbfr
+
+Dumping 6 hours of ships:                   
+MEDT=1000 =>  Max resident set size:  133 Mb   
+MEDT=2000 =>  Max resident set size:  231 Mb
+
+Dumping 6 hours of aircar:
+MEDT=1000 =>  Max resident set size:  531 Mb   
+MEDT=2000 =>  Max resident set size: 1014 Mb
+
+Dumping 6 hours of satwnd:
+MEDT=1000 =>  Max resident set size: 1240 Mb   
+MEDT=2000 =>  Max resident set size: 2330 Mb
+
+
+However, whether or not that means you should double the amount of memory in a job depends on what else you are doing in that job (and what parts might run at the same time).
+
+   Diane
+
+
+ Preimplementation Testing Requirements:
+ ---------------------------------------
+   ???????????????????????????
+
+
+ Dissemination:
+ --------------
+   ???????????????????????????
+
+
+ Special Instructions:
+ ---------------------
+   ???????????????????????????
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 obsproc_dump release 3.0.0 --> released Feb 8, 2014
 
 files:
