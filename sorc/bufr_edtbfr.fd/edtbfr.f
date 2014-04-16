@@ -1,7 +1,7 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: BUFR_EDTBFR
-C   PRGMMR: KEYSER           ORG: NP22        DATE: 2013-12-12
+C   PRGMMR: KEYSER           ORG: NP22        DATE: 2014-03-05
 C
 C ABSTRACT: APPLIES REAL-TIME INTERACTIVE QUALITY CONTROL FLAGS,
 C   GENERATED FROM EITHER A "REJECT" LIST MAINTAINED BY NCEP/NCO OR
@@ -149,6 +149,9 @@ C 2013-01-22  J. WHITING  FINAL PORT TO WCOSS -- UPDATED DOC BLOCKS;
 C     READY FOR IMPLEMENTATION.
 C 2013-12-12  D. A. KEYSER -- RECOGNIZED NEW LEVEL 2 DECODER VAD WINDS
 C     IN MESSAGE TYPE 002, SUBTYPE 017
+C 2014-03-05  D. A. KEYSER -- INCREASED MAXIMUM NUMBER OF TIME- AND
+C     REPORT TYPE-RELEVANT ENTRIES ALLOWED IN THE SDMEDIT FLAG FILE
+C     FROM 1000 TO 2000 (PARAMETER "MEDT")
 C
 C USAGE
 C   INPUT FILES:
@@ -190,6 +193,8 @@ C
 C REMARKS:
 C     Contents of each 128-character "record" (line entry) in SDMEDIT
 C     flag text file
+C     (Note: Anything in character 129 or after in the SDMEDIT flag
+C            text file is ignored by this program.)
 C        Column        Description
 C        ------        -----------
 C        01-08         Reported call sign, WMO id, tail number (MDCRS
@@ -560,7 +565,7 @@ C
 C$$$
       PROGRAM BUFR_EDTBFR
 
-      PARAMETER (MEDT=1000)         ! Allows up to 1000 time- and report
+      PARAMETER (MEDT=2000)         ! Allows up to 2000 time- and report
                                     ! type-relevant entries in the
                                     ! SDMEDIT flag file
       PARAMETER (MXTS=10)
@@ -714,10 +719,10 @@ C$$$
 
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_EDTBFR',2013,0346,0067,'NP22')
+      CALL W3TAGB('BUFR_EDTBFR',2014,0064,0067,'NP22')
 
       print *
-      print * ,'---> Welcome to BUFR_EDTBFR - Version 12-12-2013'
+      print * ,'---> Welcome to BUFR_EDTBFR - Version 03-05-2014'
       print *
 
       NET = '    '
@@ -1854,7 +1859,7 @@ C  -----
 C$$$  SUBPROGRAM DOCUMENTATION BLOCK
 C
 C SUBPROGRAM:    APPLY
-C   PRGMMR: KEYSER           ORG: NP22       DATE: 2006-04-18
+C   PRGMMR: KEYSER           ORG: NP22       DATE: 2014-03-05
 C
 C ABSTRACT: ENCODES SDMEDIT Q.C. FLAGS (KEEP, REJECT OR PURGE) INTO
 C   BUFR REPORTS.  THE FOLLOWING DATA TYPES CAN ENCODE Q.C. FLAGS
@@ -1871,6 +1876,9 @@ C 2004-02-02  D. KEYSER  -- STREAMLINED CODE; ADDED DOCBLOCK AND
 C       COMMENTS; ADDED MORE DESCRIPTIVE STANDARD OUTPUT PRINT
 C 2006-04-18  D. KEYSER  -- MODIFIED TO PROPERLY HANDLE TAMDAR AIRCRAFT
 C       (MOISTURE AVAILABLE)
+C 2014-03-05  D. A. KEYSER -- INCREASED MAXIMUM NUMBER OF TIME- AND
+C     REPORT TYPE-RELEVANT ENTRIES ALLOWED IN THE SDMEDIT FLAG FILE
+C     FROM 1000 TO 2000 (PARAMETER "MEDT")
 C
 C USAGE:    CALL APPLY (LUBFJ, CARD, M, ITYP, JTYP, LPRINT)
 C   INPUT ARGUMENT LIST:
@@ -1903,7 +1911,7 @@ C
 C$$$
       SUBROUTINE APPLY(LUBFJ,CARD,M,ITYP,JTYP,LPRINT)
 
-      PARAMETER (MEDT=1000) ! Allows up to 1000 time- and report type-
+      PARAMETER (MEDT=2000) ! Allows up to 2000 time- and report type-
                             ! relevant entries in the SDMEDIT flag file
 
       CHARACTER*128 CARD
@@ -2348,7 +2356,7 @@ C  Encode any new q.m.'s
 C$$$  SUBPROGRAM DOCUMENTATION BLOCK
 C
 C SUBPROGRAM:    PRSRNG
-C   PRGMMR: KEYSER           ORG: NP22       DATE: 2008-06-10
+C   PRGMMR: KEYSER           ORG: NP22       DATE: 2014-03-05
 C
 C ABSTRACT: PARSES VERTICAL SIGNIFICANCE QUALIFIER AND PRESSURE RANGES
 C   FOR APPLYING QUALITY MARKS ENTRIES FROM A PARTICULAR RECORD (CARD)
@@ -2370,6 +2378,9 @@ C 2008-06-10  D. KEYSER   REPLACED CALL TO BUFRLIB ROUTINE PARSEQ WITH
 C     CALL TO BUFRLIB ROUTINE PARSTR {PARSEQ HAS BEEN REPLACED WITH
 C     PARSTR IN LATEST (28 MAY 2008) VERSION OF THE BUFRLIB, PARSEQ HAS
 C     BEEN MARKED AS OBSOLETE}
+C 2014-03-05  D. A. KEYSER -- INCREASED MAXIMUM NUMBER OF TIME- AND
+C     REPORT TYPE-RELEVANT ENTRIES ALLOWED IN THE SDMEDIT FLAG FILE
+C     FROM 1000 TO 2000 (PARAMETER "MEDT")
 C
 C USAGE:    CALL PRSRNG (CARD, M, IER)
 C   INPUT ARGUMENT LIST:
@@ -2395,7 +2406,7 @@ C
 C$$$
       SUBROUTINE PRSRNG(CARD,M,IER)
 
-      PARAMETER (MEDT=1000) ! Allows up to 1000 time- and report type-
+      PARAMETER (MEDT=2000) ! Allows up to 2000 time- and report type-
                             ! relevant entries in the SDMEDIT flag file
 
       CHARACTER*128 CARD
