@@ -5,7 +5,7 @@
 #
 # Script name:   dumpjb      Dump script to get data from BUFR tanks
 #
-# RFC contact:  Keyser      Org: NP22        Date: 2014-02-04
+# RFC contact:  Keyser      Org: NP22        Date: 2014-03-16
 #
 # Abstract: The dumpjb script is an all-purpose dump utility for
 #   time windowing, geographical filtering, eliminating duplicates,
@@ -272,7 +272,7 @@
 #     to fileset changes on WCOSS.  Clean up related logic and remove references
 #     to /gpfstmp and /nfstmp which had been used on systems since retired.
 # 2014-03-16  D. Stokes  Remove default TMPDIR setting.  Script will fail with
-#     status 99 if TMPDIR is referecneced but not imported.
+#     status 99 if TMPDIR is referenced but not imported.
 #
 #
 # Usage: dumpjb  yyyymmddhh<.hh> hh<.hh> dgrp1 dgrp2 dgrp3 ... dgrpN
@@ -333,11 +333,11 @@
 #
 #==============================================================================
 #==============================================================================
-#   One of the three following script variables must be defined or this script
-#   will exit with return code 99.  The last two variables may have operational
-#   defaults defined in the script, subject to the conditions noted below.  If
-#   a user exports non-null values for any of these variables, the user value
-#   will override the default if a default is present.
+#   One of the three following script variables must be defined (imported) or
+#   this script will exit with return code 99.  The last two variables may have
+#   operational defaults defined in the script, subject to the conditions noted
+#   below.  If a user exports non-null values for any of these variables, the
+#   user value will override the default if a default is present.
 #
 #   obsproc_dump_ver - OBSPROC_DUMP version for dump executables (e.g., v3.0.0)
 #                              (there is no default)
@@ -354,11 +354,11 @@
 #                                             defined; else no default)
 #==============================================================================
 #==============================================================================
-#   One of the four following script variables must be defined or this script
-#   will exit with return code 99.  The last three variables may have
-#   operational defaults defined in the script, subject to the conditions noted
-#   below.  If a user exports non-null values for any of these variables, the
-#   user value will override the default if a default is present.
+#   One of the four following script variables must be defined (imported) or
+#   this script will exit with return code 99.  The last three variables may
+#   have operational defaults defined in the script, subject to the conditions
+#   noted below.  If a user exports non-null values for any of these variables,
+#   the user value will override the default if a default is present.
 #
 #   obsproc_shared_bufr_dumplist_ver - OBSPROC_SHARED_BUFR_DUMPLIST version for
 #                                      bufr_dumplist fixed file (e.g., v1.0.0)
@@ -381,6 +381,39 @@
 #                                      bufr_dumplist fixed file
 #              (default::$DFIX/bufr_dumplist
 #                        ===> valid only if $DFIX defined; else no default)
+#==============================================================================
+#==============================================================================
+#   One of the two following script variables must be defined (imported) or
+#   this script will exit with return code 99.  Both variables may have an
+#   operational default defined in the script, subject to the conditions noted
+#   below.  If a user exports non-null values for any of these variables, the
+#   user value will override the default if a default is present.
+#
+#   TMPDIR      - root directory tree for the path to temporary work files
+#                 (e.g., /stmpd1/$USER)
+#           {default::$DATA  (see more on $DATA further below)
+#                        ===> valid only if $USER is "nwprod*" or "climprod*";
+#                             else (e.g., checkout) no default}
+#           ===> if $USER is defined but is something other than "nwprod*" or
+#                "climprod*" (e.g., checkout) and $TMPDIR is imported as a
+#                known main shared temporary directory root (e.g., "/stmp",
+#                "/stmpd1", "/stmpp1", "/ptmp", "/ptmpp1", "/ptmpd1"), then
+#                $TMPDIR is redefined to append $USER to its original imported
+#                value, e.g., TMPDIR=$TMPDIR/$USER (this is intended to reduce
+#                the metadata load in the main shared temporary directories.
+#           ===> not referenced if DATA_DUMPJB is imported
+#.............................................................................
+#   DATA_DUMPJB - directory path to working directories
+#           (default::$TMPDIR/dumpjb.`hostname -s`.`date -u +%Y%m%d%H%M%S`.$$
+#                        ===> valid only if $TMPDIR defined; else no default)
+#      WARNING 1: This script removes all files in $DATA_DUMPJB prior to
+#                 writing into it - something to remember if you are exporting
+#                 DATA_DUMPJB to this script!!!
+#      WARNING 2: At the end of this script, all files in $DATA_DUMPJB and
+#                 the directory itself are removed UNLESS either:
+#                      a) you exported DATA_DUMPJB to this script;
+#                      b) the return code from this script is 99; or
+#                      c) the imported script variable LOUD is set to 'on'
 #==============================================================================
 #==============================================================================
 #   The following script variables are user controllable with operational
@@ -472,26 +505,6 @@
 #             in the script parameters).
 #   TANK   -  directory path to database         (default:${DCOMROOT}/us007003)
 #   DATA   -  directory path to user data destination              (default:pwd)
-#   TMPDIR -  The root directory tree for the path to temporary work files.
-#             (only used if DATA_DUMPJB is not imported)
-#             For production: Forced to $DATA.
-#             For checkout:  If imported value is a known main shared directory 
-#                such as /stmpd1, and if the global variable $USER exists, and it 
-#                always should, then append $USER:
-#                   $TMPDIR/$USER 
-#                This is intended to reduce the metadata load in the main 
-#                temporary directories.
-#             WARNING:  TMPDIR must be imported if DATA_DUMPJB is not.
-#   DATA_DUMPJB - directory path to working directories
-#                  (def:$TMPDIR/dumpjb.`hostname -s`.`date -u +%Y%m%d%H%M%S`.$$)
-#      WARNING 1: This script removes all files in DATA_DUMPJB prior to
-#                 writing into it - something to remember if you are exporting
-#                 DATA_DUMPJB to this script!!!
-#      WARNING 2: At the end of this script, all files in DATA_DUMPJB and
-#                 the directory itself are removed UNLESS: a) you exported
-#                 DATA_DUMPJB to this script; b) the return code from this
-#                 script is 99; or c) the imported script variable LOUD is
-#                 set to 'on'.
 #   EPRM   -  directory path/filename of edtbfr sdmedit/reject/list file
 #                                        (default:${DCOMROOT}/us007003/sdmedit)
 #   QPRM   -  directory path/filename of QUIPS flag file
@@ -659,7 +672,7 @@ echo
 echo "********************************************************************"
 echo "********************************************************************"
 echo "     STARTING EXECUTION OF THE UNIVERSAL DUMP SCRIPT - DUMPJB       "
-echo "                        Version 02-04-2014                          "
+echo "                            03-16-2014                              "
 echo "             Start time: `date -u`                                  "
 echo "********************************************************************"
 echo "********************************************************************"
@@ -774,15 +787,20 @@ else # put DATA_DUMPJB under $TMPDIR
       echo
       echo "*******************************************************************"
       echo "***********************   DUMPJB FAILED!!   ***********************"
-      echo
+      echo "                                                                   "
       echo "Please do one of the following:                                    " 
       echo "     -- export DATA_DUMPJB to point to a specific directory for    " 
-      echo "        dumpjb to write it's working files, or;                    "
+      echo "        dumpjb to write its working files to, or;                  "
       echo "     -- export TMPDIR which should point to your own scrub space   "
       echo "        and a unique subdirectory will be created below.           "
       echo "                                                                   "
       echo "If you set both, DATA_DUMPJB takes precedence and that directory   "
-      echo "will remain after dumpjb is done."
+      echo "will remain after dumpjb is done.                                  "
+      echo "                                                                   "
+      echo "WARNING: This script removes all files in the DATA_DUMPJB directory"
+      echo "         as well as the directory itself prior to writing into it -"
+      echo "         something to remember if you are exporting DATA_DUMPJB to "
+      echo "         this script!!!                                            "
       echo "                                                                   "
       echo "***********************   DUMPJB FAILED!!   ***********************"
       echo "*******************************************************************"
