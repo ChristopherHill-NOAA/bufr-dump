@@ -116,7 +116,9 @@ However, whether or not that means you should double the amount of memory in a j
 
  Preimplementation Testing Requirements:
  ---------------------------------------
-   ???????????????????????????
+   There are no jobs in obsproc_dump.  All jobs executing this version of
+   obsproc_dump will be part of the parallel-production test of the OBSPROC
+   Phase2 bundle.
 
 
  Dissemination:
