@@ -1,5 +1,5 @@
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-obsproc_dump release ?.?.? --> released ??? ?, 2014
+obsproc_dump release 3.1.0 --> released ??? ?, 2014
 
 files:
   obsproc_dump/fix/bufr_bufrtab.sptrmm
@@ -128,7 +128,17 @@ However, whether or not that means you should double the amount of memory in a j
 
  Special Instructions:
  ---------------------
-   ???????????????????????????
+   This must be implemented simultaneously with the implementations of
+   obsproc_global.v2.0.0, obsproc_nam.v2.0.0, obsproc_rap.v2.0.0,
+   obsproc_rtma.v2.0.0, obsproc_urma.v2.0.0, obsproc_dump_post.v2.0.0,
+   obsproc_prep.v3.0.0, obsproc_prep_post.v2.0.0 and
+   obsproc_shared/bufr_remorest.v1.0.0.
+
+   This must also be implemented simultaneously with or immediately after the
+   w3emc_v2.2.0 implementation.
+
+   Since there are no jobs in obsproc_dump, an obsproc_dump.ver file is not
+   needed.
 
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 obsproc_dump release 3.0.0 --> released Feb 8, 2014
