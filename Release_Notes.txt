@@ -129,9 +129,9 @@ However, whether or not that means you should double the amount of memory in a j
  Special Instructions:
  ---------------------
    This must be implemented simultaneously with the implementations of
-   obsproc_global.v2.0.0, obsproc_nam.v2.0.0, obsproc_rap.v2.0.0,
-   obsproc_rtma.v2.0.0, obsproc_urma.v2.0.0, obsproc_dump_post.v2.0.0,
-   obsproc_prep.v3.0.0, obsproc_prep_post.v2.0.0,
+   obsproc_dump_monitor.v1.2.0, obsproc_global.v2.0.0, obsproc_nam.v2.0.0,
+   obsproc_rap.v2.0.0, obsproc_rtma.v2.0.0, obsproc_urma.v2.0.0,
+   obsproc_dump_post.v2.0.0, obsproc_prep.v3.0.0, obsproc_prep_post.v2.0.0,
    obsproc_shared/bufr_remorest.v1.0.0 and obsproc_shared/bufr_avgdata.v1.0.0.
 
    This must also be implemented simultaneously with or immediately after the
