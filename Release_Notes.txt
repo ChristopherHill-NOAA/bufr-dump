@@ -87,43 +87,42 @@ files:
 
  Output changes:
  ---------------
-   All jobs executing this version of obsproc_dump:
-    - ???????????????????????????
+   No changes.
 
  Compute Resource Information:
  -----------------------------
-   ???????????????????????????
-!!!
-In tests I ran last month, doubling MEDT (from 1000 to 2000) did result in just about a doubling in memory required by bufr_edtbfr
+   According to information from Diane Stokes:
+      "In tests I ran ..., doubling MEDT (from 1000 to 2000) did result in just
+       about a doubling in memory required by bufr_edtbfr
 
-Dumping 6 hours of ships:                   
-MEDT=1000 =>  Max resident set size:  133 Mb   
-MEDT=2000 =>  Max resident set size:  231 Mb
+       Dumping 6 hours of ships:                   
+       MEDT=1000 =>  Max resident set size:  133 Mb   
+       MEDT=2000 =>  Max resident set size:  231 Mb
 
-Dumping 6 hours of aircar:
-MEDT=1000 =>  Max resident set size:  531 Mb   
-MEDT=2000 =>  Max resident set size: 1014 Mb
+       Dumping 6 hours of aircar:
+       MEDT=1000 =>  Max resident set size:  531 Mb   
+       MEDT=2000 =>  Max resident set size: 1014 Mb
 
-Dumping 6 hours of satwnd:
-MEDT=1000 =>  Max resident set size: 1240 Mb   
-MEDT=2000 =>  Max resident set size: 2330 Mb
+       Dumping 6 hours of satwnd:
+       MEDT=1000 =>  Max resident set size: 1240 Mb   
+       MEDT=2000 =>  Max resident set size: 2330 Mb
 
-
-However, whether or not that means you should double the amount of memory in a job depends on what else you are doing in that job (and what parts might run at the same time).
-
-   Diane
+       However, whether or not that means you should double the amount of
+       memory in a job depends on what else you are doing in that job (and what
+       parts might run at the same time)."
 
 
  Preimplementation Testing Requirements:
  ---------------------------------------
    There are no jobs in obsproc_dump.  All jobs executing this version of
    obsproc_dump will be part of the parallel-production test of the OBSPROC
-   Phase2 bundle.
+   Phase 2 bundle.
 
 
  Dissemination:
  --------------
-   ???????????????????????????
+   See information about dissemination in the release notes for the obsproc
+   networks executing this version of obsproc_dump.
 
 
  Special Instructions:
