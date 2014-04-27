@@ -91,25 +91,10 @@ files:
 
  Compute Resource Information:
  -----------------------------
-   According to information from Diane Stokes:
-      "In tests I ran ..., doubling MEDT (from 1000 to 2000) did result in just
-       about a doubling in memory required by bufr_edtbfr
-
-       Dumping 6 hours of ships:                   
-       MEDT=1000 =>  Max resident set size:  133 Mb   
-       MEDT=2000 =>  Max resident set size:  231 Mb
-
-       Dumping 6 hours of aircar:
-       MEDT=1000 =>  Max resident set size:  531 Mb   
-       MEDT=2000 =>  Max resident set size: 1014 Mb
-
-       Dumping 6 hours of satwnd:
-       MEDT=1000 =>  Max resident set size: 1240 Mb   
-       MEDT=2000 =>  Max resident set size: 2330 Mb
-
-       However, whether or not that means you should double the amount of
-       memory in a job depends on what else you are doing in that job (and what
-       parts might run at the same time)."
+   The increase of parameter MEDT (from 1000 to 2000) in bufr_edtbfr results 
+   in nearly a doubling of memory required for that code.  However, the actual
+   impact, if any, on memory requirements for a given call to dumpjb depends 
+   on the types and relative amounts of observations processed.
 
 
  Preimplementation Testing Requirements:
