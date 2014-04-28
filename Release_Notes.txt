@@ -237,7 +237,7 @@ files:
     - New. Read by build.sh - contains library version numbers needed by
       makefiles.  (Not read if setlibs.rc is read.)
    README.build in sorc directory:
-    - New. Documentation on using build.sh and install.sh.
+    - New. Documentation on using build.sh, install.sh and clean.sh.
    setlibs.rc in sorc directory:
     - New. Read by build.sh - contains library version numbers needed by
       makefiles.  (Not read if load_libs.rc is read.)
