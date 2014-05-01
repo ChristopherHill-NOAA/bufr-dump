@@ -91,11 +91,7 @@ files:
 
  Compute Resource Information:
  -----------------------------
-   The increase of parameter MEDT (from 1000 to 2000) in bufr_edtbfr results 
-   in nearly a doubling of memory required for that code.  However, the actual
-   impact, if any, on memory requirements for a given call to dumpjb depends 
-   on the types and relative amounts of observations processed.
-
+   No changes.
 
  Preimplementation Testing Requirements:
  ---------------------------------------
