@@ -1,5 +1,5 @@
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-obsproc_dump release 3.1.0 --> released ??? ?, 2014
+obsproc_dump release 3.1.0 --> released May 5, 2014
 
 files:
   obsproc_dump/fix/bufr_bufrtab.sptrmm
@@ -51,9 +51,9 @@ files:
   obsproc_dump/sorc/build.sh
   obsproc_dump/sorc/clean.sh
   obsproc_dump/sorc/install.sh
-  obsproc_dump/sorc/load_libs.rc
+ *obsproc_dump/sorc/load_libs.rc
   obsproc_dump/sorc/README.build
-  obsproc_dump/sorc/setlibs.rc
+ *obsproc_dump/sorc/setlibs.rc
   obsproc_dump/ush/bufr_dump_obs.sh
   obsproc_dump/ush/check_tanks.sh
  *obsproc_dump/ush/dumpjb
@@ -77,6 +77,10 @@ files:
       is on.  This was missed in earlier versions.
 
  Source code changes:
+   load_libs.rc and setlibs.rc in sorc directory:
+    - Increment the w3emc version from v2.0.5 to v2.2.0 in anticipation of the
+      future implementation of the w3emc library upgrade released to NCO on May
+      1, 2014.
    bufr_edtbfr:
     - Source changed to increase maximum number of time- and report type-
       relevant entries allowed in the SDMEDIT flag file from 1000 to 2000
@@ -91,7 +95,19 @@ files:
 
  Compute Resource Information:
  -----------------------------
-   No changes.
+   All source codes:
+    - continue to link to version 2.0.6 of w3nco library
+    - continue to link to version 10.2.5 of bufr library
+   Source codes bufr_dcodwindsat, bufr_dupair, bufr_dupcor, bufr_dupmar,
+   bufr_dupmrg, bufr_duprad, bufr_dupsat, bufr_dupshp, bufr_dupsst,
+   bufr_supertmi, prepobs_prepssmi, wave_dcodquikscat:
+    - now links to version 2.2.0 of w3emc library (previously linked to
+      version 2.0.5)
+   Source codes bufr_supertmi, prepobs_prepssmi, wave_dcodquikscat:
+    - continue to link to version 2.0.1 of BACIO library
+   Source code prepobs_prepssmi:
+    - continues to link to version 2.0.1 of SP library
+
 
  Preimplementation Testing Requirements:
  ---------------------------------------
@@ -102,8 +118,8 @@ files:
 
  Dissemination:
  --------------
-   See information about dissemination in the release notes for the obsproc
-   networks executing this version of obsproc_dump.
+   See information about dissemination in the release notes for
+   obsproc_<NETWORK> packages which execute this version of obsproc_dump.
 
 
  Special Instructions:
@@ -123,6 +139,8 @@ files:
 
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 obsproc_dump release 3.0.0 --> released Feb 8, 2014
+
+Initial population of vertical structure.
 
 files:
  *obsproc_dump/fix/bufr_bufrtab.sptrmm
@@ -237,10 +255,7 @@ files:
    setlibs.rc in sorc directory:
     - New. Read by build.sh - contains library version numbers needed by
       makefiles.  (Not read if load_libs.rc is read.)
-   bufr_chkbfr, bufr_combfr, bufr_dcodwindsat, bufr_dumpmd, bufr_dupair,
-   bufr_dupcor, bufr_dupmar, bufr_dupmrg, bufr_duprad, bufr_dupsat,
-   bufr_dupshp, bufr_dupsst, bufr_edtbfr, bufr_geofil, bufr_quipc,
-   bufr_raddate, bufr_supertmi, prepobs_prepssmi, wave_dcodquikscat:
+   All source codes:
     - Makefile modified to use environment variables to point to library
       version numbers and to add sample build script and info in sorc
       directory.  This generalizes the library version information.
@@ -289,7 +304,17 @@ files:
 
  Compute Resource Information:
  -----------------------------
-   No changes.
+   All source codes:
+    - continue to link to version 2.0.6 of W3NCO library
+    - continue to link to version 10.2.5 of BUFR library
+   Source codes bufr_dcodwindsat, bufr_dupair, bufr_dupcor, bufr_dupmar,
+   bufr_dupmrg, bufr_duprad, bufr_dupsat, bufr_dupshp, bufr_dupsst,
+   bufr_supertmi, prepobs_prepssmi, wave_dcodquikscat:
+    - continue to link to version 2.0.5 of W3EMC library
+   Source codes bufr_supertmi, prepobs_prepssmi, wave_dcodquikscat:
+    - continue to link to version 2.0.1 of BACIO library
+   Source code prepobs_prepssmi:
+    - continues to link to version 2.0.1 of SP library
 
 
  Preimplementation Testing Requirements:
@@ -301,8 +326,8 @@ files:
 
  Dissemination:
  --------------
-   See information about dissemination in the release notes for the obsproc
-   networks executing this version of obsproc_dump.
+   See information about dissemination in the release notes for
+   obsproc_<NETWORK> packages which execute this version of obsproc_dump.
 
 
  Special Instructions:
