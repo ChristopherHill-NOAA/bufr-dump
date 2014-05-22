@@ -6,10 +6,10 @@ bufr_ver=v10.2.5
 bacio_ver=v2.0.1
 sp_ver=v2.0.1
 
-export W3NCO_LIB4=/nwprod/lib/libw3nco_${w3nco_ver}_4.a
-export W3EMC_LIB4=/nwprod/lib/libw3emc_${w3emc_ver}_4.a
-export BUFR_LIB4=/nwprod/lib/libbufr_${bufr_ver}_4_64.a
-export BACIO_LIB4=/nwprod/lib/libbacio_${bacio_ver}_4.a
-export SP_LIB4=/nwprod/lib/libsp_${sp_ver}_4.a
+export W3NCO_LIB4=/nwprod/lib/w3nco/${w3nco_ver}/libw3nco_${w3nco_ver}_4.a
+export W3EMC_LIB4=/nwprod/lib/w3emc/${w3emc_ver}/libw3emc_${w3emc_ver}_4.a
+export BUFR_LIB4=/nwprod/lib/bufr/${bufr_ver}/libbufr_${bufr_ver}_4_64.a
+export BACIO_LIB4=/nwprod/lib/bacio/${bacio_ver}/libbacio_${bacio_ver}_4.a
+export SP_LIB4=/nwprod/lib/sp/${sp_ver}/libsp_${sp_ver}_4.a
 
 
