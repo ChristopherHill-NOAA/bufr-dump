@@ -81,6 +81,8 @@ files:
     - Increment the w3emc version from v2.0.5 to v2.2.0 in anticipation of the
       future implementation of the w3emc library upgrade released to NCO on May
       1, 2014.
+    - Updating setlibs.rc to keep in sync with changes made by NCO regarding
+      directory paths for various libraries.
    bufr_edtbfr:
     - Source changed to increase maximum number of time- and report type-
       relevant entries allowed in the SDMEDIT flag file from 1000 to 2000
