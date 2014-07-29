@@ -1,4 +1,129 @@
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+obsproc_dump release X.Y.Z --> released ??? ?, ????
+
+files:
+  obsproc_dump/fix/bufr_bufrtab.sptrmm
+  obsproc_dump/fix/bufr_bufrtab.windsat
+  obsproc_dump/fix/nam_expdomain_guam_halfdeg_imask.gbl
+  obsproc_dump/fix/nam_expdomain_halfdeg_imask.gbl
+  obsproc_dump/fix/wave_bufrtab.ascat
+  obsproc_dump/fix/wave_bufrtab.erscat
+  obsproc_dump/fix/wave_bufrtab.quikscat
+  obsproc_dump/fix/wave_landchxh
+  obsproc_dump/sorc/bufr_chkbfr.fd/chkbfr.f
+  obsproc_dump/sorc/bufr_chkbfr.fd/makefile
+  obsproc_dump/sorc/bufr_combfr.fd/combfr.f
+  obsproc_dump/sorc/bufr_combfr.fd/makefile
+  obsproc_dump/sorc/bufr_dcodwindsat.fd/dcodwindsat.f
+  obsproc_dump/sorc/bufr_dcodwindsat.fd/makefile
+  obsproc_dump/sorc/bufr_dumpmd.fd/dumpmd.f
+  obsproc_dump/sorc/bufr_dumpmd.fd/makefile
+  obsproc_dump/sorc/bufr_dupair.fd/dupair.f
+  obsproc_dump/sorc/bufr_dupair.fd/makefile
+  obsproc_dump/sorc/bufr_dupcor.fd/dupcor.f
+  obsproc_dump/sorc/bufr_dupcor.fd/makefile
+  obsproc_dump/sorc/bufr_dupmar.fd/dupmar.f
+  obsproc_dump/sorc/bufr_dupmar.fd/makefile
+  obsproc_dump/sorc/bufr_dupmrg.fd/dupmrg.f
+  obsproc_dump/sorc/bufr_dupmrg.fd/makefile
+  obsproc_dump/sorc/bufr_duprad.fd/duprad.f
+  obsproc_dump/sorc/bufr_duprad.fd/makefile
+  obsproc_dump/sorc/bufr_dupsat.fd/dupsat.f
+  obsproc_dump/sorc/bufr_dupsat.fd/makefile
+  obsproc_dump/sorc/bufr_dupshp.fd/dupshp.f
+  obsproc_dump/sorc/bufr_dupshp.fd/makefile
+  obsproc_dump/sorc/bufr_dupsst.fd/dupsst.f
+  obsproc_dump/sorc/bufr_dupsst.fd/makefile
+  obsproc_dump/sorc/bufr_edtbfr.fd/edtbfr.f
+  obsproc_dump/sorc/bufr_edtbfr.fd/makefile
+  obsproc_dump/sorc/bufr_geofil.fd/geofil.f
+  obsproc_dump/sorc/bufr_geofil.fd/makefile
+  obsproc_dump/sorc/bufr_quipc.fd/makefile
+  obsproc_dump/sorc/bufr_quipc.fd/quipc.f
+  obsproc_dump/sorc/bufr_raddate.fd/makefile
+  obsproc_dump/sorc/bufr_raddate.fd/raddate.f
+  obsproc_dump/sorc/bufr_supertmi.fd/makefile
+  obsproc_dump/sorc/bufr_supertmi.fd/supertmi.f
+  obsproc_dump/sorc/prepobs_prepssmi.fd/makefile
+  obsproc_dump/sorc/prepobs_prepssmi.fd/prepssmi.f
+  obsproc_dump/sorc/wave_dcodquikscat.fd/dcodquikscat.f
+  obsproc_dump/sorc/wave_dcodquikscat.fd/makefile
+  obsproc_dump/sorc/build.sh
+  obsproc_dump/sorc/clean.sh
+  obsproc_dump/sorc/install.sh
+  obsproc_dump/sorc/load_libs.rc
+  obsproc_dump/sorc/README.build
+  obsproc_dump/sorc/setlibs.rc
+  obsproc_dump/ush/bufr_dump_obs.sh
+  obsproc_dump/ush/check_tanks.sh
+ *obsproc_dump/ush/dumpjb
+
+( * - changed)
+
+
+ USH script changes:
+   dumpjb:
+    - Added option to append one or more additional BUFR type/subtypes (beyond
+      that defined in the bufr_dumplist fixed file) to a data group mnemonic or
+      a data group message type/subtype specified in the script parameters.
+      This is done via new imported environment variable $ADD_<DGRP>, where
+      DGRP is either the group mnemonic to dump or the BUFR message type
+      (depending upon how the dumpjb script parameters are setup).
+      BENEFIT:  Provides increased flexibility.  The bufr_dumplist file does
+                not have to be changed if additional BUFR type/subtypes need
+                to be added to a data group mnemonic for a particular network.
+    - Added option to override imported value for TANK for either an entire
+      data group mnemonic/BUFR message type {done via new imported environment
+      variable $TANK_<DGRP>, where DGRP is either the group mnemonic to dump or
+      the BUFR message type (depending upon how the dumpjb script parameters
+      are setup)}; or for a specific BUFR type/subtype within a data group
+      mnemonic or a data group message type/subtype specified in the script
+      parameters (done via new imported environment variable $TANK_<TTTSSS>,
+      where TTT is the BUFR message type and SSS is the BUFR message subtype).
+      BENEFIT:  Provides increased flexibility. Different data groups within a
+                dumpjb execution, or even different subtypes within a
+                particular data group, can be pulled from differnt tank
+                path locations.  Useful for checkout or even parallel runs.
+
+
+ Output changes:
+ ---------------
+   No changes.
+
+ Compute Resource Information:
+ -----------------------------
+   All source codes:
+    - continue to link to version 2.0.6 of w3nco library
+    - continue to link to version 10.2.5 of bufr library
+   Source codes bufr_dcodwindsat, bufr_dupair, bufr_dupcor, bufr_dupmar,
+   bufr_dupmrg, bufr_duprad, bufr_dupsat, bufr_dupshp, bufr_dupsst,
+   bufr_supertmi, prepobs_prepssmi, wave_dcodquikscat:
+    - continue to link to version 2.2.0 of w3emc library
+   Source codes bufr_supertmi, prepobs_prepssmi, wave_dcodquikscat:
+    - continue to link to version 2.0.1 of BACIO library
+   Source code prepobs_prepssmi:
+    - continues to link to version 2.0.1 of SP library
+
+
+ Preimplementation Testing Requirements:
+ ---------------------------------------
+   There are no jobs in obsproc_dump.  ??????????????????????
+
+
+ Dissemination:
+ --------------
+   See information about dissemination in the latest release notes for
+   obsproc_<NETWORK> packages which execute this version of obsproc_dump.
+
+
+ Special Instructions:
+ ---------------------
+   ??????????????????????????
+
+   Since there are no jobs in obsproc_dump, an obsproc_dump.ver file is not
+   needed.
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 obsproc_dump release 3.1.0 --> released May 5, 2014
 
 files:
@@ -120,7 +245,7 @@ files:
 
  Dissemination:
  --------------
-   See information about dissemination in the release notes for
+   See information about dissemination in the latest release notes for
    obsproc_<NETWORK> packages which execute this version of obsproc_dump.
 
 
@@ -328,7 +453,7 @@ files:
 
  Dissemination:
  --------------
-   See information about dissemination in the release notes for
+   See information about dissemination in the latest release notes for
    obsproc_<NETWORK> packages which execute this version of obsproc_dump.
 
 

@@ -5,27 +5,30 @@
 #
 # Script name:   dumpjb      Dump script to get data from BUFR tanks
 #
-# RFC contact:  Keyser      Org: NP22        Date: 2014-03-16
+# RFC contact:  Keyser      Org: NP22        Date: 2014-06-24
 #
-# Abstract: The dumpjb script is an all-purpose dump utility for
-#   time windowing, geographical filtering, eliminating duplicates,
-#   and applying corrections to, BUFR observation database tank data.
-#   The script is driven by script parameters which specify the time
-#   window and the list of data to dump.  Data to dump is indicated by
-#   mnemonic references to individual data types and/or groups of data
-#   types.  Several imported script variables determine other
-#   characteristics of the dump, such as geographical filtering, more
-#   selective time windowing, skipping over specific subtypes, and the
-#   final presentation and form of the dumped datasets. Each data group
-#   requested as a parameter, generates one or more process threads
-#   which each dump one data type.  The script is setup so all the
-#   process threads from all the data groups can be either: run in
-#   parallel under poe thus allowing threads to run across nodes; spun
-#   off into background shells to execute in parallel processors on the
-#   same node; or run serially.  Note that running under background
-#   shells will require greater memory as more shells are added.
-#   Something to keep in mind if a job slows down due to page faults
-#   resulting from a lack of memory when executing in parallel.
+# Abstract: The dumpjb script is an all-purpose dump utility for time
+#   windowing, geographical filtering, eliminating duplicates, and applying
+#   corrections to, BUFR observation database tank data.  The script is driven
+#   by script parameters which specify the time window and the list of data to
+#   dump.  Data to dump is indicated by either mnemonic references to one or
+#   more individual data types and/or groups of data types (where a data type
+#   is defined as a sequence of one or more BUFR message types/subtypes), or by
+#   a single BUFR message type, optionally followed by one or more BUFR message
+#   subtypes for the BUFR message type.  Several imported script variables
+#   determine other characteristics of the dump, such as geographical
+#   filtering, more selective time windowing, skipping over specific BUFR
+#   message type/subtypes, adding BUFR message type/subtypes, choosing the path
+#   to the database tanks based on the data type, and the final presentation
+#   and form of the dumped datasets.  Each data group requested as a parameter,
+#   generates one or more process threads which each dump one data type.  The
+#   script is setup so all the process threads from all the data groups can be
+#   either: run in parallel under poe thus allowing threads to run across
+#   nodes; spun off into background shells to execute in parallel processors on
+#   the same node; or run serially.  Note that running under background shells
+#   will require greater memory as more shells are added (something to keep in
+#   mind if a job slows down due to page faults resulting from a lack of memory
+#   when executing in parallel).
 #
 # Script history log:
 # 1996-09-25  J. Woollen  Original version for implementation
@@ -273,45 +276,110 @@
 #     to /gpfstmp and /nfstmp which had been used on systems since retired.
 # 2014-03-16  D. Stokes  Remove default TMPDIR setting.  Script will fail with
 #     status 99 if TMPDIR is referenced but not imported.
+# 2014-06-24  D. Keyser  Added option to append one or more additional BUFR
+#     type/subtypes (beyond that defined in the bufr_dumplist fixed file) to a
+#     data group mnemonic or a data group message type/subtype specified in the
+#     script parameters.  This is done via new imported environment variable
+#     $ADD_<DGRP>, where DGRP is either the group mnemonic to dump or the BUFR
+#     message type (depending upon how the dumpjb script parameters are setup).
+#     Added option to override imported value for TANK for either an entire
+#     data group mnemonic/BUFR message type {done via new imported environment
+#     variable $TANK_<DGRP>, where DGRP is either the group mnemonic to dump or
+#     the BUFR message type (depending upon how the dumpjb script parameters
+#     are setup)}; or for a specific BUFR type/subtype within a data group
+#     mnemonic or a data group message type/subtype specified in the script
+#     parameters (done via new imported environment variable $TANK_<TTTSSS>,
+#     where TTT is the BUFR message type and SSS is the BUFR message subtype). 
 #
 #
 # Usage: dumpjb  yyyymmddhh<.hh> hh<.hh> dgrp1 dgrp2 dgrp3 ... dgrpN
 #
 #   Script parameters:
 #     yyyymmddhh<.hh> - center of time window for dump
-#     hh<.hh>         - radius of time window for dump
+#
+#     hh<.hh>         - radius of time window for dump (i.e., the dump time
+#                       window would be hh<.hh> hours PRIOR to yyyymmddhh<.hh>
+#                       through hh<.hh> hours AFTER yyyymmddhh<.hh>)
 #                        (NOTE: This can be overidden for any individual BUFR
 #                                type/subtype in the list - see variables
-#                                "DTIM_earliest_TTTSSS" and
-#                                "DTIM_latest_TTTSSS" below
+#                                "DTIM_earliest_<TTTSSS>" and
+#                                "DTIM_latest_<TTTSSS>" below
 #                                        -- or --
 #                               this can be overidden for any individual data
 #                                group in the list - see variables
-#                                "DTIM_earliest_DGRP" and "DTIM_latest_DGRP"
-#                                below)
+#                                "DTIM_earliest_<DGRP>" and
+#                                "DTIM_latest_<DGRP>" below)
+#
 #     dgrp1           - data group 1 - see %% below
 #     dgrp2           - data group 2
 #     dgrp3           - data group 3
 #     ...            ...
 #     dgrpN           - data group N
-#                        (NOTE: A particular BUFR type/subtype in this list of
-#                                data groups can be skipped over - see
-#                                variable "SKIP_TTTSSS" below)
-#
-#
-#
-#   %% - Data Groups by Message Type/Subtype
-#   ----------------------------------------
-#   View dump script parameter file valid for this execution of dumpjb
-#   ($LIST as imported or set here) for current list of valid data
-#   group names (in both mnemonic and message type form) and their
-#   descriptions.
 #
 #-----------------------------------------------------------------------
-#   NOTE: If the third argument is a message type (000,001,...), the
-#         arguments following (if any) are interpreted as message
-#         subtypes. This maintains compatibility for users of earlier
-#         versions of dumpjb.
+#   %%
+#      - When data groups dgrp1, dgrp2, dgrp3, ... , dgrpN are denoted as N
+#        different mnemonics, each represents either a single BUFR message
+#        type/subtype that is to be dumped or a sequence of multiple BUFR
+#        message types/subtypes that are to be dumped, as defined in the
+#        bufr_dumplist fixed file ($LIST).  A mnemonic can be any alphanumberic
+#        string up to 6 characters in length with the exception of 3-character
+#        numeric strings. (See $LIST for the current valid list of mnemonics.)
+#           Examples:
+#                dgrp1 = synop
+#                      (defined as a single BUFR type/subtype 000/001, dump
+#                       only this type)
+#                dgrp2 = adpupa
+#                      (defined as a sequence of BUFR types/subtypes 002/001,
+#                       002/002, 002/003, 002/004, 002/005 and 004/005, dump
+#                       all of these types/subtypes)
+#                dgrp3 = vsnds
+#                      (defined as a sequence of BUFR types/subtypes 003/001,
+#                       003/002, 003/003, 003/010, 003/101, 003/102 and
+#                       003/104, dump all of these types/subtypes)
+#
+#        This will be referred to as the "data group mnemonic" case from here
+#        on.
+#        (See $LIST for the current valid list of mnemonics.)
+#
+#      - When data group dgrp1 is denoted as a 3-character numeric string and
+#        there is only one data group (i.e., dgrpN = dgrp1), dgrp1 represents a
+#        BUFR message type as defined in the bufr_dumplist fixed file ($LIST).
+#        In this case, all BUFR message subtypes in dgrp1 will be dumped.
+#           Example:
+#                dgrpN = dgrp1 = 001
+#                      (dump all BUFR subtypes in BUFR type 001; i.e.,
+#                       subtypes 001, 002, 003, 004, 005, 006, 007, 008, 009,
+#                       010, 011, 012 and 013)
+#
+#        This likewise will be referred to as the "data group mnemonic" case
+#        from here on.
+#        (See $LIST for the current valid list of mnemonics.)
+#
+#      - When data group dgrp1 is denoted as a 3-character numeric string and
+#        there is more than one data group (i.e., dgrpN > dgrp1), dgrp1
+#        represents a BUFR message type as defined in the bufr_dumplist fixed
+#        file ($LIST) and dgrp2, ... , dgrpN represent the N-1 BUFR message
+#        subtypes in BUFR message type dgrp1 that will be dumped.  No other
+#        BUFR message subtypes in dgrp1 will be considered in this situation.
+#           Example:
+#                dgrp1 = 001
+#                dgrp2 = 003
+#                dgrp3 = 010
+#                dgrpN = dgrp4 = 013
+#                      (dump only the following BUFR subtypes in BUFR type 001:
+#                       subtypes 003, 010 and 013)
+#
+#        This will be referred to as the "data group message type/subtype" case
+#        from here on.
+#
+#     The data group mnemonic case is most commonly used.
+#
+#     {NOTE1: A particular BUFR type/subtype in the resultant list to be dumped
+#             can be skipped over via variable "SKIP_<TTTSSS>" (see below)}
+#     {NOTE2: One or more BUFR types/subtypes not in the resultant list to be
+#             dumped can be added via variable "ADD_<DGRP<" (see below)}
+#
 #-----------------------------------------------------------------------
 #
 #   Modules and files referenced:
@@ -438,77 +506,177 @@
 #   CHKX   -  path to CHKBFR executable             (default:$DUEX/bufr_chkbfr)
 #   COMX   -  path to COMBFR executable             (default:$DUEX/bufr_combfr)
 #   LALO   -  geographical data filter              (default:0  (off))
-#   DTIM_earliest_TTTSSS (where TTT is BUFR data type and SSS is BUFR data
-#    subtype in the list to dump, either specified explicitly or contained in
-#    one of the data groups) - if this string exists for a particular BUFR
-#    type/subtype, then it will use this as the offset value (in hh<.hh>) from
-#    the center time specified in the first script positional parameter to
-#    obtain the earliest report time in the output dump.  A negative value
-#    means prior to the center time and a positive value means after the center
-#    time.  {If this does not exist for this BUFR type/subtype then the default
+#
+#   DTIM_earliest_<TTTSSS> - if BUFR message type TTT, subtype SSS is in the
+#    resultant list to be dumped (for either the data group mnemonic or data
+#    group message type/subtype case), then it will use this as the offset
+#    value (in hh<.hh>) from the center time specified in the first script
+#    positional parameter to obtain the earliest report time in the output
+#    dump.  A negative value means prior to the center time and a positive
+#    value means after the center time.  {If DTIM_earliest_<TTTSSS> does not
+#    exist for a particular BUFR type/subtype in the list to be dumped, then
+#    the default time window radius value, passed in via the second script
+#    positional parameter (see above), is used.}
+#    Example:
+#                  export DTIM_earliest_000007=-2.1
+#                  dumpjb 2014062312 1.5 adpsfc
+#
+#               Here, for METAR reports (000007) in the "adpsfc" dump, the
+#               earliest reports dumped will be 2.1 hours PRIOR to the center
+#               time (2014062312) and the latest reports dumped will be the
+#               "default" 1.5 hours after the center time. All other BUFR
+#               types/subtypes currently defined under the data group adpsfc in
+#               $LIST will be dumped using the default time window of 1.5 hours
+#               prior to the center time (earliest) to 1.5 hours after the
+#               center time (latest).
+#
+#   DTIM_latest_<TTTSSS> - if BUFR message type TTT, subtype SSS is in the
+#    resultant list to be dumped (for either the data group mnemonic or data
+#    group message type/subtype case), then it will use this as the offset
+#    value (in hh<.hh>) from the center time specified in the first script
+#    positional parameter to obtain the latest report time in the output dump.
+#    A negative value means prior to the center time and a positive value means
+#    after the center time.  {If DTIM_latest_<TTTSSS> does not exist for a
+#    particular BUFR type/subtype in the list to be dumped, then the default
 #    time window radius value, passed in via the second script positional
-#    parameter (see above) is used.}
-#    Example: DTIM_earliest_000007=-2.1 means that for METAR data, the earliest
-#             reports dumped will be 2.1 hours PRIOR to the center time.
-#             DTIM_earliest_001001=0.25 means that for ship data, the earliest
-#             reports dumped will be 0.25 hours AFTER the center time.
-#   DTIM_latest_TTTSSS (where TTT is BUFR data type and SSS is BUFR data
-#    subtype in the list to dump, either specified explicitly or contained in
-#    one of the data groups) - if this string exists for a particular BUFR
-#    type/subtype, then it will use this as the offset value (in hh<.hh>) from
-#    the center time specified in the first script positional parameter to
-#    obtain the latest report time in the output dump.  A negative value means
-#    prior to the center time and a positive value means after the center time.
-#    {If this does not exist for this BUFR type/subtype then the default time
-#    window radius value, passed in via the second script positional parameter
-#    (see above) is used.}
-#    Example: DTIM_latest_004004=0.5 means that for ACARS data, the latest
-#             reports dumped will be 0.5 hours AFTER to the center time.
-#             DTIM_latest_002007=-1 means that for wind profiler data, the
-#             latest reports dumped will be 1.0 hour PRIOR to the center time.
-#   DTIM_earliest_DGRP (where DGRP is a data group in the list to dump,
-#    specified explicitly) - works like DTIM_earliest_TTTSSS defined above,
-#    except all BUFR types and subtypes in the specified data group are
-#    affected.
-#    Example: DTIM_earliest_adpupa=-2.1 means that for all BUFR types/subtypes
-#             currently defined under the data group "adpupa", the earliest
-#             reports dumped will be 2.1 hours PRIOR to the center time.
-#   DTIM_latest_DGRP (where DGRP is a data group in the list to dump, specified
-#    explicitly) - works like DTIM_latest_TTTSSS defined above, except all BUFR
-#    types and subtypes in the specified data group are affected.
-#    Example: DTIM_latest_satwnd=0.5 means that for all BUFR types/subtypes
-#             currently defined under the data group "satwnd", the latest
-#             reports dumped will be 0.5 hours AFTER to the center time.
-#    (NOTE1: For the pair DTIM_earliest_TTTSSS and DTIM_latest_TTTSSS or for
-#            the pair DTIM_earliest_DGRP and DTIM_latest_DGRP, if one is
-#            specified but not the other, the default time window radius is
-#            then used for the one not specified.  The time window radius is
-#            always PRIOR to the center time for the earliest report time in
-#            the dump and AFTER the center time for the latest report time in
-#            the dump.  The value is always positive.)
-#    (NOTE2: For the pair pair DTIM_earliest_TTTSSS and DTIM_earliest_DGRP or
-#            for the pair DTIM_latest_TTTSSS and DTIM_latest_DGRP, the
-#            value specified in DTIM_*_DGRP always takes precedence.
-#    (NOTE3: This script with exit with condition code 99 if the calculated
+#    parameter (see above), is used.}
+#    Example:
+#                  export DTIM_latest_002007=-1
+#                  dumpjb 2014062306 2.5 proflr
+#
+#               Here, for NPN wind profiler reports (002007) in the "proflr"
+#               dump, the latest reports dumped will be 1.0 hours PRIOR to the
+#               center time (2014062306) and the earliest reports dumped will
+#               be the "default" 2.5 hours prior to the center time. All other
+#               BUFR types/subtypes currently defined under the data group
+#               proflr in $LIST will be dumped using the default time window of
+#               2.5 hours prior to the center time (earliest) to 2.5 hours
+#               after the center time (latest).
+#
+#   DTIM_earliest_<DGRP> - if DGRP is a data group in the list to dump (data
+#    group mnemonic case) or is a BUFR message type (data group mnemonic or
+#    data group message type/subtype case), then works like
+#    DTIM_earliest_<TTTSSS> defined above, except all BUFR message types and
+#    subtypes in the resultant list to be dumped are affected.
+#    Example:
+#                  export DTIM_earliest_adpupa=-2.1
+#                  dumpjb 2014062312 1.5 adpsfc
+#
+#               Here, for all BUFR types/subtypes currently defined under the
+#               data group adpupa in $LIST, the earliest reports dumped will be
+#               2.1 hours PRIOR to the center time (2014062312) and the latest
+#               reports dumped will be the "default" 1.5 hours after the center
+#               time.
+#
+#   DTIM_latest_<DGRP> - if DGRP is a data group in the list to dump (data
+#    group mnemonic case) or is a BUFR message type (data group mnemonic or
+#    data group message type/subtype case), then works like
+#    DTIM_latest_<TTTSSS> defined above, except all BUFR  message types and
+#    subtypes in the resultant list to be dumped are affected.
+#    Example:
+#                  export DTIM_latest_satwnd=0.5
+#                  dumpjb 2014062312 3.0 satwnd
+#
+#               Here, for all BUFR types/subtypes currently defined under the
+#               data group satwnd in $LIST, the latest reports dumped will be
+#               0,5 hours AFTER the center time (2014062312) and the earliest
+#               reports dumped will be the "default" 3.0 hours prior to the
+#               center time.
+#
+#    (NOTE1: For the pair DTIM_earliest_<TTTSSS> and DTIM_earliest_<DGRP> or
+#            for the pair DTIM_latest_<TTTSSS> and DTIM_latest_<DGRP>, the
+#            value specified in DTIM_*_<DGRP> always takes precedence.)
+#    (NOTE2: This script will exit with condition code 99 if the calculated
 #            earliest report time is LATER than the calculated latest report
 #            time.)
-#   SKIP_TTTSSS (where TTT is BUFR data type and SSS is BUFR data subtype in
-#    the list to dump, either specified explicitly or contained in one of the
-#    data groups) - if the length of this string is non-zero for a particular
-#    BUFR type/subtype (regardless of its contents), then this BUFR
-#    type/subtype will not be processed.  All other BUFR types/subtypes in the
-#    same data group or in other data groups listed in the script parameters
-#    will be processed (unless of course this variable is set to skip them)
-#    Example: If SKIP_000007 is of non-zero length (i.e., it was set to some
-#             value and exported by the parent script), then METAR data
-#             are not processed (even if data group "adpupa" is contained
-#             in the script parameters).
-#   TANK   -  directory path to database         (default:${DCOMROOT}/us007003)
+#
+#   SKIP_<TTTSSS> - if BUFR message type TTT, subtype SSS is in the resultant
+#    list to be dumped (for either the data group mnemonic or data group
+#    message type/subtype case), and SKIP_<TTTSSS> is of length 1 or greater
+#    (regardless of its value), this type/subtype will be skipped (i.e., not
+#    dumped).  (If SKIP_<TTTSSS> does not exist for a particular BUFR type/
+#    subtype in the list to be dumped, then this type/subtype will be dumped.)
+#    Example:
+#                  export SKIP_000007=YES
+#                  dumpjb 2014062312 1.5 adpsfc
+#
+#               Here, METAR reports (000007) are not processed as part of the
+#               "adpsfc" dump even though they are included in the subtypes
+#               defined for adpsfc in $LIST.
+#
+#   ADD_<DGRP>
+#            - if DGRP is a data group in the list to dump (data group mnemonic
+#    case) or is a BUFR message type (data group mnemonic case), then the
+@    contents of ADD_<DGRP> are interpreted as a sequence of individual BUFR
+#    message type (TTT) and subtype (SSS) strings in the form TTTSSS (separated
+#    by white space) which are appended to those originally defined for DGRP in
+#    the bufr_dumplist fixed file ($LIST). These additional BUFR message types/
+#    subtypes will be dumped as part of DGRP.
+#    Example 1:
+#                  export ADD_satwnd="005019 005080"
+#                  dumpjb 2014062312 1.5 satwnd
+#
+#               Here, GOES shortwave 3.9 micron winds (005019) and AVHRR POES
+#               IR winds (005080) will be included in the "satwnd" dump along
+#               with all of the subtypes defined for satwnd in $LIST.
+#    Example 2:
+#                  export ADD_002=002195
+#                  dumpjb 2014062318 3.0 002
+#
+#               Here, BUFR message type 002, subtype 195 (which currently is
+#               not defined in $LIST but might be defined for a test BUFR tank)
+#               will be included in the "005" dump along with all of the
+#               subtypes defined for type 005 in $LIST.  (Since all operational
+#               subtypes are defined in $LIST, this would only be plausible
+#               when pointing to a test BUFR tank.)
+#
+#            - if DGRP is a BUFR message type (data group message type/subtype
+#    case), then the contents of ADD_<DGRP> are interpreted as a sequence of
+#    individual BUFR message subtype (SSS) strings in the form SSS (separated
+#    by white space) which are dumped in addition to those originally in the
+#    resultant dump list for the applicable BUFR message type.
+#    Example:
+#                  export ADD_005="070 071"
+#                  dumpjb 2014062312 1.5 005 010 012
+#
+#               Here, BUFR message type 005, subtypes 070 (MODIS POES IR winds)
+#               and 071 (MODIS POES WV imager winds) will be included in the
+#               "005" dump along with specified subtypes 010 (GOES IR winds)
+#               and 012 (GOES visible winds).  (Since all subtypes wanted are
+#               already explicitly defined in dgrp2, ... , dgrpN in this case,
+#               this use of ADD_<DGRP> doesn't seem to ever be plausible.
+#
+#   DCOMROOT - default root directory path to $TANK, $EPRM and $QPRM
+#                                                                (default:/dcom)
+#
+#   TANK   -  directory path to database          (default:${DCOMROOT}/us007003)
+#                        (NOTE: This can be overidden for any individual BUFR
+#                                type/subtype in the list - see variable
+#                                "TANK_<TTTSSS>" below
+#                                        -- or --
+#                               this can be overidden for any individual data
+#                                group in the list - see variable
+#                                "TANK_<DGRP>" below)
+#
+#   TANK_<TTTSSS> - if BUFR message type TTT, subtype SSS is in the resultant
+#    list to be dumped (for either the data group mnemonic or data group
+#    message type/subtype case), then it will use this as the directory path to
+#    the database.  {If TANK_<TTTSSS> does not exist for a particular BUFR
+#    type/subtype in the list to be dumped, then the default  directory path to
+#    the database, imported via the environment variable $TANK, (see above), is
+#    used.}
+#
+#   TANK_<DGRP> - if DGRP is a data group in the list to dump (data group
+#    mnemonic case) or is a BUFR message type (data group mnemonic or data
+#    group message type/subtype case), then works like TANK_<TTTSSS> defined
+#    above, except all BUFR message types and subtypes in the resultant list to
+#    be dumped are affected.
+#
 #   DATA   -  directory path to user data destination              (default:pwd)
 #   EPRM   -  directory path/filename of edtbfr sdmedit/reject/list file
-#                                        (default:${DCOMROOT}/us007003/sdmedit)
+#                                         (default:${DCOMROOT}/us007003/sdmedit)
 #   QPRM   -  directory path/filename of QUIPS flag file
-#                                         (default:${DCOMROOT}/us007003/quips)
+#                                           (default:${DCOMROOT}/us007003/quips)
 #   MPMD   -  directory path/filename of mpmd utility script that
 #              executes poe                   (default:/nwprod/util/ush/mpmd.sh)
 #   FORM   -  if != copy, the suffix qualifier for database dump files in
@@ -672,7 +840,7 @@ echo
 echo "********************************************************************"
 echo "********************************************************************"
 echo "     STARTING EXECUTION OF THE UNIVERSAL DUMP SCRIPT - DUMPJB       "
-echo "                            03-16-2014                              "
+echo "                            06-24-2014                              "
 echo "             Start time: `date -u`                                  "
 echo "********************************************************************"
 echo "********************************************************************"
@@ -959,6 +1127,7 @@ DATDAY1_orig=$DATDAY1
 DATDAY2_orig=$DATDAY2
 DATMON1_orig=$DATMON1
 DATMON2_orig=$DATMON2
+TANK_orig=$TANK
 
 
 #  setup process lists based on the nature of the arguments
@@ -969,12 +1138,16 @@ TYPE=`grep "_$NAMES " $LIST|cut -c 12-14`
 [ "$TYPE" = mgt -a $# -gt 3 ] && SUBS="" || TYPE=nem
  
 if [ $TYPE = mgt ]; then
+# data group message type/subtype case
+# ------------------------------------
    while [ -n "$4" ]
    do
    SUBS="$SUBS $4"
    shift
    done
 else
+# data group mnemonic case
+# ------------------------
    while [ -n "$4" ]
    do
    NAMES="$NAMES $4"
@@ -1012,14 +1185,36 @@ cd $DIRD
 #  ----------------------------------------------------------------------
  
 if [ $TYPE = mgt ]; then
+# data group message type/subtype case
+# ------------------------------------
+   eval ADD_name=\$ADD_$NAME
+   if [ -n "$ADD_name" ]; then
+      for ADDsub in $ADD_name; do
+        if [ `echo $SUBS | grep -c $ADDsub` -eq 0 ]; then
+          SUBS="$SUBS $ADDsub"
+        fi
+     done
+   fi
    MTST=""
-   for SUB in $SUBS
-   do
-   MTST="$MTST $NAME$SUB"
+   for SUB in $SUBS;do
+      MTST="$MTST $NAME$SUB"
    done
 else
+# data group mnemonic case
+# ------------------------
    >$LINE
    grep "_$NAME " $LIST>$LINE
+   eval ADD_name=\$ADD_$NAME
+   if [ -n "$ADD_name" ]; then
+      for ADDsub in $ADD_name; do
+         if [ `grep -c -w $ADDsub $LINE` -eq 0 ]; then
+            mv $LINE ${LINE}beg
+            echo $ADDsub > ${LINE}end
+            paste -d" " ${LINE}beg ${LINE}end > $LINE
+            rm ${LINE}beg ${LINE}end
+         fi
+      done
+   fi
    [ -s $LINE ] && MTST="`cat $LINE|cut -c 16-500|cut -f 1 -d#`"
    if [ ! -s $LINE ]; then
       echo
@@ -1037,6 +1232,15 @@ nindx_override=0
 nindx_original=0
 mindx_override=0
 mindx_original=0
+
+
+#  see if directory path to dbase is overriden for all types/subtypes in $NAME
+#  ---------------------------------------------------------------------------
+
+TANK=$TANK_orig
+TANK_this_DGRP=no
+eval TANK_this=\$TANK_${NAME}
+[ -n "$TANK_this" ] &&  TANK_this_DGRP=yes
 
 
 #  see if time window radius is overriden for all types/subtypes in $NAME
@@ -1077,6 +1281,14 @@ pos=`expr $pos + 1`
 thread=$mt.$st.sh
 >$thread
 [ $LOUD = on ]  &&  echo " thread name is $thread"
+
+
+#  see if directory path to database is overriden for this type/subtype
+#  --------------------------------------------------------------------
+
+TANK=$TANK_orig
+[ $TANK_this_DGRP != yes ] && eval TANK_this=\$TANK_$mtst
+[ ! -z "$TANK_this" ] && TANK=$TANK_this
 
 
 #  see if time window radius is overriden for this type/subtype
@@ -1618,6 +1830,8 @@ cat *.out
  } > $DATA/$NAME.out 2>/dev/null
 
 if [ $TYPE = nem ]; then
+# data group mnemonic case
+# ------------------------
    >$LINE
    grep "_$NAME " $LIST>$LINE
    if [ ! -s $LINE ]; then
