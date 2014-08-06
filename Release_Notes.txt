@@ -1,5 +1,5 @@
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-obsproc_dump release X.Y.Z --> released ??? ?, ????
+obsproc_dump release 3.2.0 --> released Aug 6, 2014
 
 files:
   obsproc_dump/fix/bufr_bufrtab.sptrmm
@@ -107,7 +107,9 @@ files:
 
  Preimplementation Testing Requirements:
  ---------------------------------------
-   There are no jobs in obsproc_dump.  ??????????????????????
+   There are no jobs in obsproc_dump.  Recommend a couple of single DUMP job
+   tests in para, e.g., JNAM_DUMP and JGFS_DUMP). Also, this will be tested in
+   the GFS 2014 Upgrade 30-day evaluation.
 
 
  Dissemination:
@@ -118,7 +120,10 @@ files:
 
  Special Instructions:
  ---------------------
-   ??????????????????????????
+   This implementation does not depend upon any other implementations.  It can
+   be implemented any time prior to (preferred), or concurrent with, the
+   OBSPROC FY14Q4 bundle. It is being released now so it can be included in
+   the evaluation phase of the FY2015Q1 GFS upgrade.
 
    Since there are no jobs in obsproc_dump, an obsproc_dump.ver file is not
    needed.
