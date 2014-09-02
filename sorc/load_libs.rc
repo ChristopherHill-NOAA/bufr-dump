@@ -1,14 +1,11 @@
 
-module use -a /nwprod/lib/modulefiles 
-module avail
-
 #  this will only work well if all codes in package need same version of each lib below
 
 w3nco_ver=v2.0.6
 bufr_ver=v10.2.5
 w3emc_ver=v2.2.0
 bacio_ver=v2.0.1
-sp_ver=v2.0.1
+sp_ver=v2.0.2
 
 module load w3nco/$w3nco_ver
 module load bufr/$bufr_ver

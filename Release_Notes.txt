@@ -51,9 +51,9 @@ files:
   obsproc_dump/sorc/build.sh
   obsproc_dump/sorc/clean.sh
   obsproc_dump/sorc/install.sh
-  obsproc_dump/sorc/load_libs.rc
+ *obsproc_dump/sorc/load_libs.rc
   obsproc_dump/sorc/README.build
-  obsproc_dump/sorc/setlibs.rc
+ *obsproc_dump/sorc/setlibs.rc
   obsproc_dump/ush/bufr_dump_obs.sh
   obsproc_dump/ush/check_tanks.sh
  *obsproc_dump/ush/dumpjb
@@ -85,6 +85,15 @@ files:
                 particular data group, can be pulled from differnt tank
                 path locations.  Useful for checkout or even parallel runs.
 
+ Source code changes:
+   load_libs.rc and setlibs.rc in sorc directory:
+    - Increment the sp version from v2.0.1 to v2.0.2 to link to the newest
+      operational version of this library.
+   load_libs.rc in sorc directory:
+    - remove "module use -a /nwprod/lib/modulefiles" and 
+             "module avail"
+      BENEFIT: No longer needed and can slow down compilation.
+
 
  Output changes:
  ---------------
@@ -102,7 +111,8 @@ files:
    Source codes bufr_supertmi, prepobs_prepssmi, wave_dcodquikscat:
     - continue to link to version 2.0.1 of BACIO library
    Source code prepobs_prepssmi:
-    - continues to link to version 2.0.1 of SP library
+    - now links to version 2.0.2 of sp library (previously linked to
+      version 2.0.1)
 
 
  Preimplementation Testing Requirements:
@@ -130,6 +140,7 @@ files:
 
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 obsproc_dump release 3.1.0 --> released May 5, 2014
+                           --> implemented Jun 24, 2014
 
 files:
   obsproc_dump/fix/bufr_bufrtab.sptrmm
@@ -271,6 +282,7 @@ files:
 
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 obsproc_dump release 3.0.0 --> released Feb 8, 2014
+                           --> implemented Apr 8, 2014
 
 Initial population of vertical structure.
 
