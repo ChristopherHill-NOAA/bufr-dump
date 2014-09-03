@@ -1978,8 +1978,20 @@ echo "             Get pressure grib file valid at center dump time"
 echo "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
             echo
             set -x
-            /nwprod/util/ush/getges.sh -t pgbcur -v $cendat pgrb
-            err1=$?
+# DAK: 9/3/14: The below will no longer work after the next GFS upgrade due to
+#      planned changes to getges.sh and the naming conventions used for pressure grib
+#      files. Will comment out and print a diagnostic. (This logic is no longer
+#      executed in production since there are no ERS data sources.)
+######      /nwprod/util/ush/getges.sh -t pgbcur -v $cendat pgrb
+######      err1=$?
+            set +x
+            echo
+            echo "===> Cannot obtain pressure grib file valid at center dump \
+time due to planned changes to getges.sh and the naming conventions used"
+            echo "     for pressure grib files in fall 2014."
+            echo
+            set -x
+            err1=99
             set +x
             echo
 echo "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"

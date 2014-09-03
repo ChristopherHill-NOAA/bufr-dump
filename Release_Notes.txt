@@ -1,5 +1,5 @@
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-obsproc_dump release 3.2.0 --> released Aug 6, 2014
+obsproc_dump release 3.2.0 --> released Aug 6, 2014, released ...
 
 files:
   obsproc_dump/fix/bufr_bufrtab.sptrmm
@@ -54,7 +54,7 @@ files:
  *obsproc_dump/sorc/load_libs.rc
   obsproc_dump/sorc/README.build
  *obsproc_dump/sorc/setlibs.rc
-  obsproc_dump/ush/bufr_dump_obs.sh
+ *obsproc_dump/ush/bufr_dump_obs.sh
   obsproc_dump/ush/check_tanks.sh
  *obsproc_dump/ush/dumpjb
 
@@ -84,6 +84,19 @@ files:
                 dumpjb execution, or even different subtypes within a
                 particular data group, can be pulled from differnt tank
                 path locations.  Useful for checkout or even parallel runs.
+   bufr_dump_obs.sh
+    - The execution of "/nwprod/util/ush/getges.sh -t pgbcur -v $cendat pgrb"
+      in the logic that handles ERS scatterometer data processing is commented
+      out and the condition code from this execution is hardwired to 99
+      (failure). It is replaced by a diagnotic print indicating that the
+      pressure grib file cannot be obtained due to planned changes to getges.sh
+      and the naming conventions used for these files after the GFS upgrade in
+      the fall of 2014.
+      BENEFIT: This getges execution will not show up in any NCO/PMB listing of
+               incorrect getges executions after the next GFS upgrade. A hard
+               failure will now occur if this logic is executed.  Note that
+               this logic is not executed in production since ERS scatterometer
+               data have not been available for many years.
 
  Source code changes:
    load_libs.rc and setlibs.rc in sorc directory:
