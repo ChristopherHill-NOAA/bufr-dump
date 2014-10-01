@@ -113,20 +113,19 @@ files:
    No changes.
 
 
- Compute Resource Information:
- -----------------------------
-   All source codes:
-    - continue to link to version 2.0.6 of w3nco library
-    - continue to link to version 10.2.5 of bufr library
-   Source codes bufr_dcodwindsat, bufr_dupair, bufr_dupcor, bufr_dupmar,
-   bufr_dupmrg, bufr_duprad, bufr_dupsat, bufr_dupshp, bufr_dupsst,
-   bufr_supertmi, prepobs_prepssmi, wave_dcodquikscat:
-    - continue to link to version 2.2.0 of w3emc library
-   Source codes bufr_supertmi, prepobs_prepssmi, wave_dcodquikscat:
-    - continue to link to version 2.0.1 of BACIO library
-   Source code prepobs_prepssmi:
-    - now links to version 2.0.2 of sp library (previously linked to
-      version 2.0.1)
+ Shared Software:
+ ----------------
+    - All source codes:
+         link to version 2.0.6 of w3nco library
+         link to version 10.2.5 of bufr library
+    - Source codes bufr_dcodwindsat, bufr_dupair, bufr_dupcor, bufr_dupmar,
+      bufr_dupmrg, bufr_duprad, bufr_dupsat, bufr_dupshp, bufr_dupsst,
+      bufr_supertmi, prepobs_prepssmi, wave_dcodquikscat:
+         link to version 2.2.0 of w3emc library
+    - Source codes bufr_supertmi, prepobs_prepssmi, wave_dcodquikscat:
+         link to version 2.0.1 of BACIO library
+    - Source code prepobs_prepssmi:
+         links to version 2.0.2 of sp library (previously version 2.0.1)
 
 
  Preimplementation Testing Requirements:
@@ -146,12 +145,16 @@ files:
 
  Special Instructions:
  ---------------------
-   This must be implemented simultaneously with the implementations of
-   obsproc_dump_monitor.v1.2.1, obsproc_nam.v2.0.2, obsproc_rap.v2.0.2,
-   obsproc_rtma.v2.0.2, obsproc_urma.v2.0.2, obsproc_satingest.v2.3.0,
-   obsproc_prep.v3.2.0, obsproc_prep_post.v2.0.1, obsproc_dump_alert.v1.0.0,
-   obsproc_shared/bufr_avgdata.v1.0.1, radar_reflectivity_mosaic.v1.0.0 and
-   radar_reflectivity_ref2grb.v1.0.0.
+   This must be implemented simultaneously with the implementations of:
+      v1.2.1 of obsproc_dump_monitor,
+      v2.0.2 of obsproc_global, obsproc_nam, obsproc_rap, obsproc_rtma,
+      v2.0.2 of obsproc_urma,
+      v2.3.0 of obsproc_satingest,
+      v3.2.0 of obsproc_prep,
+      v2.0.1 of obsproc_prep_post,
+      v1.0.0 of obsproc_dump_alert, radar_reflectivity_mosaic,
+      v1.0.0 of radar_reflectivity_ref2grb,
+      v1.0.1 of obsproc_shared/bufr_avgdata.
 
    Since there are no jobs in obsproc_dump, an obsproc_dump.ver file is not
    needed.
