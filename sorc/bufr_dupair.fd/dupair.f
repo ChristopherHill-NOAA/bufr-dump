@@ -1,7 +1,7 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: BUFR_DUPAIR
-C   PRGMMR: KEYSER           ORG: NP22        DATE: 2013-08-22
+C   PRGMMR: KEYSER           ORG: NP22        DATE: 2014-11-07
 C
 C ABSTRACT: PROCESSES ANY COMBINATION UP TO FIVE DUMP FILES
 C   CONTAINING AIRCRAFT (BUFR MESSAGE TYPE 004) REPORTS IN AIREP
@@ -79,6 +79,9 @@ C     REPLACED TESTS VS BMISS WITH IBFMS FUNCTION; REPLACED EXPLICIT
 C     ASSIGNMENT OF BMISS W/ GETBMISS() FUNCTION
 C 2013-08-22  D. KEYSER   EXITS GRACEFULLY IF A TOTAL OF ZERO INPUT
 C     SUBSETS (REPORTS) ARE READ IN (BEFORE COULD SEG FAULT)
+C 2014-11-07  D. KEYSER   DECLARE FUNCTION GETBMISS AND ITS RETURN
+C     VALUE BMISS AS REAL*8 TO GET A RELIABLE VALUE FOR BMISS IN PRINT
+C     STATEMENTS
 C
 C USAGE:
 C   INPUT FILES:
@@ -128,7 +131,7 @@ C$$$
       INTEGER,ALLOCATABLE :: IORD(:)
       INTEGER,ALLOCATABLE :: JDUP(:)
 
-      REAL(8) UFBTAB_8,TAB7_8
+      REAL(8) UFBTAB_8,TAB7_8,BMISS,GETBMISS
       CHARACTER*80 TSTR,TSTRH,TSTR_N,TSTR_O,TSTRH_N,TSTRH_O,
      $ FILI(NFILES),FILO,FILE
       CHARACTER*8  SUBSET,CTAB7
@@ -161,10 +164,10 @@ C$$$
  
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_DUPAIR',2013,0234,0054,'NP22')
+      CALL W3TAGB('BUFR_DUPAIR',2014,0311,0054,'NP22')
 
       print *
-      print * ,'---> Welcome to BUFR_DUPAIR - Version 08-22-2013'
+      print * ,'---> Welcome to BUFR_DUPAIR - Version 11-07-2014'
       print *
 
       CALL DATELEN(10)
@@ -175,6 +178,9 @@ C  ASSIGN DEFAULT VALUE FOR 'MISSING' TO LOCAL BMISS VARIABLE
 C  ----------------------------------------------------------
 
       BMISS = GETBMISS()     ! assign default value for "missing"
+      print *
+      print *, 'BUFRLIB value for missing is: ',bmiss
+      print *
 
 C  SET THE COUNTERS TO INITIAL VALUES
 C  ----------------------------------

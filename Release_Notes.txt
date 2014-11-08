@@ -1,5 +1,25 @@
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+obsproc_dump release X.Y.Z --> released ??? ?, 20??
+
+files:
+ *obsproc_dump/sorc/bufr_dupair.fd/dupair.f
+ *obsproc_dump/sorc/bufr_dupmar.fd/dupmar.f
+ *obsproc_dump/sorc/bufr_dupmrg.fd/dupmrg.f
+ *obsproc_dump/sorc/bufr_dupsat.fd/dupsat.f
+ *obsproc_dump/sorc/bufr_dupshp.fd/dupshp.f
+ *obsproc_dump/sorc/bufr_dupsst.fd/dupsst.f
+ *obsproc_dump/sorc/bufr_geofil.fd/geofil.f
+
+
+ Source code changes:
+   bufr_dupair, bufr_dupmar, bufr_dupmrg, bufr_dupsat, bufr_dupshp,
+   bufr_dupsst, bufr_geofil:
+    - Declare function GETBMISS and its return value BMISS as REAL*8 to get a
+      reliable value for bmiss in print statements.
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 obsproc_dump release 3.2.0 --> released Aug 6, 2014, updated Sep 14, 2014
+                           --> implemented Nov 4, 2014
 
 files:
   obsproc_dump/fix/bufr_bufrtab.sptrmm

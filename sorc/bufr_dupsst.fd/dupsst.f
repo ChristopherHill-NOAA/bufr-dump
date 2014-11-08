@@ -1,7 +1,7 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: BUFR_DUPSST
-C   PRGMMR: KEYSER           ORG: NP22        DATE: 2013-01-13
+C   PRGMMR: KEYSER           ORG: NP22        DATE: 2014-11-07
 C
 C ABSTRACT: PROCESSES SEA-SURFACE TEMPERATURE DATABASE REPORTS WITH
 C   DUPLICATE CHECKING AND TRIMMING TO EXACT TIME WINDOW (DAY DOWN TO
@@ -67,6 +67,9 @@ C       GETENV SUBPROGRAM CALL TO INTEL/LINUX SYNTAX
 C 2013-01-13  J. WHITING  FINAL PORT TO WCOSS -- UPDATED DOC BLOCKS;
 C       REPLACED TESTS VS BMISS W/ IBFMS FUNCTION; REPLACED EXPLICIT
 C       ASSIGNMENT OF BMISS W/ GETBMISS() FUNCTION.
+C 2014-11-07  D. KEYSER   DECLARE FUNCTION GETBMISS AND ITS RETURN
+C     VALUE BMISS AS REAL*8 TO GET A RELIABLE VALUE FOR BMISS IN PRINT
+C     STATEMENTS
 C
 C USAGE:
 C   INPUT FILES:
@@ -122,6 +125,7 @@ C$$$
       DIMENSION    NDUP(0:5)
 
       REAL(8)      ADATE,BDATE,CDATE,DDATE,RDATE,UFBTAB_8
+      REAL(8)      BMISS,GETBMISS
 
       LOGICAL      DUPES,SSTRET
  
@@ -136,10 +140,10 @@ C$$$
  
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_DUPSST',2013,0013,0062,'NP22')
+      CALL W3TAGB('BUFR_DUPSST',2014,0311,0062,'NP22')
 
       print *
-      print * ,'---> Welcome to BUFR_DUPSST - Version 01-13-2013'
+      print * ,'---> Welcome to BUFR_DUPSST - Version 11-07-2014'
       print *
 
       CALL DATELEN(10)
@@ -150,6 +154,9 @@ C  ASSIGN DEFAULT VALUE FOR 'MISSING' TO LOCAL BMISS VARIABLE
 C  ----------------------------------------------------------
 
       BMISS = GETBMISS()     ! assign default value for "missing"
+      print *
+      print *, 'BUFRLIB value for missing is: ',bmiss
+      print *
 
 C  SET THE COUNTERS TO INITIAL VALUES
 C  ----------------------------------

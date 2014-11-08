@@ -1,7 +1,7 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: BUFR_GEOFIL
-C   PRGMMR: KEYSER           ORG: NP22        DATE: 2013-01-13
+C   PRGMMR: KEYSER           ORG: NP22        DATE: 2014-11-07
 C
 C ABSTRACT: GEOGRAPHICALLY FILTERS BUFR DATABASE DUMP FILES BY EITHER
 C   A LAT/LON BOX FILTER, A CENTER POINT LAT/LON AND RADIUS FILTER OR A
@@ -65,6 +65,9 @@ C 2012-11-20  J. WOOLLEN  INITIAL PORT TO WCOSS -- NO LOGIC CHANGES
 C 2013-01-13  J. WHITING  FINAL PORT TO WCOSS -- UPDATED DOC BLOCKS;
 C     REPLACED TESTS VS BMISS W/ IBFMS FUNCTION; REPLACED EXPLICIT
 C     ASSIGNMENT OF BMISS W/ GETBMISS() FUNCTION.
+C 2014-11-07  D. KEYSER   DECLARE FUNCTION GETBMISS AND ITS RETURN
+C     VALUE BMISS AS REAL*8 TO GET A RELIABLE VALUE FOR BMISS IN PRINT
+C     STATEMENTS
 C
 C USAGE:
 C   INPUT FILES:
@@ -159,7 +162,7 @@ C$$$
       CHARACTER*500 FILI,FILO,CARD
       CHARACTER*8   SUBSET
       DIMENSION     NGEO(0:4)
-      REAL(8)       UFBTAB_8
+      REAL(8)       UFBTAB_8,BMISS,GETBMISS
       INTEGER(4)    MASK_4(NX,NY)
  
       DATA TSTR  /'CLAT  CLON  DAYS HOUR MINU SID '/
@@ -167,10 +170,10 @@ C$$$
 
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_GEOFIL',2013,0013,0062,'NP22')
+      CALL W3TAGB('BUFR_GEOFIL',2014,0311,0062,'NP22')
 
       print *
-      print * ,'---> Welcome to BUFR_GEOFIL - Version 01-13-2013'
+      print * ,'---> Welcome to BUFR_GEOFIL - Version 11-07-2014'
       print *
 
       CALL DATELEN(10)
@@ -181,6 +184,9 @@ C  ASSIGN DEFAULT VALUE FOR 'MISSING' TO LOCAL BMISS VARIABLE
 C  ----------------------------------------------------------
 
       BMISS = GETBMISS()     ! assign default value for "missing"
+      print *
+      print *, 'BUFRLIB value for missing is: ',bmiss
+      print *
  
 C  SET THE COUNTERS TO INITIAL VALUES
 C  ----------------------------------

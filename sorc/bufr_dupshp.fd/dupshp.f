@@ -1,7 +1,7 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: BUFR_DUPSHP
-C   PRGMMR: KEYSER           ORG: NP22        DATE: 2013-01-13
+C   PRGMMR: KEYSER           ORG: NP22        DATE: 2014-11-07
 C
 C ABSTRACT: PROCESSES DUMP FILES CONTAINING RESTRICTED AND UNRESTRICTED
 C   SURFACE SHIP REPORTS IN BUFR MESSAGE TYPE 001, SUBTYPES 001 AND
@@ -27,6 +27,9 @@ C       FIXED BUGS IN PRINT 200 STATEMENT (REMOVED REFERENCE TO
 C       ELEVATION CHECKS, FIXED NAME OF HOUR TOLERANCE VAR DOUR);
 C       REPLACED TESTS VS BMISS W/ IBFMS FUNCTION CALL; REPLACED
 C       EXPLICIT ASSIGNMENT OF BMISS W/ GETBMISS() FUNCTION.
+C 2014-11-07  D. KEYSER   DECLARE FUNCTION GETBMISS AND ITS RETURN
+C     VALUE BMISS AS REAL*8 TO GET A RELIABLE VALUE FOR BMISS IN PRINT
+C     STATEMENTS
 C
 C USAGE:
 C   INPUT FILES:
@@ -82,7 +85,7 @@ C$$$
 
       DIMENSION     NDUP(0:2),IPTR(2,NFILES),IMST(13)
 
-      REAL(8)       UFBTAB_8,rpidI,rpidJ
+      REAL(8)       UFBTAB_8,rpidI,rpidJ,BMISS,GETBMISS
 
       LOGICAL       DUPES,SFCSHP
 
@@ -101,10 +104,10 @@ C$$$
 
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_DUPSHP',2013,0013,0050,'NP22')
+      CALL W3TAGB('BUFR_DUPSHP',2014,0311,0050,'NP22')
 
       print *
-      print * ,'---> Welcome to BUFR_DUPSHP - Version 01-13-2013'
+      print * ,'---> Welcome to BUFR_DUPSHP - Version 11-07-2014'
       print *
 
       CALL DATELEN(10)
@@ -115,6 +118,9 @@ C  ASSIGN DEFAULT VALUE FOR 'MISSING' TO LOCAL BMISS VARIABLE
 C  ----------------------------------------------------------
 
       BMISS = GETBMISS()     ! assign default value for "missing"
+      print *
+      print *, 'BUFRLIB value for missing is: ',bmiss
+      print *
 
 C  SET THE COUNTERS TO INITIAL VALUES
 C  ----------------------------------

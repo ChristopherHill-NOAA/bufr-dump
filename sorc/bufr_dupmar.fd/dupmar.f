@@ -1,7 +1,7 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: BUFR_DUPMAR
-C   PRGMMR: KEYSER           ORG: NP22        DATE: 2013-01-15
+C   PRGMMR: KEYSER           ORG: NP22        DATE: 2014-11-07
 C
 C ABSTRACT: PROCESSES NON-PROFILE DATABASE REPORT PARTS WITH CORRECTION
 C   CHOOSING (SEE REMARKS-1), DUPLICATE CHECKING, REPORT PART MERGING
@@ -219,6 +219,9 @@ C     INTERNALLY - ALLOWS MESGBC() TO REVERT BACK TO POSITIVE SIGN UNIT
 C     NUMER AND FUNCTION AS IT DID ON CCS; USE INTRINSIC "TRIM"
 C     CHARACTER STRING FUNCTION TO ELIMINATE NEED TO OBTAIN NUMBER OF
 C     NON-BLANK CHARACTERS IN STRINGS.
+C 2014-11-07  D. KEYSER   DECLARE FUNCTION GETBMISS AND ITS RETURN
+C     VALUE BMISS AS REAL*8 TO GET A RELIABLE VALUE FOR BMISS IN PRINT
+C     STATEMENTS
 C
 C USAGE:
 C   INPUT FILES:
@@ -315,6 +318,7 @@ C$$$
       REAL(8)       TMDBSTK_8(255),TMDPSTK_8(255)
       REAL(8)       RASTR_8(255),RASTK_8(255),FNSTR_8(255),FNSTK_8(255)
       REAL(8)       TAB7_IREC_8,TAB7_JREC_8,RPID_8,UFBINT_8(3)
+      REAL(8)       BMISS,GETBMISS
 
       EQUIVALENCE   (TAB7_IREC_8,CAB7_IREC),(TAB7_JREC_8,CAB7_JREC)
       EQUIVALENCE   (CRPID,RPID_8),(RAWRPT,RASTK_8,RAWRPT_str)
@@ -333,10 +337,10 @@ C$$$
  
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_DUPMAR',2013,0024,0062,'NP22')
+      CALL W3TAGB('BUFR_DUPMAR',2014,0311,0062,'NP22')
 
       print *
-      print * ,'---> Welcome to BUFR_DUPMAR - Version 01-24-2013'
+      print * ,'---> Welcome to BUFR_DUPMAR - Version 11-07-2014'
       print *
 
       CALL DATELEN(10)
@@ -347,6 +351,9 @@ C  ASSIGN DEFAULT VALUE FOR 'MISSING' TO LOCAL BMISS VARIABLE
 C  ----------------------------------------------------------
 
       BMISS = GETBMISS()     ! assign default value for "missing"
+      print *
+      print *, 'BUFRLIB value for missing is: ',bmiss
+      print *
 
 C  SET THE COUNTERS TO INITIAL VALUES
 C  ----------------------------------

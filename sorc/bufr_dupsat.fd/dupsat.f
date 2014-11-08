@@ -1,7 +1,7 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: BUFR_DUPSAT
-C   PRGMMR: KEYSER           ORG: NP22        DATE: 2013-07-01
+C   PRGMMR: KEYSER           ORG: NP22        DATE: 2014-11-07
 C
 C ABSTRACT: PROCESSES SATELLITE DATABASE REPORTS WITH (OPTIONAL)
 C   GEOGRAPHICAL FILTERING, DUPLICATE CHECKING, (OPTIONAL) TRIMMING
@@ -246,6 +246,9 @@ C 2013-01-14  J. WHITING  FINAL PORT TO WCOSS -- UPDATED DOC BLOCKS;
 C       REPLACED TESTS VS BMISS W/ IBFMS FUNCTION; REPLACED EXPLICIT
 C       ASSIGNMENT OF BMISS W/ GETBMISS() FUNCTION.
 C 2013-07-01  D. KEYSER   ADDED GOES-15 (SAT. ID 259) TO COMMENTS
+C 2014-11-07  D. KEYSER   DECLARE FUNCTION GETBMISS AND ITS RETURN
+C     VALUE BMISS AS REAL*8 TO GET A RELIABLE VALUE FOR BMISS IN PRINT
+C     STATEMENTS
 C
 C USAGE:
 C   INPUT FILES:
@@ -389,6 +392,7 @@ C$$$
 
       REAL(8)        ADATE,BDATE,CDATE,DDATE,RDATE,UFBTAB_8,CLON_8,
      .               ALONGITUDE_8,ALATITUDE_8
+      REAL(8)        BMISS,GETBMISS
 
       INTEGER(4)     MASK_4(NX,NY)
 
@@ -414,10 +418,10 @@ C$$$
 
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_DUPSAT',2013,0182,0062,'NP22')
+      CALL W3TAGB('BUFR_DUPSAT',2014,0311,0062,'NP22')
 
       print *
-      print * ,'---> Welcome to BUFR_DUPSAT - Version 07-01-2013'
+      print * ,'---> Welcome to BUFR_DUPSAT - Version 11-07-2014'
       print *
 
       CALL DATELEN(10)
@@ -428,6 +432,9 @@ C  ASSIGN DEFAULT VALUE FOR 'MISSING' TO LOCAL BMISS VARIABLE
 C  ----------------------------------------------------------
 
       BMISS = GETBMISS()     ! assign default value for "missing"
+      print *
+      print *, 'BUFRLIB value for missing is: ',bmiss
+      print *
 
 C  SET THE COUNTERS TO INITIAL VALUES
 C  ----------------------------------
