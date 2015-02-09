@@ -1,7 +1,7 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: BUFR_DUPSAT
-C   PRGMMR: KEYSER           ORG: NP22        DATE: 2014-11-07
+C   PRGMMR: KEYSER           ORG: NP22        DATE: 2015-01-28
 C
 C ABSTRACT: PROCESSES SATELLITE DATABASE REPORTS WITH (OPTIONAL)
 C   GEOGRAPHICAL FILTERING, DUPLICATE CHECKING, (OPTIONAL) TRIMMING
@@ -10,11 +10,11 @@ C   LONGITUDE TO BUFR STANDARD (I.E., CHANGE 0 --> 360 E TO
 C   -180 --> +180, E+,W-) (IF NECESSARY).  AN UPDATED REPORT ID
 C   (MNEMONIC "RPID") IS ALSO GENERATED FOR DERIVED WINDS FROM GOES,
 C   METEOSAT, INSAT, KALPANA, GMS, MTSAT, AQUA/TERRA (POES), NOAA/METOP
-C   (POES) AND NESDIS RETRIEVALS AND PROCESSED RADIANCES FROM GOES.
-C   OTHER REPORT TYPES (WHICH GET ONLY DUP CHECKING, OPTIONAL
-C   GEOGRAPHICAL FILTERING, OPTIONAL TIME WINDOW TRIMMING AND POSSIBLE
-C   LONGITUDE CORRECTION) INCLUDE NESDIS RETRIEVALS AND PROCESSED
-C   RADIANCES FROM TOVS, RTOVS, ATOVS AND AVHRR (INCLUDING 1B
+C   (POES), NPP (GOES) AND NESDIS RETRIEVALS AND PROCESSED RADIANCES
+C   FROM GOES. OTHER REPORT TYPES (WHICH GET ONLY DUP CHECKING,
+C   OPTIONAL GEOGRAPHICAL FILTERING, OPTIONAL TIME WINDOW TRIMMING AND
+C   POSSIBLE LONGITUDE CORRECTION) INCLUDE NESDIS RETRIEVALS AND
+C   PROCESSED RADIANCES FROM TOVS, RTOVS, ATOVS AND AVHRR (INCLUDING 1B
 C   RADIANCES); AQUA/AIRS (CENTER, WARMEST AND EVERY F-O-V), AMSRE
 C   RADIANCES AND METOP/IASI RADIANCES; AND PRODUCTS AND RADIANCES FROM
 C   ERS, SSM/I, QUIKSCAT, WINDSAT, ASCAT, TRMM AND GPS.  THE ATOVS 1B
@@ -249,6 +249,20 @@ C 2013-07-01  D. KEYSER   ADDED GOES-15 (SAT. ID 259) TO COMMENTS
 C 2014-11-07  D. KEYSER   DECLARE FUNCTION GETBMISS AND ITS RETURN
 C     VALUE BMISS AS REAL*8 TO GET A RELIABLE VALUE FOR BMISS IN PRINT
 C     STATEMENTS
+C 2015-01-28  D. KEYSER
+C     In subr. SATWND_ID:
+C      - IR (long-wave) NPP VIIRS POES winds now handled. These have
+C        message type NC005090 and BUFR satellite ID 224. Get
+C        previously unused character "J" in 1st character of generated
+C        RPID and "9" (meaning NASA is producer) in 2nd character of
+C        RPID.
+C      - IR (short-wave) GOES winds now handled. These have message
+C        type NC0050019.  Get previously unused character "S" in 8th
+C        character of generated RPID. New instrument/product type (ITP)
+C        19 is defined for IR short-wave imager automated winds. This
+C        allows a unique sequential serial index (counter) to be used
+C        to generate characters 3-7 of RPID for each individual
+C        satellite.
 C
 C USAGE:
 C   INPUT FILES:
@@ -418,10 +432,10 @@ C$$$
 
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_DUPSAT',2014,0311,0062,'NP22')
+      CALL W3TAGB('BUFR_DUPSAT',2015,0028,0062,'NP22')
 
       print *
-      print * ,'---> Welcome to BUFR_DUPSAT - Version 11-07-2014'
+      print * ,'---> Welcome to BUFR_DUPSAT - Version 01-28-2015'
       print *
 
       CALL DATELEN(10)
@@ -1335,7 +1349,7 @@ C  -----------
 C$$$  SUBPROGRAM DOCUMENTATION BLOCK
 C
 C SUBPROGRAM:    SATWND_ID
-C   PRGMMR: KEYSER           ORG: NP22        DATE: 2013-01-13
+C   PRGMMR: KEYSER           ORG: NP22        DATE: 2015-01-28
 C
 C ABSTRACT: PERFORMS DUPLICATE CHECKING AND (OPTIONAL) TRIMMING TO
 C   EXACT TIME WINDOW (DAY DOWN TO SECOND), AND THEN UPDATES THE REPORT
@@ -1394,6 +1408,19 @@ C     COMPRESSED BUFR)
 C 2013-01-14  J. WHITING  REPLACED TESTS VS BMISS W/ IBFMS FUNCTION;
 C     CHANGED IBFMS ARG VARIABLES TO 8BYTE REALS (IE, SWPR TO SWPR_8,
 C     ETC); REMOVED BMISS DATA STATEMENT.
+C 2015-01-28  D. KEYSER
+C      - IR (long-wave) NPP VIIRS POES winds now handled. These have
+C        message type NC005090 and BUFR satellite ID 224. Get
+C        previously unused character "J" in 1st character of generated
+C        RPID and "9" (meaning NASA is producer) in 2nd character of
+C        RPID.
+C      - IR (short-wave) GOES winds now handled. These have message
+C        type NC0050019.  Get previously unused character "S" in 8th
+C        character of generated RPID. New instrument/product type (ITP)
+C        19 is defined for IR short-wave imager automated winds. This
+C        allows a unique sequential serial index (counter) to be used
+C        to generate characters 3-7 of RPID for each individual
+C        satellite.
 C
 C USAGE:    CALL SATWND_ID(LUBFI,LUBFJ,JDUP,NDUP,JLON,NLON,LALO_8,
 C                          LATLON_TYPE,ICOMP)
@@ -1441,7 +1468,7 @@ C$$$
       SUBROUTINE SATWND_ID(LUBFI,LUBFJ,JDUP,NDUP,JLON,NLON,LALO_8,
      $                     LATLON_TYPE,ICOMP)
 
-      CHARACTER*1  CPROD(0:4),CSAT(784),CPRDF(0:2),CPRDFN(80)
+      CHARACTER*1  CPROD(0:4),CSAT(784),CPRDF(0:2),CPRDFN(90)
       CHARACTER*8  SUBSET,SID
       CHARACTER*6  LATLON_TYPE
       CHARACTER*3  DUMMY_MSGS
@@ -1449,7 +1476,7 @@ C$$$
       REAL(8)  UFBINT_8,RPID_8,CLON_8,LALO_8(2,NTAB)
       REAL(8)  SWPR_8,SWTP_8,CMCM_8     ! IBFMS arguments
 
-      INTEGER  JDUP(NTAB),NDUP(0:7),IPRDF(0:2),KOUNT(784,18,2),
+      INTEGER  JDUP(NTAB),NDUP(0:7),IPRDF(0:2),KOUNT(784,19,2),
      $ ISWCM(5,9:13,2),JLON(NTAB)
 
       COMMON /COUNT/NTAB,ISUB,ISUBO_T,ISUBO_L,IRECO_L
@@ -1461,14 +1488,14 @@ C$$$
       data isubi/0/
       data isubi_t/0/
 
-      DATA KOUNT/28224*0/
+      DATA KOUNT/29792*0/
 
 C---------------------------------------------------------------------
 
       DATA CSAT /  ! character 1 in report id for winds (character
                    ! meaning defined further below)
                    ! (Note:  unique characters still available for
-                   !         future use: 'J','S')
+                   !         future use: 'S')
 
 C                 **  METOP **
 C ---- spare(1-2) 3   4   5
@@ -1492,8 +1519,12 @@ C                    ** NOAA **
 C ---- spare(200-205) 206 207 208 209 spare(210-222) 223
      $,    6* '?',    'F','L','M','N',   13* '?',    'G'
 
-C ---- spare(224-249)
-     $,   26* '?'
+C                    ** NPP **
+C ---- 224
+     $,'J'
+
+C ---- spare(225-249)
+     $,   25* '?'
 
 C                    **  GOES **
 C ---- 250 251 252 253 254 255 256 257 258 259
@@ -1559,8 +1590,8 @@ C     BUFR report message sub-type (sss in NC005sss)
 C sss=  01  02  03  04  05  06  07  08  09  10  11  12  13  14  15  16
      $ 'C','C','V','C','I','W','?','Z','P','I','W','Z','P','T','I','W',
 
-C sss=  17  18  19-49  50  51  52-69  70  71  72-79  80
-     $ 'V','T',31*'?','C','V',18*'?','I','W', 8*'?','I'  /
+C sss=  17  18  19  20-49  50  51  52-69  70  71  72-79  80  81-89  90
+     $ 'V','T','S',30*'?','C','V',18*'?','I','W', 8*'?','I', 9*'?','I' /
 
 C---------------------------------------------------------------------
 
@@ -1568,7 +1599,7 @@ C---------------------------------------------------------------------
                     ! winds from foreign producers (i.e., EUMETSAT, JMA
                     ! and INSAT), where:
 
-C          1       IR automated winds (low density)
+C          1       IR (LW) automated winds (low density)
 C          4       Water vapor automated (low density)
 C          6       Visible automated (low density)
 
@@ -1584,21 +1615,23 @@ C---------------------------------------------------------------------
       DATA ISWCM /  ! defines the instrument/product type (ITP) for
                     ! winds from NESDIS or NASA, where:
 
-C          1       IR automated winds (low density)
+C          1       IR (LW) automated winds (low density)
 C          3       Picture triplet (low density)
 C          4       Water vapor automated (low density)
 C          6       Visible automated (low density)
 C         14       High-density water vapor sounder, channel 10
 C         15       High-density water vapor sounder, channel 11
 C                     (14 can be changed to this further down in code)
-C         16       High-density ir imager automated winds
+C         16       High-density IR (LW) imager automated winds
 C         17       High-density visible imager automated winds
 C         18       High-density water vapor imager
+C         19       High-density IR (SW) imager automated winds
+C                     (16 can be changed to this further down in code)
 C         99       Not applicable (default)
 
 
-C SIDP             INFRARED  VISIBLE   WV-CLTOP  PTRIPLET  WV-DPLYR
-C ----             --------  --------  --------  --------  --------
+C SIDP            IR(LW,SW)  VISIBLE   WV-CLTOP  PTRIPLET  WV-DPLYR
+C ----            ---------  --------  --------  --------  --------
 
 C  9  **  High-Density Geostationary Imager (+ low-dens. p. triplet)  **
      $                  16,      17,        18,        3,       18,
@@ -1677,6 +1710,7 @@ C                                        SAT. NO. 207           GET 'L'
 C                                        SAT. NO. 208           GET 'M'
 C                                        SAT. NO. 209           GET 'N'
 C                                        SAT. NO. 223           GET 'G'
+C                       -----> NPP:      SAT. NO. 224           GET 'J'
 C    REPROCESSED CHAR 2 -----> WINDS PRODUCED BY NESDIS/NASA:
 C                               RETURNED VALUE IN BUFR FOR 'SWPR'
 C                               (PRODUCER), IF NON-MISSING; OTHERWISE
@@ -1686,20 +1720,21 @@ C                                SAT. PRODUCER -- ESA           GET 'C'
 C                                              -- GMS/MTSAT     GET 'D'
 C                                              -- INSAT/KALPANA GET 'E'
 C    REPROCESSED CHAR 3-7 ---> SEQUENTIAL SERIAL INDEX (00001 - 99999)
-C                              (UNIQUE FOR EACH NCEP BUFR CHAR 1/2/6
+C                              (UNIQUE FOR EACH NCEP BUFR CHAR 1/2/8
 C                               COMB.)
 C    REPROCESSED CHAR 8 -----> WINDS PRODUCED BY NESDIS (INCL. AVHRR)
-C                              AND NASA/MODIS:
+C                              AND NASA/MODIS (INCL. VIIRS):
 C                               OLD FORMAT, (GOES -LOW-DENSITY-OBSOLETE)
-C                                     -- INFRA-RED CLOUD DRIFT   GET 'C'
-C                                     -- VISIBLE   CLOUD DRIFT   GET 'C'
+C                                     -- IR (LW) CLOUD DRIFT     GET 'C'
+C                                     -- VISIBLE CLOUD DRIFT     GET 'C'
 C                                     -- PICTURE TRIPLET         GET 'C'
 C                                     -- WATER VAPOR             GET 'V'
 C                               NEW FORMAT, (GOES - LOW-DENSITY)
 C                                     -- PICTURE TRIPLET         GET 'P'
 C                               NEW FORMAT (GOES - HIGH-DENSITY, AQUA/
-C                                           TERRA POES, NOAA/METOP POES)
-C                                     -- IR  IMAGER CLOUD DRIFT  GET 'I'
+C                                           TERRA POES, NOAA/METOP POES,
+C                                           NPP/POES)
+C                                     -- IR (LW) IMGR CLD DRIFT  GET 'I'
 C                                     -- VIS IMAGER CLOUD DRIFT  GET 'Z'
 C                                        (GOES ONLY)
 C                                     -- WATER VAPOR IMAGER      GET 'W'
@@ -1708,12 +1743,14 @@ C                                     -- WATER VAPR SNDR, CHN 10 GET 'T'
 C                                        (GOES ONLY)
 C                                     -- WATER VAPR SNDR, CHN 11 GET 'L'
 C                                        (GOES ONLY)
+C                                     -- IR (SW) IMGR CLD DRIFT  GET 'S'
+C                                        (GOES ONLY)
 C                               NEW FORMAT (GMS  - LOW-DENSITY)
-C                                     -- INFRA-RED CLOUD DRIFT   GET 'C'
+C                                     -- IR (LW) CLOUD DRIFT     GET 'C'
 C                                     -- WATER VAPOR             GET 'V'
 C                       -----> WINDS PRODUCED BY FOREIGN PRODUCERS:
-C                                     -- INFRA-RED CLOUD DRIFT   GET 'C'
-C                                     -- VISIBLE   CLOUD DRIFT   GET 'B'
+C                                     -- IR (LW) CLOUD DRIFT     GET 'C'
+C                                     -- VISIBLE CLOUD DRIFT     GET 'B'
 C                                     -- WATER VAPOR             GET 'V'
 
       DO WHILE(IREADMG(LUBFI,SUBSET,IDATE).EQ.0)
@@ -1787,7 +1824,8 @@ C                 problems in PREPOBS_PREPDATA in this case)
                IF((SID(1:1).GE.'A'.AND.SID(1:1).LE.'D') .OR.
      $          (SUBSET(7:8).EQ.'50'.OR.SUBSET(7:8).EQ.'51') .OR.
      $          (SUBSET(7:8).EQ.'70'.OR.SUBSET(7:8).EQ.'71') .OR.
-     $          (SUBSET(7:8).EQ.'80')) THEN
+     $          (SUBSET(7:8).EQ.'80') .OR.
+     $          (SUBSET(7:8).EQ.'90')) THEN
                   IF(SUBSET(7:8).EQ.'50'.OR.SUBSET(7:8).EQ.'51') THEN
                      IDENSITY = 2
                   ELSE
@@ -1809,7 +1847,8 @@ C  .. Satellite producer for winds generated by NESDIS/NASA
                                    !  but irregardless hardwire here as
                                    !  1 if NESDIS and 9 if NASA
                      SID(2:2) = '1'
-                     IF(SUBSET(7:8).EQ.'70'.OR.SUBSET(7:8).EQ.'71')
+                     IF(SUBSET(7:8).EQ.'70'.OR.SUBSET(7:8).EQ.'71'.OR.
+     $                  SUBSET(7:8).EQ.'90')
      $                SID(2:2) = '9'
                   ENDIF
                   IPRODUCER=1
@@ -1842,9 +1881,11 @@ C  .. Product type for winds generated by NESDIS/NASA
                      SIDP=UFBINT_8
 
 C  Effective 3/10/2005 NESDIS fixed an error which had stored SIDP as
-C   a code table value rather than correctly as a flag table value - in
-C   response must redirect SIDP value back to original code table value
-C   (will still work ok for historical runs prior to NESDIS fix)
+C   a code table value rather than correctly as a flag table value
+C  In 2015 this happened again for VIIRS POES winds (NESDIS stored SIDP
+C   as 13 rather than as 262144 prior to fixing)
+C  - in response must redirect SIDP value back to original code table
+C    value (will still work ok for historical runs prior to NESDIS fix)
 C  --------------------------------------------------------------------
 
                      IF(NINT(SIDP).EQ.4194304) THEN
@@ -1859,15 +1900,20 @@ C  --------------------------------------------------------------------
      $                                   .OR. NINT(SIDP).EQ.13))
                                       !From NESDIS BUFR Fmt (WMO)
      $                ITP = ISWCM(NINT(SWCM),NINT(SIDP),IDENSITY)
-                      IF(ITP.EQ.14)  THEN
+                      IF(ITP.EQ.16)  THEN
                          CALL UFBINT(LUBFI,UFBINT_8,1,1,IRET,'SCCF')
                          SCCF = UFBINT_8
                          SCCF = SCCF*1E-11
-                         IF(INT(SCCF).EQ.405)  ITP = 15
+                         IF(INT(SCCF).EQ.769)  ITP = 19 ! IR (SW) chn
+                      ELSE IF(ITP.EQ.14)  THEN
+                         CALL UFBINT(LUBFI,UFBINT_8,1,1,IRET,'SCCF')
+                         SCCF = UFBINT_8
+                         SCCF = SCCF*1E-11
+                         IF(INT(SCCF).EQ.405)  ITP = 15 ! WV ch 11
                       ENDIF
                   ENDIF
                   READ(SUBSET(7:8),'(I2)') INUM2
-                  IF(INUM2.LT.81)  SID(8:8) = CPRDFN(INUM2)
+                  IF(INUM2.LT.91)  SID(8:8) = CPRDFN(INUM2)
                   IF(SID(8:8).EQ.'T')  THEN
                      IF(ITP.EQ.15)  SID(8:8) = 'L'
                   ENDIF
@@ -1887,7 +1933,7 @@ C  .. Product type for  winds generated from foreign producers
                   ITP = IPRDF(MOD(INUM1,3))
                ENDIF
             ENDIF
-            IF(NINT(SAID).LT.785.AND.ITP.LT.19.AND.IPRODUCER.LT.3)  THEN
+            IF(NINT(SAID).LT.785.AND.ITP.LT.20.AND.IPRODUCER.LT.3)  THEN
                KOUNT(NINT(SAID),ITP,IPRODUCER) =
      $          MIN(KOUNT(NINT(SAID),ITP,IPRODUCER)+1,99999)
                WRITE(SID(3:7),'(I5.5)')  KOUNT(NINT(SAID),ITP,IPRODUCER)

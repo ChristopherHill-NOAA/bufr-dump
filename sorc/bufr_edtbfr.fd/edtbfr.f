@@ -1,7 +1,7 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: BUFR_EDTBFR
-C   PRGMMR: KEYSER           ORG: NP22        DATE: 2014-03-05
+C   PRGMMR: KEYSER           ORG: NP22        DATE: 2015-01-28
 C
 C ABSTRACT: APPLIES REAL-TIME INTERACTIVE QUALITY CONTROL FLAGS,
 C   GENERATED FROM EITHER A "REJECT" LIST MAINTAINED BY NCEP/NCO OR
@@ -147,11 +147,13 @@ C     GETENV SUBPROGRAM CALL TO INTEL/LINUX SYNTAX; EXPANDED EDIT
 C     DESCRIPTORS TO ACCOMODATE RECOMMENDED FIELD WIDTHS (FORMAT 200)
 C 2013-01-22  J. WHITING  FINAL PORT TO WCOSS -- UPDATED DOC BLOCKS;
 C     READY FOR IMPLEMENTATION.
-C 2013-12-12  D. A. KEYSER -- RECOGNIZED NEW LEVEL 2 DECODER VAD WINDS
+C 2013-12-12  D. A. KEYSER -- RECOGNIZES NEW LEVEL 2 DECODER VAD WINDS
 C     IN MESSAGE TYPE 002, SUBTYPE 017
 C 2014-03-05  D. A. KEYSER -- INCREASED MAXIMUM NUMBER OF TIME- AND
 C     REPORT TYPE-RELEVANT ENTRIES ALLOWED IN THE SDMEDIT FLAG FILE
 C     FROM 1000 TO 2000 (PARAMETER "MEDT")
+C 2015-01-28  D. A. KEYSER -- RECOGNIZES NEW NPP/VIIRS IR(LW) POES
+C     WINDS IN MESSAGE TYPE 005, SUBTYPE 090
 C
 C USAGE
 C   INPUT FILES:
@@ -375,10 +377,10 @@ C                                         character bulletin header (4
 C                                         letters and 2 numbers) and
 C                                         CCCC is the bulletin
 C                                         originator (4 characters)
-C                                         (e.g., "IUCS59 RJTD" is a
+C                                         {e.g., "IUCS59 RJTD" is a
 C                                         WMO bulletin header and
 C                                         originator for Japanese
-C                                         IR satellite winds)
+C                                         IR(LW) satellite winds}
 C                         "-----------" - WMO bulletin header and
 C                             or          originator not entered (all
 C                         "           "   WMO bulletin headers and
@@ -578,7 +580,7 @@ C$$$
 
       CHARACTER*80  BFRFIL,ASTR,DSTR,BSTR,TSTR,SSTR
       CHARACTER*128 CARD,CARDS(0:5,MEDT)
-      CHARACTER*40  CTYPE(0:20,0:4),CTYPE_sat(10:80,5:5),CTYPE1
+      CHARACTER*40  CTYPE(0:20,0:4),CTYPE_sat(10:90,5:5),CTYPE1
       CHARACTER*11  BUHDOR
       CHARACTER*8   STNID,SUBSET,MSGTYP,STNID_TEST,CARDS8,CARDS8_TRUN,
      .              STNID_TRUN,CBUHD,CBORG
@@ -678,51 +680,53 @@ C$$$
      .         7*'                                        '/
 
       DATA CTYPE_sat
-     .          /'GOES/NESDIS IR DERIVED CLOUD MOTION     ', ! 005.010
+     .          /'GOES/NESDIS IR(LW) DERIVED CLOUD MOTION ', ! 005.010
      .           'GOES/NESDIS WV IMAGER DERIVED CLD MOTION', ! 005.011
      .           'GOES/NESDIS VIS DERIVED CLOUD MOTION    ', ! 005.012
      .           'GOES/NESDIS PICT TRIP DERIVED CLD MOTION', ! 005.013
      .           'GOES/NESDIS WV SOUNDR DERIVED CLD MOTION', ! 005.014
-     .           'GOES/NESDIS IR DERIVED CLOUD MOTION     ', ! 005.015
+     .           'GOES/NESDIS IR(LW) DERIVED CLOUD MOTION ', ! 005.015
      .           'GOES/NESDIS WV IMAGER DERIVED CLD MOTION', ! 005.016
      .           'GOES/NESDIS VIS DERIVED CLOUD MOTION    ', ! 005.017
      .           'GOES/NESDIS WV SOUNDR DERIVED CLD MOTION', ! 005.018
-     .           'GOES/NESDIS 3.9 MCN CHN DERIVED C MOTION', ! 005.019
+     .           'GOES/NESDIS IR(SW) DERIVED CLOUD MOTION ', ! 005.019
      .         1*'                                        ',
-     .           'INSAT/INDIA IR DERIVED CLOUD MOTION     ', ! 005.021
+     .           'INSAT/INDIA IR(LW) DERIVED CLOUD MOTION ', ! 005.021
      .           'INSAT/INDIA VIS DERIVED CLOUD MOTION    ', ! 005.022
      .           'INSAT/INDIA WV IMAGER DERIVED CLD MOTION', ! 005.023
      .        17*'                                        ',
-     .           'GMS/MTSAT/JMA IR DERIVED CLOUD MOTION   ', ! 005.041
+     .           'GMS/MTSAT/JMA IR(LW) DERIVED CLD MOTION ', ! 005.041
      .           'GMS/MTSAT/JMA VIS DERIVED CLOUD MOTION  ', ! 005.042
      .           'GMS/MTSAT/JMA WV IMGR DERIVED CLD MOTION', ! 005.043
-     .           'GMS/MTSAT/JMA IR DERIVED CLOUD MOTION   ', ! 005.044
+     .           'GMS/MTSAT/JMA IR(LW) DERIVED CLD MOTION ', ! 005.044
      .           'GMS/MTSAT/JMA VIS DERIVED CLOUD MOTION  ', ! 005.045
      .           'GMS/MTSAT/JMA WV IMGR DERIVED CLD MOTION', ! 005.046
      .         3*'                                        ',
-     .           'GMS/MTSAT/NESDIS IR DERIVED CLOUD MOTION', ! 005.050
+     .           'GMS/MTSAT/NESDIS IR(LW) DERIVED C MOTION', ! 005.050
      .           'GMS/MTSAT/NESDIS WV IMGR DERIVD C MOTION', ! 005.051
      .         9*'                                        ',
-     .           'METEOSAT/EUMETSAT IR DERIVED CLD MOTION ', ! 005.061
+     .           'METEOSAT/EUMETSAT IR(LW) DERIVD C MOTION', ! 005.061
      .           'METEOSAT/EUMETSAT VIS DERIVED CLD MOTION', ! 005.062
      .           'METEOSAT/EUMETSAT WV IMG DERIVD C MOTION', ! 005.063
-     .           'METEOSAT/EUMETSAT IR DERIVED CLD MOTION ', ! 005.064
+     .           'METEOSAT/EUMETSAT IR(LW) DERIVD C MOTION', ! 005.064
      .           'METEOSAT/EUMETSAT VIS DERIVED CLD MOTION', ! 005.065
      .           'METEOSAT/EUMETSAT WV IMG DERIVD C MOTION', ! 005.066
      .         3*'                                        ',
-     .           'AQUA/TERRA/MODIS IR DERIVED CLOUD MOTION', ! 005.070
+     .           'AQUA/TERRA/MODIS IR(LW) DERIVED C MOTION', ! 005.070
      .           'AQUA/TERRA/MODIS WV IMG DERIVED C MOTION', ! 005.071
      .         8*'                                        ',
-     .           'NOAA/METOP/AVHRR IR DERIVED CLOUD MOTION'/ ! 005.080
+     .           'NOAA/METOP/AVHRR IR(LW) DERIVED C MOTION', ! 005.080
+     .         9*'                                        ',
+     .           'NPP/VIIRS IR(LW) DERIVED CLOUD MOTION   '/ ! 005.090
 
       DATA CTYP /'SFC','SHP','UPA','---','ACF','SAT'/
 
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_EDTBFR',2014,0064,0067,'NP22')
+      CALL W3TAGB('BUFR_EDTBFR',2015,0028,0067,'NP22')
 
       print *
-      print * ,'---> Welcome to BUFR_EDTBFR - Version 03-05-2014'
+      print * ,'---> Welcome to BUFR_EDTBFR - Version 01-28-2015'
       print *
 
       NET = '    '
@@ -1019,7 +1023,7 @@ C  ------------------------------------------------------------------
             IF(ITYP.LT.005) THEN
                IF(JTYP.GE.000 .AND. JTYP.LT.021) CTYPE1=CTYPE(JTYP,ITYP)
             ELSE
-              IF(JTYP.GE.010.AND.JTYP.LT.081)CTYPE1=CTYPE_sat(JTYP,ITYP)
+              IF(JTYP.GE.010.AND.JTYP.LT.091)CTYPE1=CTYPE_sat(JTYP,ITYP)
             ENDIF
          ENDIF
          PRINT'(//"===> NEXT BUFR FILE TO CHECK HAS TYPE=",I4.3,

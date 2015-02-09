@@ -1,14 +1,65 @@
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-obsproc_dump release X.Y.Z --> released ??? ?, 20??
+obsproc_dump release 3.2.1 --> released ??? ?, 2015
+                           --> implemented ??? ?, 2015
 
 files:
- *obsproc_dump/sorc/bufr_dupair.fd/dupair.f
- *obsproc_dump/sorc/bufr_dupmar.fd/dupmar.f
- *obsproc_dump/sorc/bufr_dupmrg.fd/dupmrg.f
- *obsproc_dump/sorc/bufr_dupsat.fd/dupsat.f
- *obsproc_dump/sorc/bufr_dupshp.fd/dupshp.f
- *obsproc_dump/sorc/bufr_dupsst.fd/dupsst.f
- *obsproc_dump/sorc/bufr_geofil.fd/geofil.f
+   obsproc_dump/fix/bufr_bufrtab.sptrmm
+   obsproc_dump/fix/bufr_bufrtab.windsat
+   obsproc_dump/fix/nam_expdomain_guam_halfdeg_imask.gbl
+   obsproc_dump/fix/nam_expdomain_halfdeg_imask.gbl
+   obsproc_dump/fix/wave_bufrtab.ascat
+   obsproc_dump/fix/wave_bufrtab.erscat
+   obsproc_dump/fix/wave_bufrtab.quikscat
+   obsproc_dump/fix/wave_landchxh
+   obsproc_dump/sorc/bufr_chkbfr.fd/chkbfr.f
+   obsproc_dump/sorc/bufr_chkbfr.fd/makefile
+   obsproc_dump/sorc/bufr_combfr.fd/combfr.f
+   obsproc_dump/sorc/bufr_combfr.fd/makefile
+   obsproc_dump/sorc/bufr_dcodwindsat.fd/dcodwindsat.f
+   obsproc_dump/sorc/bufr_dcodwindsat.fd/makefile
+   obsproc_dump/sorc/bufr_dumpmd.fd/dumpmd.f
+   obsproc_dump/sorc/bufr_dumpmd.fd/makefile
+ M obsproc_dump/sorc/bufr_dupair.fd/dupair.f
+   obsproc_dump/sorc/bufr_dupair.fd/makefile
+   obsproc_dump/sorc/bufr_dupcor.fd/dupcor.f
+   obsproc_dump/sorc/bufr_dupcor.fd/makefile
+ M obsproc_dump/sorc/bufr_dupmar.fd/dupmar.f
+   obsproc_dump/sorc/bufr_dupmar.fd/makefile
+ M obsproc_dump/sorc/bufr_dupmrg.fd/dupmrg.f
+   obsproc_dump/sorc/bufr_dupmrg.fd/makefile
+   obsproc_dump/sorc/bufr_duprad.fd/duprad.f
+   obsproc_dump/sorc/bufr_duprad.fd/makefile
+ M obsproc_dump/sorc/bufr_dupsat.fd/dupsat.f
+   obsproc_dump/sorc/bufr_dupsat.fd/makefile
+ M obsproc_dump/sorc/bufr_dupshp.fd/dupshp.f
+   obsproc_dump/sorc/bufr_dupshp.fd/makefile
+ M obsproc_dump/sorc/bufr_dupsst.fd/dupsst.f
+   obsproc_dump/sorc/bufr_dupsst.fd/makefile
+ M obsproc_dump/sorc/bufr_edtbfr.fd/edtbfr.f
+   obsproc_dump/sorc/bufr_edtbfr.fd/makefile
+ M obsproc_dump/sorc/bufr_geofil.fd/geofil.f
+   obsproc_dump/sorc/bufr_geofil.fd/makefile
+   obsproc_dump/sorc/bufr_quipc.fd/makefile
+   obsproc_dump/sorc/bufr_quipc.fd/quipc.f
+   obsproc_dump/sorc/bufr_raddate.fd/makefile
+   obsproc_dump/sorc/bufr_raddate.fd/raddate.f
+   obsproc_dump/sorc/bufr_supertmi.fd/makefile
+   obsproc_dump/sorc/bufr_supertmi.fd/supertmi.f
+   obsproc_dump/sorc/prepobs_prepssmi.fd/makefile
+   obsproc_dump/sorc/prepobs_prepssmi.fd/prepssmi.f
+   obsproc_dump/sorc/wave_dcodquikscat.fd/dcodquikscat.f
+   obsproc_dump/sorc/wave_dcodquikscat.fd/makefile
+   obsproc_dump/sorc/build.sh
+   obsproc_dump/sorc/clean.sh
+   obsproc_dump/sorc/install.sh
+   obsproc_dump/sorc/load_libs.rc
+   obsproc_dump/sorc/README.build
+   obsproc_dump/sorc/setlibs.rc
+   obsproc_dump/ush/bufr_dump_obs.sh
+   obsproc_dump/ush/check_tanks.sh
+   obsproc_dump/ush/dumpjb
+
+( M - modified)
 
 
  Source code changes:
@@ -16,69 +67,143 @@ files:
    bufr_dupsst, bufr_geofil:
     - Declare function GETBMISS and its return value BMISS as REAL*8 to get a
       reliable value for bmiss in print statements.
+   bufr_edtbfr:
+    - Recognizes new NPP/VIIRS IR(LW) POES winds in message type 005, subtype
+      090.
+   bufr_dupsat (subroutine satwnd_id.f):
+    - IR (long-wave) NPP VIIRS POES winds now handled. These have message type
+      NC005090 and BUFR satellite ID 224. Get previously unused character "J"
+      in 1st character of generated RPID and "9" (meaning NASA is producer) in
+      2nd character of RPID.
+    - IR (short-wave) GOES winds now handled. These have message type
+      NC0050019.  Get previously unused character "S" in 8th character of
+      generated RPID. New instrument/product type (ITP) 19 is defined for IR
+      short-wave imager automated winds. This allows a unique sequential serial
+      index (counter) to be used to generate characters 3-7 of RPID for each
+      individual satellite.
+    BENEFIT:  Allows the new IR (long-wave) POES winds and IR (short-wave) GOES
+              winds to have the correct report ID in the "satwnd" dumps. These
+              will be tested in various GSI upgrades in the next quarter.
+
+
+ Output changes:
+ ---------------
+  (For specific network changes see " Output changes" in Release Notes for that
+   network, if that network executes this version of obsproc_dump.)
+
+
+ Libraries:
+ ----------
+   w3nco   2.0.6 (all)
+   w3emc   2.2.0 (bufr_dcodwindsat, bufr_dupair, bufr_dupcor, bufr_dupmar,
+                  bufr_dupmrg, bufr_duprad, bufr_dupsat, bufr_dupshp,
+                  bufr_dupsst, bufr_supertmi, prepobs_prepssmi,
+                  wave_dcodquikscat)
+   bufr   10.2.5 (all)
+   bacio   2.0.1 (bufr_supertmi, prepobs_prepssmi, wave_dcodquikscat)
+                  snow_sno96grb)
+   sp      2.0.2 (prepobs_prepssmi)
+
+
+ Build Instructions:
+ -------------------
+   - See sorc/README.build
+
+
+ Preimplementation Testing Requirements:
+ ---------------------------------------
+   There are no jobs in obsproc_dump.  All jobs executing this version of
+   obsproc_dump should be tested.
+
+
+ Dissemination:
+ --------------
+   See information about dissemination in the latest release notes for
+   obsproc_<NETWORK> packages which execute this version of obsproc_dump.
+
+
+ Special Instructions:
+ ---------------------
+   This must be implemented either simultaneously with or after the
+   implementation of:
+      v2.4.2 of obsproc_satingest.
+   This must be implemented simultaneously with the implementations of:
+      v2.0.4 of obsproc_cdas,
+      v1.2.2 of obsproc_dump_monitor,
+      v2.0.1 of obsproc_dump_post,
+      v2.1.1 of obsprod_global,
+      v2.0.3 of obsproc_nam,
+      v3.5.0 of obsproc_prep,
+      v2.0.3 of obsproc_rap,
+ ???? v2.0.4 of obsproc_rtma,
+ ???? v2.0.4 of obsproc_urma,
+      v1.2.0 of obsproc_shared/bufr_dumplist.
+
+   Since there are no jobs in obsproc_dump, an obsproc_dump.ver file is not
+   needed.
 
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 obsproc_dump release 3.2.0 --> released Aug 6, 2014, updated Sep 14, 2014
                            --> implemented Nov 4, 2014
 
 files:
-  obsproc_dump/fix/bufr_bufrtab.sptrmm
-  obsproc_dump/fix/bufr_bufrtab.windsat
-  obsproc_dump/fix/nam_expdomain_guam_halfdeg_imask.gbl
-  obsproc_dump/fix/nam_expdomain_halfdeg_imask.gbl
-  obsproc_dump/fix/wave_bufrtab.ascat
-  obsproc_dump/fix/wave_bufrtab.erscat
-  obsproc_dump/fix/wave_bufrtab.quikscat
-  obsproc_dump/fix/wave_landchxh
-  obsproc_dump/sorc/bufr_chkbfr.fd/chkbfr.f
-  obsproc_dump/sorc/bufr_chkbfr.fd/makefile
-  obsproc_dump/sorc/bufr_combfr.fd/combfr.f
-  obsproc_dump/sorc/bufr_combfr.fd/makefile
-  obsproc_dump/sorc/bufr_dcodwindsat.fd/dcodwindsat.f
-  obsproc_dump/sorc/bufr_dcodwindsat.fd/makefile
-  obsproc_dump/sorc/bufr_dumpmd.fd/dumpmd.f
-  obsproc_dump/sorc/bufr_dumpmd.fd/makefile
-  obsproc_dump/sorc/bufr_dupair.fd/dupair.f
-  obsproc_dump/sorc/bufr_dupair.fd/makefile
-  obsproc_dump/sorc/bufr_dupcor.fd/dupcor.f
-  obsproc_dump/sorc/bufr_dupcor.fd/makefile
-  obsproc_dump/sorc/bufr_dupmar.fd/dupmar.f
-  obsproc_dump/sorc/bufr_dupmar.fd/makefile
-  obsproc_dump/sorc/bufr_dupmrg.fd/dupmrg.f
-  obsproc_dump/sorc/bufr_dupmrg.fd/makefile
-  obsproc_dump/sorc/bufr_duprad.fd/duprad.f
-  obsproc_dump/sorc/bufr_duprad.fd/makefile
-  obsproc_dump/sorc/bufr_dupsat.fd/dupsat.f
-  obsproc_dump/sorc/bufr_dupsat.fd/makefile
-  obsproc_dump/sorc/bufr_dupshp.fd/dupshp.f
-  obsproc_dump/sorc/bufr_dupshp.fd/makefile
-  obsproc_dump/sorc/bufr_dupsst.fd/dupsst.f
-  obsproc_dump/sorc/bufr_dupsst.fd/makefile
-  obsproc_dump/sorc/bufr_edtbfr.fd/edtbfr.f
-  obsproc_dump/sorc/bufr_edtbfr.fd/makefile
-  obsproc_dump/sorc/bufr_geofil.fd/geofil.f
-  obsproc_dump/sorc/bufr_geofil.fd/makefile
-  obsproc_dump/sorc/bufr_quipc.fd/makefile
-  obsproc_dump/sorc/bufr_quipc.fd/quipc.f
-  obsproc_dump/sorc/bufr_raddate.fd/makefile
-  obsproc_dump/sorc/bufr_raddate.fd/raddate.f
-  obsproc_dump/sorc/bufr_supertmi.fd/makefile
-  obsproc_dump/sorc/bufr_supertmi.fd/supertmi.f
-  obsproc_dump/sorc/prepobs_prepssmi.fd/makefile
-  obsproc_dump/sorc/prepobs_prepssmi.fd/prepssmi.f
-  obsproc_dump/sorc/wave_dcodquikscat.fd/dcodquikscat.f
-  obsproc_dump/sorc/wave_dcodquikscat.fd/makefile
-  obsproc_dump/sorc/build.sh
-  obsproc_dump/sorc/clean.sh
-  obsproc_dump/sorc/install.sh
- *obsproc_dump/sorc/load_libs.rc
-  obsproc_dump/sorc/README.build
- *obsproc_dump/sorc/setlibs.rc
- *obsproc_dump/ush/bufr_dump_obs.sh
-  obsproc_dump/ush/check_tanks.sh
- *obsproc_dump/ush/dumpjb
+   obsproc_dump/fix/bufr_bufrtab.sptrmm
+   obsproc_dump/fix/bufr_bufrtab.windsat
+   obsproc_dump/fix/nam_expdomain_guam_halfdeg_imask.gbl
+   obsproc_dump/fix/nam_expdomain_halfdeg_imask.gbl
+   obsproc_dump/fix/wave_bufrtab.ascat
+   obsproc_dump/fix/wave_bufrtab.erscat
+   obsproc_dump/fix/wave_bufrtab.quikscat
+   obsproc_dump/fix/wave_landchxh
+   obsproc_dump/sorc/bufr_chkbfr.fd/chkbfr.f
+   obsproc_dump/sorc/bufr_chkbfr.fd/makefile
+   obsproc_dump/sorc/bufr_combfr.fd/combfr.f
+   obsproc_dump/sorc/bufr_combfr.fd/makefile
+   obsproc_dump/sorc/bufr_dcodwindsat.fd/dcodwindsat.f
+   obsproc_dump/sorc/bufr_dcodwindsat.fd/makefile
+   obsproc_dump/sorc/bufr_dumpmd.fd/dumpmd.f
+   obsproc_dump/sorc/bufr_dumpmd.fd/makefile
+   obsproc_dump/sorc/bufr_dupair.fd/dupair.f
+   obsproc_dump/sorc/bufr_dupair.fd/makefile
+   obsproc_dump/sorc/bufr_dupcor.fd/dupcor.f
+   obsproc_dump/sorc/bufr_dupcor.fd/makefile
+   obsproc_dump/sorc/bufr_dupmar.fd/dupmar.f
+   obsproc_dump/sorc/bufr_dupmar.fd/makefile
+   obsproc_dump/sorc/bufr_dupmrg.fd/dupmrg.f
+   obsproc_dump/sorc/bufr_dupmrg.fd/makefile
+   obsproc_dump/sorc/bufr_duprad.fd/duprad.f
+   obsproc_dump/sorc/bufr_duprad.fd/makefile
+   obsproc_dump/sorc/bufr_dupsat.fd/dupsat.f
+   obsproc_dump/sorc/bufr_dupsat.fd/makefile
+   obsproc_dump/sorc/bufr_dupshp.fd/dupshp.f
+   obsproc_dump/sorc/bufr_dupshp.fd/makefile
+   obsproc_dump/sorc/bufr_dupsst.fd/dupsst.f
+   obsproc_dump/sorc/bufr_dupsst.fd/makefile
+   obsproc_dump/sorc/bufr_edtbfr.fd/edtbfr.f
+   obsproc_dump/sorc/bufr_edtbfr.fd/makefile
+   obsproc_dump/sorc/bufr_geofil.fd/geofil.f
+   obsproc_dump/sorc/bufr_geofil.fd/makefile
+   obsproc_dump/sorc/bufr_quipc.fd/makefile
+   obsproc_dump/sorc/bufr_quipc.fd/quipc.f
+   obsproc_dump/sorc/bufr_raddate.fd/makefile
+   obsproc_dump/sorc/bufr_raddate.fd/raddate.f
+   obsproc_dump/sorc/bufr_supertmi.fd/makefile
+   obsproc_dump/sorc/bufr_supertmi.fd/supertmi.f
+   obsproc_dump/sorc/prepobs_prepssmi.fd/makefile
+   obsproc_dump/sorc/prepobs_prepssmi.fd/prepssmi.f
+   obsproc_dump/sorc/wave_dcodquikscat.fd/dcodquikscat.f
+   obsproc_dump/sorc/wave_dcodquikscat.fd/makefile
+   obsproc_dump/sorc/build.sh
+   obsproc_dump/sorc/clean.sh
+   obsproc_dump/sorc/install.sh
+ M obsproc_dump/sorc/load_libs.rc
+   obsproc_dump/sorc/README.build
+ M obsproc_dump/sorc/setlibs.rc
+ M obsproc_dump/ush/bufr_dump_obs.sh
+   obsproc_dump/ush/check_tanks.sh
+ M obsproc_dump/ush/dumpjb
 
-( * - changed)
+( M - modified)
 
 
  USH script changes:
@@ -184,63 +309,63 @@ obsproc_dump release 3.1.0 --> released May 5, 2014
                            --> implemented Jun 24, 2014
 
 files:
-  obsproc_dump/fix/bufr_bufrtab.sptrmm
-  obsproc_dump/fix/bufr_bufrtab.windsat
-  obsproc_dump/fix/nam_expdomain_guam_halfdeg_imask.gbl
-  obsproc_dump/fix/nam_expdomain_halfdeg_imask.gbl
-  obsproc_dump/fix/wave_bufrtab.ascat
-  obsproc_dump/fix/wave_bufrtab.erscat
-  obsproc_dump/fix/wave_bufrtab.quikscat
-  obsproc_dump/fix/wave_landchxh
-  obsproc_dump/sorc/bufr_chkbfr.fd/chkbfr.f
-  obsproc_dump/sorc/bufr_chkbfr.fd/makefile
-  obsproc_dump/sorc/bufr_combfr.fd/combfr.f
-  obsproc_dump/sorc/bufr_combfr.fd/makefile
-  obsproc_dump/sorc/bufr_dcodwindsat.fd/dcodwindsat.f
-  obsproc_dump/sorc/bufr_dcodwindsat.fd/makefile
-  obsproc_dump/sorc/bufr_dumpmd.fd/dumpmd.f
-  obsproc_dump/sorc/bufr_dumpmd.fd/makefile
-  obsproc_dump/sorc/bufr_dupair.fd/dupair.f
-  obsproc_dump/sorc/bufr_dupair.fd/makefile
-  obsproc_dump/sorc/bufr_dupcor.fd/dupcor.f
-  obsproc_dump/sorc/bufr_dupcor.fd/makefile
-  obsproc_dump/sorc/bufr_dupmar.fd/dupmar.f
-  obsproc_dump/sorc/bufr_dupmar.fd/makefile
-  obsproc_dump/sorc/bufr_dupmrg.fd/dupmrg.f
-  obsproc_dump/sorc/bufr_dupmrg.fd/makefile
-  obsproc_dump/sorc/bufr_duprad.fd/duprad.f
-  obsproc_dump/sorc/bufr_duprad.fd/makefile
-  obsproc_dump/sorc/bufr_dupsat.fd/dupsat.f
-  obsproc_dump/sorc/bufr_dupsat.fd/makefile
-  obsproc_dump/sorc/bufr_dupshp.fd/dupshp.f
-  obsproc_dump/sorc/bufr_dupshp.fd/makefile
-  obsproc_dump/sorc/bufr_dupsst.fd/dupsst.f
-  obsproc_dump/sorc/bufr_dupsst.fd/makefile
- *obsproc_dump/sorc/bufr_edtbfr.fd/edtbfr.f
-  obsproc_dump/sorc/bufr_edtbfr.fd/makefile
-  obsproc_dump/sorc/bufr_geofil.fd/geofil.f
-  obsproc_dump/sorc/bufr_geofil.fd/makefile
-  obsproc_dump/sorc/bufr_quipc.fd/makefile
-  obsproc_dump/sorc/bufr_quipc.fd/quipc.f
-  obsproc_dump/sorc/bufr_raddate.fd/makefile
-  obsproc_dump/sorc/bufr_raddate.fd/raddate.f
-  obsproc_dump/sorc/bufr_supertmi.fd/makefile
-  obsproc_dump/sorc/bufr_supertmi.fd/supertmi.f
-  obsproc_dump/sorc/prepobs_prepssmi.fd/makefile
-  obsproc_dump/sorc/prepobs_prepssmi.fd/prepssmi.f
-  obsproc_dump/sorc/wave_dcodquikscat.fd/dcodquikscat.f
-  obsproc_dump/sorc/wave_dcodquikscat.fd/makefile
-  obsproc_dump/sorc/build.sh
-  obsproc_dump/sorc/clean.sh
-  obsproc_dump/sorc/install.sh
- *obsproc_dump/sorc/load_libs.rc
-  obsproc_dump/sorc/README.build
- *obsproc_dump/sorc/setlibs.rc
-  obsproc_dump/ush/bufr_dump_obs.sh
-  obsproc_dump/ush/check_tanks.sh
- *obsproc_dump/ush/dumpjb
+   obsproc_dump/fix/bufr_bufrtab.sptrmm
+   obsproc_dump/fix/bufr_bufrtab.windsat
+   obsproc_dump/fix/nam_expdomain_guam_halfdeg_imask.gbl
+   obsproc_dump/fix/nam_expdomain_halfdeg_imask.gbl
+   obsproc_dump/fix/wave_bufrtab.ascat
+   obsproc_dump/fix/wave_bufrtab.erscat
+   obsproc_dump/fix/wave_bufrtab.quikscat
+   obsproc_dump/fix/wave_landchxh
+   obsproc_dump/sorc/bufr_chkbfr.fd/chkbfr.f
+   obsproc_dump/sorc/bufr_chkbfr.fd/makefile
+   obsproc_dump/sorc/bufr_combfr.fd/combfr.f
+   obsproc_dump/sorc/bufr_combfr.fd/makefile
+   obsproc_dump/sorc/bufr_dcodwindsat.fd/dcodwindsat.f
+   obsproc_dump/sorc/bufr_dcodwindsat.fd/makefile
+   obsproc_dump/sorc/bufr_dumpmd.fd/dumpmd.f
+   obsproc_dump/sorc/bufr_dumpmd.fd/makefile
+   obsproc_dump/sorc/bufr_dupair.fd/dupair.f
+   obsproc_dump/sorc/bufr_dupair.fd/makefile
+   obsproc_dump/sorc/bufr_dupcor.fd/dupcor.f
+   obsproc_dump/sorc/bufr_dupcor.fd/makefile
+   obsproc_dump/sorc/bufr_dupmar.fd/dupmar.f
+   obsproc_dump/sorc/bufr_dupmar.fd/makefile
+   obsproc_dump/sorc/bufr_dupmrg.fd/dupmrg.f
+   obsproc_dump/sorc/bufr_dupmrg.fd/makefile
+   obsproc_dump/sorc/bufr_duprad.fd/duprad.f
+   obsproc_dump/sorc/bufr_duprad.fd/makefile
+   obsproc_dump/sorc/bufr_dupsat.fd/dupsat.f
+   obsproc_dump/sorc/bufr_dupsat.fd/makefile
+   obsproc_dump/sorc/bufr_dupshp.fd/dupshp.f
+   obsproc_dump/sorc/bufr_dupshp.fd/makefile
+   obsproc_dump/sorc/bufr_dupsst.fd/dupsst.f
+   obsproc_dump/sorc/bufr_dupsst.fd/makefile
+ M obsproc_dump/sorc/bufr_edtbfr.fd/edtbfr.f
+   obsproc_dump/sorc/bufr_edtbfr.fd/makefile
+   obsproc_dump/sorc/bufr_geofil.fd/geofil.f
+   obsproc_dump/sorc/bufr_geofil.fd/makefile
+   obsproc_dump/sorc/bufr_quipc.fd/makefile
+   obsproc_dump/sorc/bufr_quipc.fd/quipc.f
+   obsproc_dump/sorc/bufr_raddate.fd/makefile
+   obsproc_dump/sorc/bufr_raddate.fd/raddate.f
+   obsproc_dump/sorc/bufr_supertmi.fd/makefile
+   obsproc_dump/sorc/bufr_supertmi.fd/supertmi.f
+   obsproc_dump/sorc/prepobs_prepssmi.fd/makefile
+   obsproc_dump/sorc/prepobs_prepssmi.fd/prepssmi.f
+   obsproc_dump/sorc/wave_dcodquikscat.fd/dcodquikscat.f
+   obsproc_dump/sorc/wave_dcodquikscat.fd/makefile
+   obsproc_dump/sorc/build.sh
+   obsproc_dump/sorc/clean.sh
+   obsproc_dump/sorc/install.sh
+ M obsproc_dump/sorc/load_libs.rc
+   obsproc_dump/sorc/README.build
+ M obsproc_dump/sorc/setlibs.rc
+   obsproc_dump/ush/bufr_dump_obs.sh
+   obsproc_dump/ush/check_tanks.sh
+ M obsproc_dump/ush/dumpjb
 
-( * - changed)
+( M - modified)
 
 
  USH script changes:
@@ -276,6 +401,7 @@ files:
  Output changes:
  ---------------
    No changes.
+
 
  Compute Resource Information:
  -----------------------------
@@ -328,63 +454,64 @@ obsproc_dump release 3.0.0 --> released Feb 8, 2014
 Initial population of vertical structure.
 
 files:
- *obsproc_dump/fix/bufr_bufrtab.sptrmm
- *obsproc_dump/fix/bufr_bufrtab.windsat
- *obsproc_dump/fix/nam_expdomain_guam_halfdeg_imask.gbl
- *obsproc_dump/fix/nam_expdomain_halfdeg_imask.gbl
- *obsproc_dump/fix/wave_bufrtab.ascat
- *obsproc_dump/fix/wave_bufrtab.erscat
- *obsproc_dump/fix/wave_bufrtab.quikscat
- *obsproc_dump/fix/wave_landchxh
- *obsproc_dump/sorc/bufr_chkbfr.fd/chkbfr.f
- *obsproc_dump/sorc/bufr_chkbfr.fd/makefile
- *obsproc_dump/sorc/bufr_combfr.fd/combfr.f
- *obsproc_dump/sorc/bufr_combfr.fd/makefile
- *obsproc_dump/sorc/bufr_dcodwindsat.fd/dcodwindsat.f
- *obsproc_dump/sorc/bufr_dcodwindsat.fd/makefile
- *obsproc_dump/sorc/bufr_dumpmd.fd/dumpmd.f
- *obsproc_dump/sorc/bufr_dumpmd.fd/makefile
- *obsproc_dump/sorc/bufr_dupair.fd/dupair.f
- *obsproc_dump/sorc/bufr_dupair.fd/makefile
- *obsproc_dump/sorc/bufr_dupcor.fd/dupcor.f
- *obsproc_dump/sorc/bufr_dupcor.fd/makefile
- *obsproc_dump/sorc/bufr_dupmar.fd/dupmar.f
- *obsproc_dump/sorc/bufr_dupmar.fd/makefile
- *obsproc_dump/sorc/bufr_dupmrg.fd/dupmrg.f
- *obsproc_dump/sorc/bufr_dupmrg.fd/makefile
- *obsproc_dump/sorc/bufr_duprad.fd/duprad.f
- *obsproc_dump/sorc/bufr_duprad.fd/makefile
- *obsproc_dump/sorc/bufr_dupsat.fd/dupsat.f
- *obsproc_dump/sorc/bufr_dupsat.fd/makefile
- *obsproc_dump/sorc/bufr_dupshp.fd/dupshp.f
- *obsproc_dump/sorc/bufr_dupshp.fd/makefile
- *obsproc_dump/sorc/bufr_dupsst.fd/dupsst.f
- *obsproc_dump/sorc/bufr_dupsst.fd/makefile
- *obsproc_dump/sorc/bufr_edtbfr.fd/edtbfr.f
- *obsproc_dump/sorc/bufr_edtbfr.fd/makefile
- *obsproc_dump/sorc/bufr_geofil.fd/geofil.f
- *obsproc_dump/sorc/bufr_geofil.fd/makefile
- *obsproc_dump/sorc/bufr_quipc.fd/makefile
- *obsproc_dump/sorc/bufr_quipc.fd/quipc.f
- *obsproc_dump/sorc/bufr_raddate.fd/makefile
- *obsproc_dump/sorc/bufr_raddate.fd/raddate.f
- *obsproc_dump/sorc/bufr_supertmi.fd/makefile
- *obsproc_dump/sorc/bufr_supertmi.fd/supertmi.f
- *obsproc_dump/sorc/prepobs_prepssmi.fd/makefile
- *obsproc_dump/sorc/prepobs_prepssmi.fd/prepssmi.f
- *obsproc_dump/sorc/wave_dcodquikscat.fd/dcodquikscat.f
- *obsproc_dump/sorc/wave_dcodquikscat.fd/makefile
- *obsproc_dump/sorc/build.sh
- *obsproc_dump/sorc/clean.sh
- *obsproc_dump/sorc/install.sh
- *obsproc_dump/sorc/load_libs.rc
- *obsproc_dump/sorc/README.build
- *obsproc_dump/sorc/setlibs.rc
- *obsproc_dump/ush/bufr_dump_obs.sh
- *obsproc_dump/ush/check_tanks.sh
- *obsproc_dump/ush/dumpjb
+ M obsproc_dump/fix/bufr_bufrtab.sptrmm
+ M obsproc_dump/fix/bufr_bufrtab.windsat
+ M obsproc_dump/fix/nam_expdomain_guam_halfdeg_imask.gbl
+ M obsproc_dump/fix/nam_expdomain_halfdeg_imask.gbl
+ M obsproc_dump/fix/wave_bufrtab.ascat
+ M obsproc_dump/fix/wave_bufrtab.erscat
+ M obsproc_dump/fix/wave_bufrtab.quikscat
+ M obsproc_dump/fix/wave_landchxh
+ M obsproc_dump/sorc/bufr_chkbfr.fd/chkbfr.f
+ M obsproc_dump/sorc/bufr_chkbfr.fd/makefile
+ M obsproc_dump/sorc/bufr_combfr.fd/combfr.f
+ M obsproc_dump/sorc/bufr_combfr.fd/makefile
+ M obsproc_dump/sorc/bufr_dcodwindsat.fd/dcodwindsat.f
+ M obsproc_dump/sorc/bufr_dcodwindsat.fd/makefile
+ M obsproc_dump/sorc/bufr_dumpmd.fd/dumpmd.f
+ M obsproc_dump/sorc/bufr_dumpmd.fd/makefile
+ M obsproc_dump/sorc/bufr_dupair.fd/dupair.f
+ M obsproc_dump/sorc/bufr_dupair.fd/makefile
+ M obsproc_dump/sorc/bufr_dupcor.fd/dupcor.f
+ M obsproc_dump/sorc/bufr_dupcor.fd/makefile
+ M obsproc_dump/sorc/bufr_dupmar.fd/dupmar.f
+ M obsproc_dump/sorc/bufr_dupmar.fd/makefile
+ M obsproc_dump/sorc/bufr_dupmrg.fd/dupmrg.f
+ M obsproc_dump/sorc/bufr_dupmrg.fd/makefile
+ M obsproc_dump/sorc/bufr_duprad.fd/duprad.f
+ M obsproc_dump/sorc/bufr_duprad.fd/makefile
+ M obsproc_dump/sorc/bufr_dupsat.fd/dupsat.f
+ M obsproc_dump/sorc/bufr_dupsat.fd/makefile
+ M obsproc_dump/sorc/bufr_dupshp.fd/dupshp.f
+ M obsproc_dump/sorc/bufr_dupshp.fd/makefile
+ M obsproc_dump/sorc/bufr_dupsst.fd/dupsst.f
+ M obsproc_dump/sorc/bufr_dupsst.fd/makefile
+ M obsproc_dump/sorc/bufr_edtbfr.fd/edtbfr.f
+ M obsproc_dump/sorc/bufr_edtbfr.fd/makefile
+ M obsproc_dump/sorc/bufr_geofil.fd/geofil.f
+ M obsproc_dump/sorc/bufr_geofil.fd/makefile
+ M obsproc_dump/sorc/bufr_quipc.fd/makefile
+ M obsproc_dump/sorc/bufr_quipc.fd/quipc.f
+ M obsproc_dump/sorc/bufr_raddate.fd/makefile
+ M obsproc_dump/sorc/bufr_raddate.fd/raddate.f
+ M obsproc_dump/sorc/bufr_supertmi.fd/makefile
+ M obsproc_dump/sorc/bufr_supertmi.fd/supertmi.f
+ M obsproc_dump/sorc/prepobs_prepssmi.fd/makefile
+ M obsproc_dump/sorc/prepobs_prepssmi.fd/prepssmi.f
+ M obsproc_dump/sorc/wave_dcodquikscat.fd/dcodquikscat.f
+ M obsproc_dump/sorc/wave_dcodquikscat.fd/makefile
+ A obsproc_dump/sorc/build.sh
+ A obsproc_dump/sorc/clean.sh
+ A obsproc_dump/sorc/install.sh
+ A obsproc_dump/sorc/load_libs.rc
+ A obsproc_dump/sorc/README.build
+ A obsproc_dump/sorc/setlibs.rc
+ M obsproc_dump/ush/bufr_dump_obs.sh
+ M obsproc_dump/ush/check_tanks.sh
+ M obsproc_dump/ush/dumpjb
 
-( * - changed)
+( A - added)
+( M - modified)
 
 
  USH script changes:
@@ -462,7 +589,6 @@ files:
    wave_dcodquikscat:
     - Source changed to:
           1) Handle OSCAT DATA (although currently, these are not reprocessed).
-               Monitoring (RTDM) System graphics.
       N O T I C E:  By the time this was implemented, OSCAT data were no longer
                     available.  The instrument stopped working on 2/20/14 and
                     was declared as "Dead" on 4/3/14.
