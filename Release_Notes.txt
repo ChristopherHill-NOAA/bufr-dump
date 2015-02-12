@@ -57,11 +57,14 @@ files:
    obsproc_dump/sorc/setlibs.rc
    obsproc_dump/ush/bufr_dump_obs.sh
    obsproc_dump/ush/check_tanks.sh
-   obsproc_dump/ush/dumpjb
+ M obsproc_dump/ush/dumpjb
 
 ( M - modified)
 
 
+ USH script changes:
+   dumpjb:
+    - Fixed a typo.
  Source code changes:
    bufr_dupair, bufr_dupmar, bufr_dupmrg, bufr_dupsat, bufr_dupshp,
    bufr_dupsst, bufr_geofil:

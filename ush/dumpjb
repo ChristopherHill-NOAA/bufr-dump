@@ -607,7 +607,7 @@
 #   ADD_<DGRP>
 #            - if DGRP is a data group in the list to dump (data group mnemonic
 #    case) or is a BUFR message type (data group mnemonic case), then the
-@    contents of ADD_<DGRP> are interpreted as a sequence of individual BUFR
+#    contents of ADD_<DGRP> are interpreted as a sequence of individual BUFR
 #    message type (TTT) and subtype (SSS) strings in the form TTTSSS (separated
 #    by white space) which are appended to those originally defined for DGRP in
 #    the bufr_dumplist fixed file ($LIST). These additional BUFR message types/
