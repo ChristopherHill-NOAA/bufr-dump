@@ -3143,6 +3143,8 @@ elif [[ $job = rap_dump*_pcyc_?? ]];then
    run=rap_p
 elif [[ $job = rap_dump*_erly_?? ]];then
    run=rap_e
+elif [[ $job = rap_dump*_ehrrr_?? ]];then
+   run=rap_eh
 elif [[ $job = ruc2a_dump*_?? ]];then
    run=ruc2a
 else
@@ -3170,7 +3172,7 @@ cat <<EOFs1 > status.out
         THIS CREATION TIME MUST BE EARLIER THAN THE START TIME FOR ANY
     OPERATIONAL ANALYSES JOBS THAT READ FROM THESE OBSERVATIONAL DATA DUMP
        FILES (i.e., Jobs NAM_PREP, NDAS_PREP, RAP_PREP, RAP_PREP_PCYC,
-                RAP_PREP_ERLY, RUC2A_PREP, GFS_PREP, GDAS_PREP)
+       RAP_PREP_ERLY, RAP_PREP_EHRRR, RUC2A_PREP, GFS_PREP, GDAS_PREP)
                    
 *******************************************************************************
 

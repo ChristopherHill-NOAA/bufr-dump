@@ -55,7 +55,7 @@ files:
    obsproc_dump/sorc/load_libs.rc
    obsproc_dump/sorc/README.build
    obsproc_dump/sorc/setlibs.rc
-   obsproc_dump/ush/bufr_dump_obs.sh
+ M obsproc_dump/ush/bufr_dump_obs.sh
    obsproc_dump/ush/check_tanks.sh
  M obsproc_dump/ush/dumpjb
 
@@ -65,6 +65,9 @@ files:
  USH script changes:
    dumpjb:
     - Fixed a typo.
+   bufr_dump_obs.sh:
+    - Account for new RUN "rap_eh" (early HRRR dump).
+
  Source code changes:
    bufr_dupair, bufr_dupmar, bufr_dupmrg, bufr_dupsat, bufr_dupshp,
    bufr_dupsst, bufr_geofil:
