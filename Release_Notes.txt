@@ -132,7 +132,7 @@ files:
  ---------------------
    This must be implemented either simultaneously with or after the
    implementation of:
-      v2.5.1 of obsproc_satingest.
+      v2.6.0 of obsproc_satingest.
    This must be implemented simultaneously with the implementations of:
       v2.0.4 of obsproc_cdas,
       v1.2.2 of obsproc_dump_monitor,
