@@ -5,7 +5,7 @@
 #
 # Script name:   dumpjb      Dump script to get data from BUFR tanks
 #
-# RFC contact:  Keyser      Org: NP22        Date: 2014-06-24
+# RFC contact:  Melchior    Org: NP22        Date: 2015-06-16
 #
 # Abstract: The dumpjb script is an all-purpose dump utility for time
 #   windowing, geographical filtering, eliminating duplicates, and applying
@@ -290,6 +290,8 @@
 #     mnemonic or a data group message type/subtype specified in the script
 #     parameters (done via new imported environment variable $TANK_<TTTSSS>,
 #     where TTT is the BUFR message type and SSS is the BUFR message subtype). 
+# 2015-06-16  S. Melchior  Includes types MDCRS/ARINC (004.004) and MDCRS/AFWA
+#     (004.007) in bufr_dupair dup-checking.
 #
 #
 # Usage: dumpjb  yyyymmddhh<.hh> hh<.hh> dgrp1 dgrp2 dgrp3 ... dgrpN
@@ -840,7 +842,7 @@ echo
 echo "********************************************************************"
 echo "********************************************************************"
 echo "     STARTING EXECUTION OF THE UNIVERSAL DUMP SCRIPT - DUMPJB       "
-echo "                            06-24-2014                              "
+echo "                            06-16-2015                              "
 echo "             Start time: `date -u`                                  "
 echo "********************************************************************"
 echo "********************************************************************"
@@ -1878,13 +1880,13 @@ echo
 
 rc_dupair=0
 dupair_run=no
-grep -q -e "004.001" -e "004.002" -e "004.003" -e "004.006" -e "004.009" $FILES
+grep -q -e "004.001" -e "004.002" -e "004.003" -e "004.004" -e "004.006" -e "004.007" -e "004.009" $FILES
 errgrepa=$?
 if [ $errgrepa -eq 0 ]; then
    if [ $DUPC = on ]; then
      echo "--------------------------------------------------------------------"
-      echo "Duplicate check combined aircraft reports in 004.001 - 004.003, \
-004.006 and 004.009"
+      echo "Duplicate check combined aircraft and aircar reports in \
+004.001 - 004.004, 004.006, 004.007 and 004.009" 
       echo "Duplicate check program: $AIRX"
      echo "--------------------------------------------------------------------"
       time cat $FILES | $AIRX
@@ -1896,8 +1898,8 @@ if [ $errgrepa -eq 0 ]; then
       rm fort.60 2>/dev/null
    else
      echo "--------------------------------------------------------------------"
-      echo "Duplicate check of combined aircraft reports in 004.001 - 004.003,\
- 004.006 and 004.009 NOT PERFORMED (turned off by user)"
+      echo "Duplicate check of combined aircraft and aircar reports in \
+004.001 - 004.004, 004.006, 004.007 and 004.009 NOT PERFORMED (turned off by user)"
      echo "--------------------------------------------------------------------"
    fi
    echo "--------------------------------------------------------------------"
@@ -1933,8 +1935,8 @@ fi
 
 if [ $dupair_run = yes ]; then
    echo
-   echo "Duplicate checking completed for combined aircraft reports in \
-004.001 - 004.003, 004.006 and 004.009"
+   echo "Duplicate checking completed for combined aircraft and aircar \
+reports in 004.001 - 004.004, 004.006, 004.007 and 004.009"
 fi
 if [ $dupshp_run = yes ]; then
    echo

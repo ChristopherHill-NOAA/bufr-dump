@@ -1,4 +1,161 @@
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+obsproc_dump release 3.3.1 --> released ??? ?, 2015
+                           --> implemented ??? ?, 2015
+
+files:
+   obsproc_dump/fix/bufr_bufrtab.sptrmm
+   obsproc_dump/fix/bufr_bufrtab.windsat
+   obsproc_dump/fix/nam_expdomain_guam_halfdeg_imask.gbl
+   obsproc_dump/fix/nam_expdomain_halfdeg_imask.gbl
+   obsproc_dump/fix/wave_bufrtab.ascat
+   obsproc_dump/fix/wave_bufrtab.erscat
+   obsproc_dump/fix/wave_bufrtab.quikscat
+   obsproc_dump/fix/wave_landchxh
+   obsproc_dump/sorc/bufr_chkbfr.fd/chkbfr.f
+   obsproc_dump/sorc/bufr_chkbfr.fd/makefile
+   obsproc_dump/sorc/bufr_combfr.fd/combfr.f
+   obsproc_dump/sorc/bufr_combfr.fd/makefile
+   obsproc_dump/sorc/bufr_dcodwindsat.fd/dcodwindsat.f
+   obsproc_dump/sorc/bufr_dcodwindsat.fd/makefile
+   obsproc_dump/sorc/bufr_dumpmd.fd/dumpmd.f
+   obsproc_dump/sorc/bufr_dumpmd.fd/makefile
+ M obsproc_dump/sorc/bufr_dupair.fd/dupair.f
+   obsproc_dump/sorc/bufr_dupair.fd/makefile
+ M obsproc_dump/sorc/bufr_dupcor.fd/dupcor.f
+   obsproc_dump/sorc/bufr_dupcor.fd/makefile
+   obsproc_dump/sorc/bufr_dupmar.fd/dupmar.f
+   obsproc_dump/sorc/bufr_dupmar.fd/makefile
+   obsproc_dump/sorc/bufr_dupmrg.fd/dupmrg.f
+   obsproc_dump/sorc/bufr_dupmrg.fd/makefile
+   obsproc_dump/sorc/bufr_duprad.fd/duprad.f
+   obsproc_dump/sorc/bufr_duprad.fd/makefile
+ M obsproc_dump/sorc/bufr_dupsat.fd/dupsat.f
+   obsproc_dump/sorc/bufr_dupsat.fd/makefile
+   obsproc_dump/sorc/bufr_dupshp.fd/dupshp.f
+   obsproc_dump/sorc/bufr_dupshp.fd/makefile
+   obsproc_dump/sorc/bufr_dupsst.fd/dupsst.f
+   obsproc_dump/sorc/bufr_dupsst.fd/makefile
+ M obsproc_dump/sorc/bufr_edtbfr.fd/edtbfr.f
+   obsproc_dump/sorc/bufr_edtbfr.fd/makefile
+   obsproc_dump/sorc/bufr_geofil.fd/geofil.f
+   obsproc_dump/sorc/bufr_geofil.fd/makefile
+   obsproc_dump/sorc/bufr_quipc.fd/makefile
+   obsproc_dump/sorc/bufr_quipc.fd/quipc.f
+   obsproc_dump/sorc/bufr_raddate.fd/makefile
+   obsproc_dump/sorc/bufr_raddate.fd/raddate.f
+   obsproc_dump/sorc/bufr_supertmi.fd/makefile
+   obsproc_dump/sorc/bufr_supertmi.fd/supertmi.f
+   obsproc_dump/sorc/prepobs_prepssmi.fd/makefile
+   obsproc_dump/sorc/prepobs_prepssmi.fd/prepssmi.f
+   obsproc_dump/sorc/wave_dcodquikscat.fd/dcodquikscat.f
+   obsproc_dump/sorc/wave_dcodquikscat.fd/makefile
+   obsproc_dump/sorc/build.sh
+   obsproc_dump/sorc/clean.sh
+   obsproc_dump/sorc/install.sh
+   obsproc_dump/sorc/load_libs.rc
+   obsproc_dump/sorc/README.build
+   obsproc_dump/sorc/setlibs.rc
+   obsproc_dump/ush/bufr_dump_obs.sh
+   obsproc_dump/ush/check_tanks.sh
+ M obsproc_dump/ush/dumpjb
+
+( M - modified)
+
+
+ USH script changes:
+   dumpjb:
+    -  Includes types MDCRS/ARINC (004.004) and MDCRS/AFWA (004.007) in
+       bufr_dupair dup-checking.
+       BENEFIT: See source code change to bufr_dupair below.
+
+ Source code changes:
+   bufr_dupair:
+    - Now duplicate checks MDCRS reports (004.004 or 004.007) which will later
+      be part of the "aircar" dump (duplcate check moved from upstream "dupcor"
+      code which did not consider height or obs time down to second as this
+      code does in its duplicate checking).  (This is only done if obs date is
+      after January 1, 2010; prior to this date duplicates for these types are
+      still removed by upstream "dupcor" code.)
+    - Tolerances tightened to an exact match when duplicate checking MDCRS or
+      AMDAR report against like-type for obs date after January 1, 2010 when it
+      is known that AFWA was no longer re-encoding MDCRS or AMDAR report as
+      AIREPs.
+       - Tolerances remain as before (loosened) if 1 of 2 dups being checked is
+         an AIREP or PIREP or obs date is prior to January 1, 2010 for any type
+         (and remain even more loosened as before if 1 of 2 AIREPs or PIREPs is
+         from AFWA).
+    BENEFIT: Changes above prevent near-duplcate MDCRS or AMDAR reports from
+             being tossed as before. This can result in thousands of reports
+             that were previously tossed now being retained.  Historic runs
+             (pre-2010) are not changed since re-encoded AFWA reports appeared
+             then. Duplcate AIREP and PIREP reports can still come in from
+             different sources with slightly different lat/lon, time or
+             elevation, thus old tolerances are kept for these.
+    - Receipt time is now stored so that latest arriving report is selected
+      when there are duplicates.
+      BENEFIT: Especially needed now that MDCRS are duplicate checked here
+               rather than in upstream "dupcor" code which, like most other
+               dup-check codes, stores latest arriving report when there are
+               duplicates.
+    - No longer checks reports already flagged as a duplicate against
+      subsequent reports.
+      BENEFIT: Allows code to run faster.  No change not change answers.
+    - Added requirement to retain AMDAR report when it duplicates an AIREP or
+      PIREP (thus tossing AIREP or PIREP), or to retain an AIREP report when it
+      duplicates a PIREP (thus tossing PIREP).
+      BENEFIT: Ensures best quality report is retained.
+    - Added diagnostic print for debugging.  This is commented out.
+    - Added a more detailed report summary print at the end.
+   bufr_dupcor:
+    - No longer tosses duplicates for MDCRS types (004.004 or 004.007) which
+      will later be part of the "aircar" dump.  Duplicate checking/tossing is
+      now done in downstream "dupair" code where height and obs time down to
+      the minute are considered. (This is only done if obs date is after
+      January 1, 2010; prior to this date duplicates for these types are still
+      removed by this code since these types are not duplicate checked by
+      downstream "dupair" code if they have obs date prior to January 1, 2010.)
+      BEFEFIT: See source code change to bufr_dupair above.
+    - No longer tosses duplicates for Canadian AMDARs (004.009) which will
+      later be part of the "aircft" dump.
+      BEFEFIT: This corrects an oversight since these are supposed to be
+               duplicate checked/tossed only in downstream "dupair" code, like
+               most other aircraft types.  Prevents near-duplcate Canadian
+               AMDAR reports from being tossed (although few actually were
+               here).
+    - If no time window trimming is being performed and aircraft type does not
+      need to be duplicate checked here, this program now simply stops (with
+      r.c. zero) because it has nothing to do.
+      BENEFIT: Allows code to run faster.
+    - If file is an aircraft type for which duplicate tossing is not performed
+      but time trimming is still needed, skips logic which was still sorting
+      reports and performing duplicate checking (not never tossing any
+      duplicates).
+      BENEFIT:  This is not needed.  Allows code to run faster.
+    - Updated report summary at end - e.g., no more references to "duplcates
+      not removed".
+   bufr_dupsat:
+    - Fixed bug in code which failed to initialize a counting variable and led
+      to incorrect print statements. It had no affect on answers.
+   bufr_edtbfr:
+    - Increased the maximum number of ID matches that can be listed in stdout
+      when a wildcard ID entry is specified from 3000 to 3500.
+      BEFEFIT: All Mexican MDCRS are now in the sdmedit file with a wildcard
+               ID.  There are > 3000 of these.
+    - The print statement stops listing ID's if the maximum noted above is hit
+      and a warning message is now printed.
+      BENEFIT: Prevents an array overflow without warning if the number of
+               wildcard ID matches exceeds the limit.
+    - The wildcard ID-match listing now includes a print of the complete
+      sdmedit entry card.
+      BENEFIT: Identifes the wildcard ID-match listing for cases where there is
+               more than one such entry in the sdmedit file.
+
+
+
+   <incomplete>
+
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 obsproc_dump release 3.2.1 --> released May 1, 2015
                            --> implemented ??? ?, 2015
 

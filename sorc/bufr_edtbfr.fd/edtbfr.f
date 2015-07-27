@@ -1,7 +1,7 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: BUFR_EDTBFR
-C   PRGMMR: KEYSER           ORG: NP22        DATE: 2015-01-28
+C   PRGMMR: KEYSER           ORG: NP22        DATE: 2015-03-06
 C
 C ABSTRACT: APPLIES REAL-TIME INTERACTIVE QUALITY CONTROL FLAGS,
 C   GENERATED FROM EITHER A "REJECT" LIST MAINTAINED BY NCEP/NCO OR
@@ -154,6 +154,16 @@ C     REPORT TYPE-RELEVANT ENTRIES ALLOWED IN THE SDMEDIT FLAG FILE
 C     FROM 1000 TO 2000 (PARAMETER "MEDT")
 C 2015-01-28  D. A. KEYSER -- RECOGNIZES NEW NPP/VIIRS IR(LW) POES
 C     WINDS IN MESSAGE TYPE 005, SUBTYPE 090
+C 2015-03-06  D. A. KEYSER -- INCREASED THE MAXIMUM NUMBER OF ID
+C     MATCHES THAT CAN BE LISTED IN STDOUT WHEN A WILDCARD ID ENTRY IS
+C     SPECIFIED FROM 3000 TO 3500 (DUE TO > 3000 MEXICAN MDCRS REPORTS
+C     CURRENTLY FLAGGED VIA AN ENTRY WITH A WILDCARD ID); THE PRINT
+C     STATEMENT STOPS LISTING ID'S IF THIS MAXIMUM IS HIT AND PRINTS
+C     A WARNING MESSAGE (BEFORE, NO WARNING AND ARRAY OVERFLOW OCCURRED
+C     FOR THE MEXICAN MDCRS LISTING).  THE WILDCARD ID-MATCH LISTING
+C     NOW INCLUDES A PRINT OF THE COMPLETE SDMEDIT ENTRY CARD (TO
+C     IDENTIFY THE WILDCARD ID-MATCH LISTING FOR CASES WHERE THERE IS
+C     MORE THAN ONE SUCH ENTRY IN THE SDMEDIT FILE).
 C
 C USAGE
 C   INPUT FILES:
@@ -571,6 +581,9 @@ C$$$
                                     ! type-relevant entries in the
                                     ! SDMEDIT flag file
       PARAMETER (MXTS=10)
+      PARAMETER (ISTNID_MATCH=3500) ! Allows up to 3500 stn id matches
+                                    ! to be listed in stdout when a
+                                    ! wildcard id entry is specified
 
       REAL(8),ALLOCATABLE :: TAB_8(:,:)
       REAL(8),ALLOCATABLE :: CLONH_8(:)
@@ -584,7 +597,7 @@ C$$$
       CHARACTER*11  BUHDOR
       CHARACTER*8   STNID,SUBSET,MSGTYP,STNID_TEST,CARDS8,CARDS8_TRUN,
      .              STNID_TRUN,CBUHD,CBORG
-      CHARACTER*8   STNID_MATCH(MEDT,3000)
+      CHARACTER*8   STNID_MATCH(MEDT,ISTNID_MATCH)
       CHARACTER*4   NET
       CHARACTER*3   CTYP(0:5),CTYP1,CITP
 
@@ -723,10 +736,10 @@ C$$$
 
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_EDTBFR',2015,0028,0067,'NP22')
+      CALL W3TAGB('BUFR_EDTBFR',2015,0065,0067,'NP22')
 
       print *
-      print * ,'---> Welcome to BUFR_EDTBFR - Version 01-28-2015'
+      print * ,'---> Welcome to BUFR_EDTBFR - Version 03-06-2015'
       print *
 
       NET = '    '
@@ -1650,7 +1663,7 @@ c^^^^^print
                            IF(IMATCH_STNID(N,M).GT.1) THEN
                               KTOT(M) = KTOT(M) + 1
                               RSTNID_8 = TAB_8(1,N)
-                              IF(KTOT(M).LT.3001)
+                              IF(KTOT(M).LT.ISTNID_MATCH+1)
      .                         STNID_MATCH(M,KTOT(M)) = STNID
                            ENDIF
                         ENDIF
@@ -1687,10 +1700,16 @@ C  --------------------------------------------------------------------
          DO  M = 1,NEDT(ITYP)
             IF(KTOT(M).GT.0) THEN
                PRINT 400, CARDS(ITYP,M)(1:8)
-  400 FORMAT(/'--> Wildcard id: ',A8,' includes the following report ',
-     . 'id''s (there may be duplicate id''s for more than one time or ',
-     . 'location):')
-               PRINT 401, (STNID_MATCH(M,K),K=1,KTOT(M))
+  400 FORMAT(/'--> Wildcard id: ',A8,' for below entry includes the ',
+     . 'following id''s (there may be dupl. id''s for more than one ',
+     . 'time or location):')
+               PRINT'(A128)',CARDS(ITYP,M)
+               PRINT 401, (STNID_MATCH(M,K),
+     .          K=1,MIN(KTOT(M),ISTNID_MATCH))
+               IF(KTOT(M).GT.ISTNID_MATCH)
+     .          PRINT'("#### Cannot list all reports here as there ",
+     .          "are more id matches (",I0,") than the print limit (",
+     .          I0,")"/)', KTOT(M), ISTNID_MATCH
   401 FORMAT(3X,14A9)
             ENDIF
          ENDDO

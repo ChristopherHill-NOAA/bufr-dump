@@ -1,23 +1,26 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: BUFR_DUPCOR
-C   PRGMMR: KEYSER           ORG: NP22        DATE: 2013-02-07
+C   PRGMMR: MELCHIOR/KEYSER  ORG: NP22        DATE: 2015-06-16
 C
-C ABSTRACT: PROCESSES NON PROFILE DATABASE REPORT PARTS WITH CORRECTION
-C   CHOOSING, DUPLICATE CHECKING AND (OPTIONAL) TRIMMING TO EXACT TIME
-C   WINDOW (MONTH DOWN TO MINUTE).  THE ALGORITHM SORTS THE REPORT
-C   PARTS IN ASCENDING ORDER OF LAT, LON, OBS TIME (MONTH DOWN TO
-C   MINUTE), CORRECTION INDICATOR, REPORT ID (FOR SOME TYPES) AND
-C   RECEIPT TIME (YEAR DOWN TO MINUTE).  IN THE DUPLICATE CHECKING, THE
-C   REPORT USUALLY SELECTED IS THE BULLETIN LAST RECEIVED OR CORRECTED.
-C   REPORTS ARE CHECKED FOR LAT, LON AND OBS TIME (MONTH DOWN TO
-C   MINUTE) ALL INSIDE THE TOLERANCE LIMITS.  THE FILE PATH/NAMES OF
-C   THE INPUT AND OUTPUT FILES, (OPTIONALLY) THE TIME WINDOW TO TRIM TO
-C   AND (OPTIONALLY) DEFAULT OVERRIDE DUP-CHECKING TOLERANCE LIMITS ARE
-C   READ FROM STANDARD INPUT AT THE START OF THIS PROGRAM.  IF THE TIME
-C   WINDOW RECORD IS MISSING, THEN NO TIME WINDOW TRIMMING IS
-C   PERFORMED.  ALL FILE CONNECTIONS (EXCEPT STANDARD INPUT WHICH IS
-C   PRE-CONNECTED) ARE MADE THROUGH THE FORTRAN OPEN STATEMENT.
+C ABSTRACT: PROCESSES NON PROFILE DATABASE REPORTS WITH CORRECTION
+C   CHOOSING, DUPLICATE CHECKING (DEPENDING UPON TYPE) AND
+C   (OPTIONAL) TRIMMING TO EXACT TIME WINDOW (MONTH DOWN TO MINUTE).
+C   WHEN DUPLICATE CHECKING IS PERFORMED (CURRENTLY FOR ALL TYPES
+C   EXCEPT FOR THOSE AIRCRAFT TYPES THAT LATER GO INTO BUFR_DUPAIR) THE
+C   ALGORITHM SORTS THE REPORTS IN ASCENDING ORDER OF LAT, LON, OBS TIME
+C   (MONTH DOWN TO MINUTE), CORRECTION INDICATOR, REPORT ID (FOR SOME
+C   TYPES) AND RECEIPT TIME (YEAR DOWN TO MINUTE).  IN THE DUPLICATE
+C   CHECKING, THE REPORT USUALLY SELECTED IS THE BULLETIN LAST RECEIVED
+C   OR CORRECTED.  FOR TYPES BEING DUPLICATE-CHECKED, REPORTS ARE
+C   CHECKED FOR LAT, LON AND OBS TIME (MONTH DOWN TO MINUTE) ALL INSIDE
+C   THE TOLERANCE LIMITS.  THE FILE PATH/NAMES OF THE INPUT AND OUTPUT
+C   FILES, (OPTIONALLY) THE TIME WINDOW TO TRIM TO AND (OPTIONALLY)
+C   DEFAULT OVERRIDE DUP-CHECKING TOLERANCE LIMITS ARE READ FROM
+C   STANDARD INPUT AT THE START OF THIS PROGRAM.  IF THE TIME WINDOW
+C   RECORD IS MISSING, THEN NO TIME WINDOW TRIMMING IS PERFORMED.  ALL
+C   FILE CONNECTIONS (EXCEPT STANDARD INPUT WHICH IS PRE-CONNECTED) ARE
+C   MADE THROUGH THE FORTRAN OPEN STATEMENT.
 C
 C PROGRAM HISTORY LOG:
 C 1996-09-06  J. WOOLLEN  ORIGINAL VERSION FOR IMPLEMENTATION
@@ -163,6 +166,36 @@ C 2013-02-07  J. Whiting  Port to WCOSS - Updated DUPES variable
 C       assignment statement w/ 8-btye integer intrinsic functions 
 C       (KIDNNT) so as to properly handle large (global missing) values
 C       declared BMISS, GETBMISS and CORN_8 as 8-byte reals.
+C 2015-06-16  S. Melchior -
+C      - No longer tosses duplicates for MDCRS types (004.004 or
+C        004.007) which will later be part of the "aircar" dump.
+C        Duplicate checking/tossing is now done in downstream "dupair"
+C        code where height and obs time down to the minute are
+C        considered.  Prevents near-duplcate MDCRS reports from being
+C        tossed as before.
+C      - No longer tosses duplicates for Canadian AMDARs (004.009)
+C        which will later be part of the "aircft" dump.  This corrects
+C        an oversight since these are supposed to be duplicate checked/
+C        tossed only in downstream "dupair" code, like most other
+C        aircraft types.  Prevents near-duplcate Canadian AMDAR reports
+C        from being tossed (although few actually were here).
+C 2015-06-16  D. Keyser
+C      - Additional changes related to above:
+C         - If no time window trimming is being performed and aircraft
+C           type does not need to be duplicate checked here, this
+C           program now simply stops (with r.c. zero) because it has
+C           nothing to do.  Eliminates wasted run time.
+C         - If file is an aircraft type for which duplicate tossing is
+C           not performed but time trimming is still needed, skips
+C           logic which was still sorting reports and performing
+C           duplicate checking.  This is not needed and wastes time.
+C         - Will continue to perform duplicate checking/tossing for
+C           MDCRS types (004.004 or 004.007) which will later be part
+C           of the "aircar" dump if obs date is prior to January 1,
+C           2010. These are NOT duplicate checked by downstream
+C           "dupair" code.
+C         - Updated report summary at end - e.g., no more references to
+C           "duplcates not removed".
 C     
 C USAGE:
 C   INPUT FILES:
@@ -180,18 +213,19 @@ C     UNIT 20  - UNCHECKED, UNCORRECTED AND UNWINDOWED BUFR DUMP FILE
 C
 C   OUTPUT FILES:
 C     UNIT 06  - STANDARD OUTPUT PRINT
-C     UNIT 50  - DUPLICATE CHECKED, CORRECTED AND (OPTIONAL) TIME
-C                WINDOW TRIMMED BUFR DUMP FILE
+C     UNIT 50  - DUPLICATE CHECKED (FOR MOST TYPES), CORRECTED (FOR
+C                CONVENTIONAL TYPES) AND (OPTIONAL) TIME WINDOW TRIMMED
+C                BUFR DUMP FILE
 C
 C   SUBPROGRAMS CALLED:
 C     UNIQUE:    - REMTDY
 C     SYSTEM     - GETENV   SYSTEM
 C     LIBRARY:
-C       W3NCO    - W3TAGB   W3TAGE  ERREXIT W3FS26
+C       W3NCO    - W3TAGB   W3TAGE  ERREXIT W3FS26  IW3JDN
 C       W3EMC    - ORDERS
 C       BUFRLIB  - DATELEN  OPENBF  COPYMG  UFBTAB  OPENMB  COPYSB
 C                  READMG   IREADMG CLOSMG  CLOSBF  MESGBC  MAXOUT
-C                  IBFMS    GETBMISS
+C                  IBFMS    COPYBF  UFBINT  GETBMISS
 C
 C   EXIT STATES:
 C     COND =   0 - SUCCESSFUL RUN
@@ -228,7 +262,7 @@ C$$$
       DIMENSION     NDUP(0:5)
 
       REAL(8)       ADATE,BDATE,CDATE,DDATE,RDATE,UFBTAB_8
-      REAL(8)       TAB8_IREC_8,TAB8_JREC_8
+      REAL(8)       TAB8_IREC_8,TAB8_JREC_8,rdate_8(3)
 
       LOGICAL       DUPES,AIRCFT,METAR
 
@@ -248,10 +282,10 @@ C$$$
  
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_DUPCOR',2013,0038,0054,'NP22') 
+      CALL W3TAGB('BUFR_DUPCOR',2015,0167,0054,'NP22') 
 
       print *
-      print * ,'---> Welcome to BUFR_DUPCOR - Version 02-07-2013'
+      print * ,'---> Welcome to BUFR_DUPCOR - Version 06-16-2015'
       print *
 
       CALL DATELEN(10)
@@ -296,33 +330,12 @@ ccc   print *, 'file fili is ',nbytes_fili,' bytes long'
 ccc   print *, 'file filo is ',nbytes_filo,' bytes long'
 cppppp
 
-      READ(5,*,END=1) ADATE,BDATE
-      READ(5,*,END=1) DEXY,DOUR,DMIN
+C  OPEN FILE TEMPORARILY TO CHECK FOR COMPRESSION AND TO SEE WHAT THE
+C   BUFR MESSAGE TYPE IS (SUBSET), ALSO CHECKS DATE FOR 1ST OBS FOUND
+C   FOR MOST AIRCRAFT TYPES (DETERMINES IF DUP-CHECKING IS PERFORMED
+C   FOR THESE TYPES)
+C  ------------------------------------------------------------------
 
-    1 CONTINUE
-
-      IF(BDATE.NE.99999999.00_8) THEN
-         PRINT 200, ADATE,BDATE
-      ELSE
-         PRINT 201
-      ENDIF
-  200 FORMAT(/'REQUESTED EARLIEST DATE IS ....... ',F15.2/
-     .        'REQUESTED LATEST   DATE IS ....... ',F15.2)
-  201 FORMAT(/'@@@@ AS REQUESTED, NO TIME WINDOW TRIMMING IS PERFORMED'/
-     .        '@@@@ ALL NON-DUPLICATES ARE RETAINED REGARDLESS OF TIME')
-      PRINT 202, FILI(1:NBYTES_FILI),FILO(1:NBYTES_FILO),DEXY,DMON,DDAY,
-     . DOUR,DMIN
-  202 FORMAT(/'UNCHECKED AND UNCORRECTED INPUT FILE IS         '/5X,A/
-     .        'DUPLICATE CHECKED AND CORRECTED OUTPUT FILE IS'/5X,A//
-     .        'BUFR_DUPCOR PARAMETERS:'/
-     .        3X,'TOLERANCE FOR LAT/LON CHECKS (IN DEGREES) .. ',F5.1/
-     .        3X,'TOLERANCE FOR YEAR CHECK (** NOT CHECKED **) '/
-     .        3X,'TOLERANCE FOR MONTH CHECK (IN MONTHS) ...... ',F5.1/
-     .        3X,'TOLERANCE FOR DAY CHECK (IN DAYS) .......... ',F5.1/
-     .        3X,'TOLERANCE FOR HOUR CHECK (IN HOURS) ........ ',F5.1/
-     .        3X,'TOLERANCE FOR MINUTE CHECK (IN MINUTES) .... ',F5.1/
-     .        3X,'TOLERANCE FOR SECOND CHECK (** NOT CHECKED **) ')
- 
       OPEN(LUBFI,FILE=FILI(1:NBYTES_FILI),FORM='UNFORMATTED')
 
       CALL MESGBC(LUBFI,MSGT,ICOMP)
@@ -345,18 +358,99 @@ cppppp
      .    'MESSAGE TYPE FOUND IS",I5/)', MSGT
       ENDIF
 
-      CALL CLOSBF(LUBFI)
-
-C  OPEN FILE TEMPORARILY TO SEE WHAT THE BUFR MESSAGE TYPE IS (SUBSET)
-C  -------------------------------------------------------------------
-
-      OPEN(LUBFI,FILE=FILI(1:NBYTES_FILI),FORM='UNFORMATTED')
-
       CALL OPENBF(LUBFI,'IN',LUBFI)
-      IF(IREADMG(LUBFI,SUBSET,IDATE).NE.0) PRINT *, 'BUFR_DUPCOR - ',
-     $ 'NO DATA IN INPUT FILE'
+      aircft = .false.
+      if(ireadmg(lubfi,subset,idate).ne.0) then
+         print *, '===> BUFR_DUPCOR - NO DATA IN INPUT FILE'
+         print *, '===> THIS PROGRAM IS DONE - STOP'
+         print *
+         call closbf(lubfi)
+         open(lubfi,file=fili(1:nbytes_fili),form='UNFORMATTED')
+         open(lubfj,file=filo(1:nbytes_filo),form='UNFORMATTED')
+         call copybf(lubfi,lubfj)
+         call closbf(lubfi)
+         call closbf(lubfj)
+         call w3tage('BUFR_DUPCOR')
+         call errexit(00)
+      else
+         READ(SUBSET,'(2X,2I3)') MTP,MST
+
+C  For all types of aircraft rpts with obs time after January 01, 2010:
+C    AIRCFT types NC004001, NC004002, NC004003, NC004006 and NC004009 as
+C    well as AIRCAR types NC004004 and NC004007 are NOT duplicate
+C    checked here (that will be done later in bufr_dupair), however,
+C    they will be time trimmed if that option is invoked.
+C  For all types of aircraft rpts with obs time before January 01, 2010:
+C    AIRCFT types NC004001, NC004002, NC004003, NC004006 and NC004009
+C    are NOT duplicate checked here (that will be done later in
+C    bufr_dupair), however, they will be time trimmed if that option is
+C    invoked.
+C    AIRCAR types NC004004 and NC004007 ARE duplicate checked here (they
+C    are not considered by bufr_dupair), and they are time trimmed if
+C    that option is invoked.
+C  ---------------------------------------------------------------------
+
+         AIRCFT = MTP.EQ.4.AND.(MST.LE.4.OR.MST.EQ.6.or.mst.eq.7.or.
+     .                          mst.eq.9)
+         if(aircft) then
+            if(ireadsb(lubfi).eq.0) then
+               call ufbint(lubfi,rdate_8,3,1,nlv,'YEAR MNTH DAYS')
+               jndcntrl = iw3jdn(2010,1,1)
+               jnddata =
+     .          iw3jdn(int(rdate_8(1)),int(rdate_8(2)),int(rdate_8(3)))
+               if(jnddata.lt.jndcntrl)
+     .          aircft = mtp.eq.4.and.(mst.le.3.or.mst.eq.6.OR.mst.eq.9)
+            endif
+         endif
+      ENDIF
 
       CALL CLOSBF(LUBFI)
+
+      READ(5,*,END=1) ADATE,BDATE
+      READ(5,*,END=1) DEXY,DOUR,DMIN
+
+    1 CONTINUE
+
+      IF(BDATE.NE.99999999.00_8) THEN
+         PRINT 200, ADATE,BDATE
+      ELSE
+         if(.not.aircft) PRINT 201
+      ENDIF
+  200 FORMAT(/'REQUESTED EARLIEST DATE IS ....... ',F15.2/
+     .        'REQUESTED LATEST   DATE IS ....... ',F15.2)
+  201 FORMAT(/'@@@@ AS REQUESTED, NO TIME WINDOW TRIMMING IS PERFORMED'/
+     .        '@@@@ ALL NON-DUPLICATES ARE RETAINED REGARDLESS OF TIME')
+      if(aircft) then
+         print'(/"--> This type is not dup-checked here -- it will '//
+     .    'be dup-checked later by BUFR_DUPAIR"//
+     .    "INPUT FILE IS         "/5x,a/"OUTPUT FILE IS"/5x,a/)',
+     .    fili(1:nbytes_fili),filo(1:nbytes_filo)
+         if(bdate.eq.99999999.00_8) then
+            print 203
+  203 format(/'@@@@ AS REQUESTED, NO TIME WINDOW TRIMMING IS PERFORMED'/
+     .        '@@@@ THIS PROGRAM IS DONE - STOP')
+            open(lubfi,file=fili(1:nbytes_fili),form='UNFORMATTED')
+            open(lubfj,file=filo(1:nbytes_filo),form='UNFORMATTED')
+            call copybf(lubfi,lubfj)
+            call closbf(lubfi)
+            call closbf(lubfj)
+            call w3tage('BUFR_DUPCOR')
+            call errexit(00)
+         endif
+      else
+         PRINT 202, FILI(1:NBYTES_FILI),FILO(1:NBYTES_FILO),DEXY,DMON,
+     .    DDAY,DOUR,DMIN
+  202 FORMAT(/'UNCHECKED AND UNCORRECTED INPUT FILE IS         '/5X,A/
+     .        'DUPLICATE CHECKED AND CORRECTED OUTPUT FILE IS'/5X,A//
+     .        'BUFR_DUPCOR PARAMETERS:'/
+     .        3X,'TOLERANCE FOR LAT/LON CHECKS (IN DEGREES) .. ',F5.1/
+     .        3X,'TOLERANCE FOR YEAR CHECK (** NOT CHECKED **) '/
+     .        3X,'TOLERANCE FOR MONTH CHECK (IN MONTHS) ...... ',F5.1/
+     .        3X,'TOLERANCE FOR DAY CHECK (IN DAYS) .......... ',F5.1/
+     .        3X,'TOLERANCE FOR HOUR CHECK (IN HOURS) ........ ',F5.1/
+     .        3X,'TOLERANCE FOR MINUTE CHECK (IN MINUTES) .... ',F5.1/
+     .        3X,'TOLERANCE FOR SECOND CHECK (** NOT CHECKED **) ')
+      endif
 
 C  COUNT THE NUMBER OF SUBSETS IN THE FILE TO ALLOCATE SPACE
 C  ---------------------------------------------------------
@@ -384,9 +478,12 @@ C  ---------------------------------------------------------
 
       OPEN(LUBFI,FILE=FILI(1:NBYTES_FILI),FORM='UNFORMATTED')
 
-C  MAKE A TABLE OUT OF THE LATS, LONS, AND TIME COORDINATES
+C  MAKE A TABLE OUT OF THE LATS, LONS, OBS TIME COORDINATES AND
+C   RECEIPT TIME COORDINATES
+C  ------------------------------------------------------------
+
 C  CHECK TABLE A ENTRY SINCE HI-RES ALTIMETER DATA AND AIRCRAFT TYPES
-C  E-ADAS, CANADIAN AMDAR AND TAMDAR ALL HAVE HIGH ACCURACY LAT/LON
+C   E-ADAS, CANADIAN AMDAR AND TAMDAR ALL HAVE HIGH ACCURACY LAT/LON
 C  ------------------------------------------------------------------
  
       LATLON_TYPE='NONE  '
@@ -541,6 +638,8 @@ cppppp
          ENDIF
       ENDDO
  
+      if(.not.aircft) then
+
 C  GET A SORTED INDEX OF THE REPORTS KEYED IN THIS ORDER: LAT, LON, OBS
 C   TIME, CORRECTION INDICATOR (%), REPORT ID (*), RECEIPT TIME
 C  --------------------------------------------------------------------
@@ -561,7 +660,7 @@ C    % - correction takes into account type of hourly report for METARs
       CALL ORDERS(12,IWORK,TAB_8(3,1),IORD,NTAB,MXTS,8,2) ! obs month
       CALL ORDERS(12,IWORK,TAB_8(2,1),IORD,NTAB,MXTS,8,2) ! longitude
       CALL ORDERS(12,IWORK,TAB_8(1,1),IORD,NTAB,MXTS,8,2) ! latitude
- 
+
 C  GO THROUGH THE REPORTS IN ORDER, MARKING DUPLICATES AND CORRECTIONS
 C  -------------------------------------------------------------------
  
@@ -591,6 +690,7 @@ c greater than 10e7) "missing" values are encountered.
      .      CAB8_IREC.EQ.CAB8_JREC
          IF(DUPES) JDUP(IREC) = 2
       ENDDO
+      endif ! .not.aircft
  
 C  TRIM THE EXCESS DATA FROM THE EXACT TIME WINDOW (IF REQUESTED)
 C  --------------------------------------------------------------
@@ -633,8 +733,6 @@ C  --------------------------------------------------------------------
       IF(DUMMY_MSGS.NE.'YES') CALL CLOSMG(-LUBFJ)
  
       DO WHILE(IREADMG(LUBFI,SUBSET,IDATE).EQ.0)
-         READ(SUBSET,'(2X,2I3)') MTP,MST
-         AIRCFT = MTP.EQ.4 .AND. (MST.LE.3 .OR. MST.EQ.6)
          NSUBS = NMSUB(LUBFI)
 
 C  If no subsets in msg & dummy msgs not expected, loop to nxt input msg
@@ -654,17 +752,12 @@ C  ---------------------------------------------------------------------
             DO WHILE(IFBGET(LUBFI).EQ.0)
                ISUB = ISUB+1
                IDUP = JDUP(ISUB)
-               IF(IDUP.LE.1 .OR. (AIRCFT.AND.IDUP.LE.2)) THEN
+               if(idup.le.1) then
                   CALL COPYSB(LUBFI,LUBFJ,IRET)
-                  IF(AIRCFT .AND. IDUP.EQ.2) THEN
-                     NDUP(3) = NDUP(3)+1
-                  ELSE
-                     NDUP(IDUP) = NDUP(IDUP)+1
-                  ENDIF
                ELSE
                   CALL COPYSB(LUBFI,00000,IRET)
-                  NDUP(IDUP) = NDUP(IDUP)+1
                ENDIF
+               NDUP(IDUP) = NDUP(IDUP)+1
             ENDDO
          ELSE
             IF(NSUBS.GT.0) THEN
@@ -716,27 +809,34 @@ C  -------------------------------------------------------------------
 C  GENERATE REPORT
 C  ---------------
  
-      IF(.NOT.METAR)  THEN
-         PRINT 300, ISUB,NTAB,NDUP(0)+NDUP(1)+NDUP(3),NDUP(0),
-     .              NDUP(1),NDUP(3),NDUP(2),NDUP(4)
+      if(aircft)  then
+         print 302, isub,ntab,ndup(0)+ndup(1),ndup(0),ndup(1),ndup(4)
+  302 format(/'BUFR_DUPCOR READ IN A TOTAL OF',i12,' REPORTS'/
+     .        'BUFR_DUPCOR CHECKED A TOTAL OF',i12,' REPORTS'//
+     .        'NUMBER OF REPORTS WRITTEN OUT ..................',i7/
+     .        '   INCLUDES ',i8,' NON-DUP CHECKED REPORTS'/
+     .        '   INCLUDES ',i8,' CORRECTED REPORTS'/
+     .        'NUMBER OF REPORTS SKIPPED DUE TO:'/
+     .        '   BEING OUTSIDE TIME WINDOW FOR TRIMMING ......',i7/)
+      else IF(.NOT.METAR)  THEN
+         PRINT 300, ISUB,NTAB,NDUP(0)+NDUP(1),NDUP(0),NDUP(1),NDUP(2),
+     .              NDUP(4)
   300 FORMAT(/'BUFR_DUPCOR READ IN A TOTAL OF',I12,' REPORTS'/
      .        'BUFR_DUPCOR CHECKED A TOTAL OF',I12,' REPORTS'//
      .        'NUMBER OF REPORTS WRITTEN OUT ..................',I7/
      .        '   INCLUDES ',I8,' UNIQUE REPORTS'/
      .        '   INCLUDES ',I8,' CORRECTED REPORTS'/
-     .        '   INCLUDES ',I8,' DUPLICATES NOT REMOVED'/
      .        'NUMBER OF REPORTS SKIPPED DUE TO:'/
      .        '   FAILING DUPLICATE CHECK .....................',I7/
      .        '   BEING OUTSIDE TIME WINDOW FOR TRIMMING ......',I7/)
       ELSE
-         PRINT 301, ISUB,NTAB,NDUP(0)+NDUP(1)+NDUP(3),NDUP(0),
-     .              NDUP(1),NDUP(3),NDUP(2),NDUP(4)
+         PRINT 301, ISUB,NTAB,NDUP(0)+NDUP(1),NDUP(0),NDUP(1),NDUP(2),
+     .              NDUP(4)
   301 FORMAT(/'BUFR_DUPCOR READ IN A TOTAL OF',I12,' REPORTS'/
      .        'BUFR_DUPCOR CHECKED A TOTAL OF',I12,' REPORTS'//
      .        'NUMBER OF REPORTS WRITTEN OUT ..................',I7/
      .        '   INCLUDES ',I8,' UNIQUE REPORTS'/
      .        '   INCLUDES ',I8,' CORRECTED OR THRPT=METAR REPORTS'/
-     .        '   INCLUDES ',I8,' DUPLICATES NOT REMOVED'/
      .        'NUMBER OF REPORTS SKIPPED DUE TO:'/
      .        '   FAILING DUPLICATE CHECK .....................',I7/
      .        '   BEING OUTSIDE TIME WINDOW FOR TRIMMING ......',I7/)

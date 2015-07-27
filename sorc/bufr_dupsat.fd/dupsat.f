@@ -1,7 +1,7 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: BUFR_DUPSAT
-C   PRGMMR: KEYSER           ORG: NP22        DATE: 2015-01-28
+C   PRGMMR: KEYSER           ORG: NP22        DATE: 2015-06-30
 C
 C ABSTRACT: PROCESSES SATELLITE DATABASE REPORTS WITH (OPTIONAL)
 C   GEOGRAPHICAL FILTERING, DUPLICATE CHECKING, (OPTIONAL) TRIMMING
@@ -263,6 +263,9 @@ C        19 is defined for IR short-wave imager automated winds. This
 C        allows a unique sequential serial index (counter) to be used
 C        to generate characters 3-7 of RPID for each individual
 C        satellite.
+C 2015-06-30  D. Keyser  Fixed bug in code which failed to initialize a
+C        counting variable and led to incorrect print statements. It
+C        had no affect on answers.
 C
 C USAGE:
 C   INPUT FILES:
@@ -432,10 +435,10 @@ C$$$
 
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_DUPSAT',2015,0028,0062,'NP22')
+      CALL W3TAGB('BUFR_DUPSAT',2015,0181,0062,'NP22')
 
       print *
-      print * ,'---> Welcome to BUFR_DUPSAT - Version 01-28-2015'
+      print * ,'---> Welcome to BUFR_DUPSAT - Version 06-30-2015'
       print *
 
       CALL DATELEN(10)
@@ -886,15 +889,15 @@ C  TOSS REPORTS WITH UNREASONABLE LAT OR LON
 C  -----------------------------------------
 
             JDUP(IREC) = 7
-            IF(IFIRSTU.EQ.0) THEN
+            IF(IFIRST_U.EQ.0) THEN
                PRINT'(/"~~> Will print first 100 reports with '//
      $          'unreasonable latitude or longitude ..."/)'
                CALL SYSTEM('[ -n "$jlogfile" ] && $DATA/postmsg'//
      $          ' "$jlogfile" "***WARNING: AT LEAST 1 REPORT HAS A'//
      $          ' UNREASONABLE LAT/LON, TYPE="'//SUBSET)
             ENDIF
-            IFIRSTU = IFIRSTU + 1
-            IF(IFIRSTU.LE.100.OR.K.EQ.NTAB) THEN
+            IFIRST_U = IFIRST_U + 1
+            IF(IFIRST_U.LE.100.OR.K.EQ.NTAB) THEN
                PRINT 858, K,TAB_8(1,IREC),TAB_8(2,IREC),
      $          (NINT(TAB_8(II,IREC)),II=3,6)
   858 FORMAT('##WARNING: REPORT NUMBER ',I10,' HAS EITHER AN ',
