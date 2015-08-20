@@ -157,7 +157,7 @@ files:
 
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 obsproc_dump release 3.2.1 --> released May 1, 2015
-                           --> implemented ??? ?, 2015
+                           --> implemented Aug 10, 2015
 
 files:
    obsproc_dump/fix/bufr_bufrtab.sptrmm
@@ -287,6 +287,7 @@ files:
 
  Special Instructions:
  ---------------------
+   This is part of OBSPROC.v5.0.0.
    This must be implemented either simultaneously with or after the
    implementation of:
       v2.6.0 of obsproc_satingest.
@@ -455,6 +456,7 @@ files:
 
  Special Instructions:
  ---------------------
+   This is part of OBSPROC.v4.0.0.
    This must be implemented simultaneously with the implementations of:
       v1.2.1 of obsproc_dump_monitor,
       v2.0.2 of obsproc_global, obsproc_nam, obsproc_rap, obsproc_rtma,
@@ -599,6 +601,7 @@ files:
 
  Special Instructions:
  ---------------------
+   This is part of OBSPROC.v3.0.0.
    This must be implemented simultaneously with the implementations of
    obsproc_dump_monitor.v1.2.0, obsproc_global.v2.0.0, obsproc_nam.v2.0.0,
    obsproc_rap.v2.0.0, obsproc_rtma.v2.0.0, obsproc_urma.v2.0.0,
@@ -807,6 +810,7 @@ files:
 
  Special Instructions:
  ---------------------
+   This is part of OBSPROC.v1.0.0.
    This must be implemented simultaneously with the implementations of
    obsproc_dump_monitor.v1.0.0, obsproc_global.v1.0.0, obsproc_nam.v1.0.0,
    obsproc_rap.v1.0.0, obsproc_rtma.v1.1.0, obsproc_urma.v1.1.0,
