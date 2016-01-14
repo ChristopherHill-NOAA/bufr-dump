@@ -1,7 +1,7 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: BUFR_DUPCOR
-C   PRGMMR: MELCHIOR/KEYSER  ORG: NP22        DATE: 2015-06-16
+C   PRGMMR: MELCHIOR         ORG: NP22        DATE: 2015-07-28
 C
 C ABSTRACT: PROCESSES NON PROFILE DATABASE REPORTS WITH CORRECTION
 C   CHOOSING, DUPLICATE CHECKING (DEPENDING UPON TYPE) AND
@@ -196,6 +196,10 @@ C           2010. These are NOT duplicate checked by downstream
 C           "dupair" code.
 C         - Updated report summary at end - e.g., no more references to
 C           "duplcates not removed".
+C 2015-07-28  S. Melchior Added ability to process (i.e., time-trim if
+C     requested) new AIRCFT types containing Korean AMDAR (from BUFR)
+C     in NC004011 and catch-all AMDAR (from BUFR) in NC004103 if they
+C     are present.
 C     
 C USAGE:
 C   INPUT FILES:
@@ -282,10 +286,10 @@ C$$$
  
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_DUPCOR',2015,0167,0054,'NP22') 
+      CALL W3TAGB('BUFR_DUPCOR',2015,0209,0054,'NP22') 
 
       print *
-      print * ,'---> Welcome to BUFR_DUPCOR - Version 06-16-2015'
+      print * ,'---> Welcome to BUFR_DUPCOR - Version 07-28-2015'
       print *
 
       CALL DATELEN(10)
@@ -376,10 +380,11 @@ C  ------------------------------------------------------------------
          READ(SUBSET,'(2X,2I3)') MTP,MST
 
 C  For all types of aircraft rpts with obs time after January 01, 2010:
-C    AIRCFT types NC004001, NC004002, NC004003, NC004006 and NC004009 as
-C    well as AIRCAR types NC004004 and NC004007 are NOT duplicate
-C    checked here (that will be done later in bufr_dupair), however,
-C    they will be time trimmed if that option is invoked.
+C    AIRCFT types NC004001, NC004002, NC004003, NC004006, NC004009,
+C    NC004011 and NC004103 as well as AIRCAR types NC004004 and NC004007
+C    are NOT duplicate checked here (that will be done later in
+C    bufr_dupair), however, they will be time trimmed if that option is
+C    invoked.
 C  For all types of aircraft rpts with obs time before January 01, 2010:
 C    AIRCFT types NC004001, NC004002, NC004003, NC004006 and NC004009
 C    are NOT duplicate checked here (that will be done later in
@@ -391,7 +396,7 @@ C    that option is invoked.
 C  ---------------------------------------------------------------------
 
          AIRCFT = MTP.EQ.4.AND.(MST.LE.4.OR.MST.EQ.6.or.mst.eq.7.or.
-     .                          mst.eq.9)
+     .                          mst.eq.9.or.mst.eq.11.or.mst.eq.103)
          if(aircft) then
             if(ireadsb(lubfi).eq.0) then
                call ufbint(lubfi,rdate_8,3,1,nlv,'YEAR MNTH DAYS')

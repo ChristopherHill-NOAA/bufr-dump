@@ -1,7 +1,7 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: BUFR_EDTBFR
-C   PRGMMR: KEYSER           ORG: NP22        DATE: 2015-03-06
+C   PRGMMR: KEYSER           ORG: NP22        DATE: 2016-01-14
 C
 C ABSTRACT: APPLIES REAL-TIME INTERACTIVE QUALITY CONTROL FLAGS,
 C   GENERATED FROM EITHER A "REJECT" LIST MAINTAINED BY NCEP/NCO OR
@@ -164,6 +164,9 @@ C     FOR THE MEXICAN MDCRS LISTING).  THE WILDCARD ID-MATCH LISTING
 C     NOW INCLUDES A PRINT OF THE COMPLETE SDMEDIT ENTRY CARD (TO
 C     IDENTIFY THE WILDCARD ID-MATCH LISTING FOR CASES WHERE THERE IS
 C     MORE THAN ONE SUCH ENTRY IN THE SDMEDIT FILE).
+C 2016-01-14  D. A. Keyser --  Recognizes new Korean AMDAR aircraft
+C     (from BUFR) in message type 004, subtype 011 and new catch-all
+C     AMDAR aircraft (from BUFR) in message type 004, subtype 103.
 C
 C USAGE
 C   INPUT FILES:
@@ -593,7 +596,7 @@ C$$$
 
       CHARACTER*80  BFRFIL,ASTR,DSTR,BSTR,TSTR,SSTR
       CHARACTER*128 CARD,CARDS(0:5,MEDT)
-      CHARACTER*40  CTYPE(0:20,0:4),CTYPE_sat(10:90,5:5),CTYPE1
+      CHARACTER*40  CTYPE(0:255,0:4),CTYPE_sat(10:90,5:5),CTYPE1
       CHARACTER*11  BUHDOR
       CHARACTER*8   STNID,SUBSET,MSGTYP,STNID_TEST,CARDS8,CARDS8_TRUN,
      .              STNID_TRUN,CBUHD,CBORG
@@ -643,7 +646,7 @@ C$$$
      .         2*'                                        ',
      .           'SHEF DATA                               ', ! 000.011
      .           'AVIATION-SUPPLEMENTARY CLIMATOLOGICAL DA', ! 000.012
-     .         8*'                                        ',
+     .       243*'                                        ',
      .         1*'                                        ',
      .           'SURFACE MARINE SHIP, RESTRICTED         ', ! 001.001
      .           'SURFACE MARINE BUOY(FM 18)(MOORED & DFT)', ! 001.002
@@ -656,7 +659,7 @@ C$$$
      .           'USGS RIVER/STREAM DATA                  ', ! 001.009
      .         3*'                                        ',
      .           'SURFACE MARINE SHIP, UNRESTRICTED       ', ! 001.013
-     .         7*'                                        ',
+     .       242*'                                        ',
      .         1*'                                        ',
      .           'RAWINSONDE - FIXED LAND                 ', ! 002.001
      .           'RAWINSONDE - MOBIL LAND                 ', ! 002.002
@@ -675,8 +678,8 @@ C$$$
      .           'OZONESONDE (HIGH-RES) (FROM ASCII)      ', ! 002.015
      .           'EUROPEAN PROFILER WINDS                 ', ! 002.016
      .           'NeXRaD VAD WINDS FROM LEVEL 2 DECODER   ', ! 002.017
-     .         3*'                                        ',
-     .        21*'                                        ',
+     .       238*'                                        ',
+     .       256*'                                        ',
      .         1*'                                        ',
      .           'MANUAL AIREP FORMAT AIRCRAFT            ', ! 004.001
      .           'MANUAL PIREP FORMAT AIRCRAFT            ', ! 004.002
@@ -687,10 +690,13 @@ C$$$
      .           'AUTO MDCRS ACARS AIRCFT (ARINC) via AFWA', ! 004.007
      .           'AUTOMATED TAMDAR AIRCRAFT - Mesaba      ', ! 004.008
      .           'CANADIAN ASDAR/ACARS AIRCRAFT (in BUFR) ', ! 004.009
-     .         2*'                                        ',
+     .         1*'                                        ',
+     .           'KOREAN ASDAR/ACARS AIRCRAFT (in BUFR)   ', ! 004.011
      .           'AUTOMATED TAMDAR AIRCRAFT - PenAIR      ', ! 004.012
      .           'AUTOMATED TAMDAR AIRCRAFT - Chautauqua  ', ! 004.013
-     .         7*'                                        '/
+     .        89*'                                        ',
+     .           'AUTO AMDAR FMT ASDAR/ACARS ACFT(in BUFR)', ! 004.103
+     .       152*'                                        '/
 
       DATA CTYPE_sat
      .          /'GOES/NESDIS IR(LW) DERIVED CLOUD MOTION ', ! 005.010
@@ -736,10 +742,10 @@ C$$$
 
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_EDTBFR',2015,0065,0067,'NP22')
+      CALL W3TAGB('BUFR_EDTBFR',2016,0014,0067,'NP22')
 
       print *
-      print * ,'---> Welcome to BUFR_EDTBFR - Version 03-06-2015'
+      print * ,'---> Welcome to BUFR_EDTBFR - Version 01-14-2016'
       print *
 
       NET = '    '
@@ -1034,7 +1040,7 @@ C  ------------------------------------------------------------------
          IF(ITYP.GE.000 .AND. ITYP.LT.006) THEN
             CTYP1 = CTYP(ITYP)
             IF(ITYP.LT.005) THEN
-               IF(JTYP.GE.000 .AND. JTYP.LT.021) CTYPE1=CTYPE(JTYP,ITYP)
+               IF(JTYP.GE.000 .AND. JTYP.LE.255) CTYPE1=CTYPE(JTYP,ITYP)
             ELSE
               IF(JTYP.GE.010.AND.JTYP.LT.091)CTYPE1=CTYPE_sat(JTYP,ITYP)
             ENDIF

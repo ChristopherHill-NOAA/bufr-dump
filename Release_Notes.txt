@@ -64,8 +64,9 @@ files:
 
  USH script changes:
    dumpjb:
-    -  Includes types MDCRS/ARINC (004.004) and MDCRS/AFWA (004.007) in
-       bufr_dupair dup-checking.
+    -  Includes types MDCRS/ARINC (004.004), MDCRS/AFWA (004.007), Korean AMDAR
+       (from BUFR) (004.011) and catch-all AMDAR (from BUFR) (004.103) in
+        bufr_dupair dup-checking.
        BENEFIT: See source code change to bufr_dupair below.
 
  Source code changes:
@@ -96,6 +97,11 @@ files:
              then. Duplcate AIREP and PIREP reports can still come in from
              different sources with slightly different lat/lon, time or
              elevation, thus old tolerances are kept for these.
+    - Now duplicate checks new Korean AMDAR reports (from BUFR) (004.011) and
+      catch-all AMDAR reports (from BUFR) (004.103) if they are present.
+      BEFEFIT: Add new types which will eventually be processed in production.
+               Catch-all AMDAR reports are those being migrated from TAC to
+               BUFR.
     - Receipt time is now stored so that latest arriving report is selected
       when there are duplicates.
       BENEFIT: Especially needed now that MDCRS are duplicate checked here
@@ -107,7 +113,9 @@ files:
       BENEFIT: Allows code to run faster.  No change not change answers.
     - Added requirement to retain AMDAR report when it duplicates an AIREP or
       PIREP (thus tossing AIREP or PIREP), or to retain an AIREP report when it
-      duplicates a PIREP (thus tossing PIREP).
+      duplicates a PIREP (thus tossing PIREP), or to retain either a European
+      AMDAR report from BUFR or a catch-all AMDAR report from BUFR when it
+      duplicates an AMDAR report from TAC (thus tossing AMDAR report from TAC).
       BENEFIT: Ensures best quality report is retained.
     - Added diagnostic print for debugging.  This is commented out.
     - Added a more detailed report summary print at the end.
@@ -138,6 +146,12 @@ files:
       BENEFIT:  This is not needed.  Allows code to run faster.
     - Updated report summary at end - e.g., no more references to "duplcates
       not removed".
+    - Added ability to process (i.e., time-trim if requested) new AIRCFT types
+      containing Korean AMDAR (from BUFR) (004.011) and catch-all AMDAR (from
+      BUFR) (004.103) if they are present.
+      BEFEFIT: Add new types which will eventually be processed in production.
+               Catch-all AMDAR reports are those being migrated from TAC to
+               BUFR.
    bufr_dupsat:
     - Fixed bug in code which failed to initialize a counting variable and led
       to incorrect print statements. It had no affect on answers.
@@ -154,7 +168,12 @@ files:
       sdmedit entry card.
       BENEFIT: Identifes the wildcard ID-match listing for cases where there is
                more than one such entry in the sdmedit file.
-
+    - Recognizes new Korean AMDAR aircraft (from BUFR) in message type 004,
+      subtype 011 and new catch-all AMDAR aircraft (from BUFR) in message type
+      004, subtype 103.
+      BEFEFIT: Add new types which will eventually be processed in production.
+               Catch-all AMDAR reports are those being migrated from TAC to
+               BUFR.
 
 
    <incomplete>

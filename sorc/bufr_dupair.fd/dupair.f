@@ -1,21 +1,22 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: BUFR_DUPAIR
-C   PRGMMR: MELCHIOR/KEYSER  ORG: NP22        DATE: 2015-06-16
+C   PRGMMR: MELCHIOR/KEYSER  ORG: NP22        DATE: 2016-01-14
 C
-C ABSTRACT: PROCESSES ANY COMBINATION UP TO SEVEN DUMP FILES
+C ABSTRACT: PROCESSES ANY COMBINATION UP TO NINE DUMP FILES
 C   CONTAINING TYPES THAT ULTIMATELY GO INTO EITHER THE "AIRCFT" DUMP
 C   {BUFR MESSAGE TYPE 004, SUBTYPES 001 (AIREP FORMAT), 002 (PIREP
-C   FORMAT), 003 (AMDAR FORMAT), 006 (EUROPEAN AMDAR, BUFR FORMAT) AND
-C   009) (CANADIAN AMDAR, BUFR FORMAT)} OR INTO THE "AIRCAR" DUMP {BUFR
-C   MESSAGE TYPE 004, SUBTYPES 004 (MDCRS FROM ARINC) AND 007 (MDRCS
-C   FROM AFWA)}.  PERFORMS A SINGLE DUP-CHECK FOR REPORTS ACROSS ALL
-C   APPLICABLE FILES GOING INTO EITHER THE "AIRCFT" DUMP OR INTO THE
-C   "AIRCAR" DUMP.  DOES NOT INCLUDE TAMDAR IN SUBTYPES 008, 010, 012
-C   AND 013 WHICH GO INTO "AIRCFT" DUMP.  INFORMATION IS READ
-C   SEPARATELY FROM EACH FILE THAT IS PRESENT, AND IS THEN COMBINED
-C   INTO TABLES USED FOR THE DUP-CHECK.  THE ALGORITHM SORTS THE
-C   REPORTS IN ASCENDING ORDER OF LAT, LON, OBS TIME (DAY DOWN TO
+C   FORMAT), 003 (AMDAR FORMAT), 006 (EUROPEAN AMDAR, BUFR FORMAT),
+C   009 (CANADIAN AMDAR, BUFR FORMAT), 011 (KOREAN AMDAR, BUFR
+C   FORMAT), 103 (CATCH-ALL AMDAR, BUFR FORMAT)} OR INTO THE "AIRCAR"
+C   DUMP {BUFR MESSAGE TYPE 004, SUBTYPES 004 (MDCRS FROM AIRINC) AND
+C   007 (MDCRS FROM AFWA)}.  PERFORMS A SINGLE DUP-CHECK FOR REPORTS
+C   ACROSS ALL APPLICABLE FILES GOING INTO EITHER THE "AIRCFT" DUMP
+C   OR INTO THE "AIRCAR" DUMP.  DOES NOT INCLUDE TAMDAR IN SUBTYPES
+C   008, 010, 012 AND 013 WHICH GO INTO "AIRCFT" DUMP.  INFORMATION
+C   IS READ SEPARATELY FROM EACH FILE THAT IS PRESENT, AND IS THEN
+C   COMBINED INTO TABLES USED FOR THE DUP-CHECK.  THE ALGORITHM SORTS
+C   THE REPORTS IN ASCENDING ORDER OF LAT, LON, OBS TIME (DAY DOWN TO
 C   SECOND), HEIGHT, AND RECEIPT TIME (YEAR DOWN TO MINUTE).  IN THE
 C   DUPLICATE CHECKING LOGIC, ADJACENT, SORTED REPORT PAIRS ARE CHECKED
 C   FOR LAT, LON, OBS TIME (TO THE SECOND) AND FLIGHT LEVEL, ALL BASED
@@ -138,6 +139,15 @@ C           prior to January 1, 2010).
 C         - Added diagnostic print for debugging.  This is commented
 C           out.
 C         - Added a more detailed report summary print at the end.
+C 2015-09-03  S. Melchior Added ability to process new dump files
+C      containing Korean AMDAR (from BUFR) in NC004011 and catch-all
+C      AMDAR (from BUFR) in NC004103 if they are present.  If a
+C      duplicate is found consisting of an AMDAR from TAC format and
+C      either a European AMDAR from BUFR or a catch-all AMDAR from
+C      BUFR, the AMDAR from TAC format is always tossed.
+C 2016-01-14  D. Keyser   Corrected a bug introduced in 2015-09-03
+C      update (which had not yet been implemented) which prevented this
+C      code from processing MDCRS reports from "aircar" dump.
 C
 C USAGE:
 C   INPUT FILES:
@@ -147,13 +157,15 @@ C                COMBINED INTO A SINGLE DUMP FILE (for either "aircft"
 C                or "aircar" dumps) - THE ONLY FILE NAMES CONSIDERED
 C                BY THIS PROGRAM ARE *004.001 (AIREP FORMAT), *004.002
 C                (PIREP FORMAT), *004.003 (AMDAR FORMAT), *004.006
-C                (E-AMDAR, BUFR FORMAT) and *004.009 (CANADIAN AMDAR,
-C                BUFR FORMAT) (all included in the "aircft" dump), or
-C                *004.004 (MDCRS from ARINC) and *004.007 (MDCRS from
-C                AFWA) (both included in the "aircar" dump) - OTHER
-C                FILES MAY BE INCLUDED HERE, BUT THEY WILL NOT BE
-C                MODIFIED BY THIS PROGRAM; THE OUTPUT FILE NAMES WILL
-C                BE THE SAME AS THE INPUT NAMES HERE.
+C                (EUROPEAN AMDAR, BUFR FORMAT), *004.009 (CANADIAN
+C                AMDAR, BUFR FORMAT), *004.011 (KOREAN AMDAR, BUFR
+C                FORMAT) and *004.103 (CATCH-ALL AMDAR, BUFR FORMAT)
+C                (all included in the "aircft" dump), or *004.004
+C                (MDCRS from ARINC) and *004.007 (MDCRS from AFWA)
+C                (both included in the "aircar" dump) - OTHER FILES MAY
+C                BE INCLUDED HERE, BUT THEY WILL NOT BE MODIFIED BY
+C                THIS PROGRAM; THE OUTPUT FILE NAMES WILL BE THE SAME
+C                AS THE INPUT NAMES HERE.
 C     UNIT 20  - UNCHECKED BUFR FILE(S)
 C
 C   OUTPUT FILES:
@@ -182,59 +194,65 @@ C
 C$$$
       PROGRAM BUFR_DUPAIR
  
-      PARAMETER (MXTS=15)
-      PARAMETER (NFILES=7)  ! Number of input files being considered
+      PARAMETER (MXTS=15,MXTS2=2)
+      PARAMETER (NFILES=9)  ! Number of input files being considered
  
       REAL(8),ALLOCATABLE :: TAB_8(:,:)
+      REAL(8),ALLOCATABLE :: TAB2_8(:,:)
       real(8),allocatable :: rab_8(:,:)
       INTEGER,ALLOCATABLE :: IWORK(:)
       INTEGER,ALLOCATABLE :: IORD(:)
       INTEGER,ALLOCATABLE :: JDUP(:)
 
-      REAL(8) UFBTAB_8,TAB7_8,BMISS,GETBMISS,tab1_i_8,tab1_j_8
+      REAL(8) UFBTAB_8,TAB7_8,BMISS,GETBMISS,tab1_i_8,tab1_j_8,
+     $ tab2_i_8
       CHARACTER*80 TSTR,TSTRH,TSTR_N,TSTR_O,TSTRH_N,TSTRH_O,
-     $ FILI(NFILES),FILO,FILE,rstr,tstr_n_mdcrs,tstr_o_mdcrs
-      CHARACTER*8  SUBSET,CTAB7,ctab1_i,ctab1_j
-      character*19 ctext_file(nfiles)
+     $ FILI(NFILES),FILO,FILE,rstr,tstr_n_mdcrs,tstr_o_mdcrs,
+     $ TSTR2,TSTRH2
+      CHARACTER*8  SUBSET,CTAB7,ctab1_i,ctab1_j,ctab2_i
+      character*20 ctext_file(nfiles)
       CHARACTER*3  DUMMY_MSGS
       CHARACTER*1  CDUMMY
 
-      DIMENSION    IMST(9),ntab_file(nfiles)
+      DIMENSION    IMST(103),ntab_file(nfiles)
       DIMENSION    NDUP(0:4),IPTR(2,NFILES),ndup_file(0:4,nfiles)
 
       LOGICAL      DUPES,PIREP,AIRCFT,mdcrs
 
       EQUIVALENCE  (TAB7_8,CTAB7)
-      equivalence  (tab1_i_8,ctab1_i),(tab1_j_8,ctab1_j)
+      equivalence  (tab1_i_8,ctab1_i),(tab1_j_8,ctab1_j),
+     $ (tab2_i_8,ctab2_i)
 
       DATA TSTR_N
      $ /'RPID CLAT  CLON  DAYS HOUR MINU BORG PSAL FLVL HEIT HMSL
-     $ IALT SECO YEAR MNTH '/
+     $ IALT FLVLST SECO YEAR '/
       DATA TSTRH_N
      $ /'ACRN CLATH CLONH DAYS HOUR MINU BORG PSAL FLVL HEIT HMSL
-     $ IALT SECO YEAR MNTH '/
+     $ IALT FLVLST SECO YEAR '/
       DATA TSTR_O
      $ /'RPID CLAT  CLON  DAYS HOUR MINU ICLI PSAL FLVL HEIT HMSL
-     $ IALT SECO YEAR MNTH '/
+     $ IALT NUL    SECO YEAR '/
       DATA TSTRH_O
      $ /'ACRN CLATH CLONH DAYS HOUR MINU ICLI PSAL FLVL HEIT HMSL
-     $ IALT SECO YEAR MNTH '/
+     $ IALT NUL    SECO YEAR '/
       data tstr_n_mdcrs
      $ /'ACRN CLAT  CLON  DAYS HOUR MINU BORG PSAL FLVL HEIT HMSL
-     $ IALT SECO YEAR MNTH '/
+     $ IALT NUL    SECO YEAR '/
       data tstr_o_mdcrs
      $ /'ACRN CLAT  CLON  DAYS HOUR MINU ICLI PSAL FLVL HEIT HMSL
-     $ IALT SECO YEAR MNTH '/
+     $ IALT NUL    SECO YEAR '/
       data rstr  /'RCYR  RCMO  RCDY RCHR RCMI                     '/
 
       data ctext_file/
-     $           'AIREP format       ',
-     $           'PIREP format       ',
-     $           'AMDAR format       ',
-     $           'MDCRS-ARINC/BUFR   ',
-     $           'EUROPEAN AMDAR/BUFR',
-     $           'MDCRS-AWFA/BUFR    ',
-     $           'CANADIAN AMDAR/BUFR'/
+     $           'AIREP format        ',
+     $           'PIREP format        ',
+     $           'AMDAR format        ',
+     $           'MDCRS-ARINC/BUFR    ',
+     $           'EUROPEAN AMDAR/BUFR ',
+     $           'MDCRS-AWFA/BUFR     ',
+     $           'CANADIAN AMDAR/BUFR ',
+     $           'KOREAN AMDAR/BUFR   ',
+     $           'CATCH-ALL AMDAR/BUFR'/
 
 C  Tolerance parameters for reports with obs time after January 01,
 C   2010 -and- the pair being checked contains some combination of
@@ -262,14 +280,15 @@ C  -------------------------------------
       DATA DDAY    / 0.0/ ! day
 
 
-      DATA IMST  /   1,   2,   3,   4, -99,   5,   6, -99,   7/
+      DATA IMST  /   1,   2,   3,   4, -99,   5,   6, -99,   7,
+     $             -99,   8,   91*-99,   9/
  
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_DUPAIR',2015,0167,0054,'NP22')
+      CALL W3TAGB('BUFR_DUPAIR',2016,0014,0054,'NP22')
 
       print *
-      print * ,'---> Welcome to BUFR_DUPAIR - Version 06-16-2015'
+      print * ,'---> Welcome to BUFR_DUPAIR - Version 01-14-2016'
       print *
 
       CALL DATELEN(10)
@@ -304,7 +323,8 @@ C  --------------------------------------------------
       DO  I=1,10
          IF(FILE(I:I+3).EQ.'004.') THEN
             READ(FILE(I+4:I+6),'(I3)') MST
-            IF(MST.LE.4.OR.MST.EQ.6.or.mst.eq.7.OR.MST.EQ.9) THEN
+            IF(MST.LE.4.OR.MST.EQ.6.or.mst.eq.7.OR.MST.EQ.9.OR.
+     .         MST.EQ.11.OR.MST.EQ.103) THEN
                FILI(IMST(MST)) = FILE
                AIRCFT = .TRUE.
                PRINT *, ' >> WILL CHECK ',FILE(I:I+6)
@@ -372,12 +392,14 @@ C  ---------------------------------------------------------------
 
       ALLOCATE(TAB_8(MXTS,MXTB),STAT=I);IF(I.NE.0) GOTO 901
       allocate(rab_8(mxts,mxtb),stat=i);if(i.ne.0) goto 901
+      ALLOCATE(TAB2_8(MXTS2,MXTB),STAT=I);IF(I.NE.0) GOTO 901
       ALLOCATE(IWORK(MXTB)     ,STAT=I);IF(I.NE.0) GOTO 901
       ALLOCATE(IORD(MXTB)      ,STAT=I);IF(I.NE.0) GOTO 901
       ALLOCATE(JDUP(MXTB)      ,STAT=I);IF(I.NE.0) GOTO 901
 
       TAB_8 = BMISS
       rab_8 = bmiss
+      TAB2_8 = BMISS
 
 C  MAKE A TABLE OUT OF THE LATS, LONS, HEIGHT, OBS TIME
 C   COORDINATES AND RECEIPT TIME COORDINATES
@@ -427,18 +449,30 @@ C  -------------------------------------------------------------
             OPEN(LUBFI,FILE=FILI(I),FORM='UNFORMATTED')
             IF(IRET.GT.0) THEN
                TSTR  = TSTR_N
-               if(i.eq.4) tstr = tstr_n_mdcrs
-               TSTRH = TSTRH_N
+               TSTR2 = 'MNTH NUL'
+               IF(I.EQ.4) THEN
+                  TSTR  = TSTR_N_MDCRS
+                  TSTR2 = 'MNTH NUL'
+               ENDIF
+               TSTRH  = TSTRH_N
+               TSTRH2 = 'MNTH ACID'
             ELSE
                TSTR  = TSTR_O
-               if(i.eq.4) tstr = tstr_o_mdcrs
-               TSTRH = TSTRH_O
+               TSTR2 = 'MNTH NUL'
+               IF(I.EQ.4) THEN
+                  TSTR  = TSTR_O_MDCRS
+                  TSTR2 = 'MNTH NUL'
+               endif
+               TSTRH  = TSTRH_O
+               TSTRH2 = 'MNTH NUL'
             ENDIF
 
             CALL UFBTAB(LUBFI,TAB_8(1,IPT),MXTS,MXTB-IPT+1,NTAB,TSTR)
+            CALL UFBTAB(LUBFI,TAB2_8(1,IPT),MXTS2,MXTB-IPT+1,NTAB,TSTR2)
             IF(IBFMS(TAB_8(2,IPT)).EQ.1) THEN             ! data missing
-               OPEN(LUBFI,FILE=FILI(I),FORM='UNFORMATTED')
-              CALL UFBTAB(LUBFI,TAB_8(1,IPT),MXTS,MXTB-IPT+1,NTAB,TSTRH)
+         OPEN(LUBFI,FILE=FILI(I),FORM='UNFORMATTED')
+         CALL UFBTAB(LUBFI,TAB_8(1,IPT),MXTS,MXTB-IPT+1,NTAB,TSTRH)
+         CALL UFBTAB(LUBFI,TAB2_8(1,IPT),MXTS2,MXTB-IPT+1,NTAB,TSTRH2)
             ENDIF
             call ufbtab(lubfi,rab_8(1,ipt),mxts,mxtb-ipt+1,ntab,rstr)
             IPTR(1,I) = IPT
@@ -474,7 +508,7 @@ C  - these will be used later to determine the tolerances for dup-check
 C    and whether or not MDCRS reports should be duplicate checked here
 C  --------------------------------------------------------------------
 
-      jnddata= iw3jdn(int(tab_8(14,1)),int(tab_8(15,1)),int(tab_8(4,1)))
+      jnddata= iw3jdn(int(tab_8(15,1)),int(tab2_8(1,1)),int(tab_8(4,1)))
       jndcntrl = iw3jdn(2010,1,1)
 
       if(mdcrs.and.jnddata.lt.jndcntrl) then
@@ -491,25 +525,28 @@ C  --------------------------------------------------------------------
          TAB_8(3,N) = MOD(TAB_8(3,N)+360.,360._8)
 
          IF(IBFMS(TAB_8(6,N)).EQ.1) TAB_8(6,N) = 0    ! data missing
-         if(ibfms(tab_8(13,n)).eq.1) tab_8(13,n) = 0  ! data missing
-         TAB_8(5,N) = TAB_8(5,N)+((TAB_8(6,N)+(TAB_8(13,N)/60.))/60.)
+         if(ibfms(tab_8(14,n)).eq.1) tab_8(14,n) = 0  ! data missing
+         TAB_8(5,N) = TAB_8(5,N)+((TAB_8(6,N)+(TAB_8(14,N)/60.))/60.)
 
 C  Find the height and store back in what was "MINU" slot
 C  ------------------------------------------------------
 
-         IF(IBFMS(TAB_8(8,N)).EQ.0) THEN               ! data not missing
+         IF(IBFMS(TAB_8(8,N)).EQ.0) THEN              ! data not missing
             TAB_8(6,N) = TAB_8(8,N) ! PSAL - Height for AMDAR format
-         ELSE  IF(IBFMS(TAB_8(9,N)).EQ.0) THEN         ! data not missing
+         ELSE  IF(IBFMS(TAB_8(9,N)).EQ.0) THEN        ! data not missing
             TAB_8(6,N) = TAB_8(9,N) ! FLVL - Height for AIREP/PIREP fmt
-         ELSE IF(IBFMS(TAB_8(12,N)).EQ.0) THEN         ! data not missing
+         ELSE IF(IBFMS(TAB_8(12,N)).EQ.0) THEN        ! data not missing
             TAB_8(6,N) = TAB_8(12,N)! IALT - Height for MDCRS fmt
-         ELSE  IF(IBFMS(TAB_8(10,N)).EQ.0) THEN        ! data not missing
+         ELSE  IF(IBFMS(TAB_8(10,N)).EQ.0) THEN       ! data not missing
             TAB_8(6,N) = TAB_8(10,N)! HEIT - 1st choice height for
-                                    !        E-EDAS/CAN-AMDAR
+                                    !        EUROPEAN & CANADIAN AMDAR
                                     !        (currently missing)
+         ELSE  IF(IBFMS(TAB_8(13,N)).EQ.0) THEN       ! data not missing
+            tab_8(6,n) = tab_8(13,n)! FLVLST - Height for KOREAN &
+                                    !          Catch-all AMDAR (BUFR fmt)
          ELSE
             TAB_8(6,N) = TAB_8(11,N)! HMSL - 2nd choice height for
-                                    !        E-EDAS/CAN-AMDAR
+                                    !        EUROPEAN & CANADIAN AMDAR
                                     !        (available) -- or --
                                     !        default if all are missing
          ENDIF
@@ -522,7 +559,9 @@ C              = 4 --> b004/xx004 (MDCRS-ARINC/BUFR)
 C              = 5 --> b004/xx006 (EUROPEAN AMDAR/BUFR)
 C              = 6 --> b004/xx007 (MDCRS-AWFA/BUFR)
 C              = 7 --> b004/xx009 (CANADIAN AMDAR/BUFR)
-C  ----------------------------------------------------
+C              = 8 --> b004/xx011 (KOREAN AMDAR/BUFR)
+C              = 9 --> b004/xx103 (CATCH-ALL AMDAR/BUFR)
+C  -----------------------------------------------------
 
          DO I=1,NFILES
             IF(N.GE.IPTR(1,I) .AND. N.LE.IPTR(2,I)) THEN
@@ -539,12 +578,23 @@ C  -------------------------------------------------------------------
          TAB7_8 = TAB_8(7,N)
          TAB_8(7,N) = 0.
 
+C  Check for missing report identifier.  If missing then use ACID
+C  --------------------------------------------------------------
+         tab1_i_8 = tab_8(1,N)
+         tab2_i_8 = tab2_8(2,N)
+         if(icbfms(ctab1_i,8).eq.1) then  ! missing identifier
+ccc        print *,'missing id = ',ctab1_i
+           tab_8(1,N) = tab2_8(2,N)
+ccc        tab1_i_8 = tab_8(1,N)
+ccc        print *,'new id = ',ctab1_i
+         endif
+
 C  If obs time of report (based on first report in memory) is earlier
 C   than January 01, 2010, or if report is AIREP or PIREP at any time,
 C   then discriminate on AFWA header
 C  --------------------------------------------------------------------
 
-C        print *,'jnddata=',int(tab_8(14,n)),int(tab_8(15,n)),
+C        print *,'jnddata=',int(tab_8(15,n)),int(tab2_8(1,n)),
 C    .            int(tab_8(4,n))
          if(jnddata.lt.jndcntrl
      .      .or.tab_8(9,n).eq.1.or.tab_8(9,n).eq.2) then
@@ -672,7 +722,8 @@ cpppppppppp
 C .. if duplicate check is satisfied and report "I" is either from
 C    AFWA or it is from a less-preferred file-type than
 C    report "J" (e.g., "I" is an AIREP or PIREP and "J" is an AMDAR -or-
-C    "I" is a PIREP and "J" is an AIREP), set its duplicate flag to 1
+C    "I" is a PIREP and "J" is an AIREP -or- "I" is TAC format AMDAR and
+C    "J" is BUFR format AMDAR), set its duplicate flag to 1
 C    in order to throw it out thus retaining report "J" at this point
 C    (regardless of whether or not it is from AFWA)
                IF(TAB_8(7,I).EQ.1) then
@@ -681,10 +732,12 @@ cpppppppppp
 ccc               print *, 'I tossed ==> AFWA'
 cpppppppppp
                else if((tab_8(9,i).le.2.and.tab_8(9,j).ge.3) .or.
-     .                 (tab_8(9,i).eq.2.and.tab_8(9,j).eq.1)) then
+     .                 (tab_8(9,i).eq.2.and.tab_8(9,j).eq.1) .or.
+     .                 (tab_8(9,i).eq.3.and.tab_8(9,j).eq.9) .or.
+     .                 (tab_8(9,i).eq.3.and.tab_8(9,j).eq.5)) then
 cpppppppppp
 ccc               print *, 'I tossed ==> from less-preferred file-type',
-ccc  .             ' than J'
+ccc  .             ' than J',tab_8(9,i)
 cpppppppppp
                  jdup(i) = 1
 
@@ -865,17 +918,17 @@ C  -----------------------
       do i = 1,nfiles
          if(ntab_file(i).gt.0) print 301, ntab_file(i),ctext_file(i),
      .    ndup_file(3,i)
-  301 format('  THESE INCLUDE ',I8,' REPORTS FROM ',A19,', where ',i8,
+  301 format('  THESE INCLUDE ',I8,' REPORTS FROM ',A20,', where ',i8,
      . ' are tagged as AFWA')
       enddo
-      print'(54x,"total AFWA = "I6)', NDUP(3)
+      print'(55x,"total AFWA = "I6)', NDUP(3)
 
       print 302, ndup(0)
   302 format(/'NUMBER OF UNIQUE REPORTS WRITTEN OUT ...........',i7)
       do i = 1,nfiles
          if(ndup_file(0,i).gt.0) print 303, ndup_file(0,i),ctext_file(i)
       enddo
-  303 format(10x,'THESE INCLUDE ',i8,' REPORTS FROM ',a19)
+  303 format(10x,'THESE INCLUDE ',i8,' REPORTS FROM ',a20)
 
       print 304, ndup(1)
   304 format(/'NUMBER OF REPORTS SKIPPED DUE TO:'/
