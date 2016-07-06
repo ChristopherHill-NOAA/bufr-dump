@@ -428,7 +428,7 @@ files:
       BENEFIT:  Provides increased flexibility. Different data groups within a
                 dumpjb execution, or even different subtypes within a
                 particular data group, can be pulled from differnt tank
-                path locations.  Useful for checkout or even parallel runs.
+                path locations.  Useful for developer or even parallel runs.
    bufr_dump_obs.sh
     - The execution of "/nwprod/util/ush/getges.sh -t pgbcur -v $cendat pgrb"
       in the logic that handles ERS scatterometer data processing is commented
