@@ -24,7 +24,7 @@
 #
 #
 # Usage:
-#      sh /nwprod/util/scripts/check_tanks.sh <dump mnemonic>
+#      sh check_tanks.sh <dump mnemonic>
 #
 # Script variables imported:
 #  DATA - path to working directory coming into this script
@@ -36,10 +36,12 @@
 #         (default is $FIXobsproc_shared_bufr_dumplist/bufr_dumplist)
 #         (If $LIST not imported, then $FIXobsproc_shared_bufr_dumplist MUST
 #          BE PASSED INTO THIS SCRIPT)
-#  utilscript - path to utility scripts
-#         (default is /nwprod/util/ush)
 #  cycle - e.g., t12z
 #         (default is t00z)
+#
+#   Modules and files referenced:
+#     executables:  $NDATE (presumably from default or specified version of
+#                           module prod_util)
 #
 # Remarks:
 #   Only one dump mnemonic at a time can be processed by this script.
@@ -68,21 +70,17 @@ TANK=${TANK:-/dcom/us007003}
 
 LIST=${LIST:-$FIXobsproc_shared_bufr_dumplist/bufr_dumplist}
 
-utilscript=${utilscript:-/nwprod/util/ush}
-
 set +u
 if [ -z "$PDY" ]; then
 # Run set-pdy if it has not yet been run
    cycle=${cycle:-t00z}
-   sh $utilscript/setpdy.sh
+   set +x; echo -e "\n---> path to setpdy.sh below is: `which setpdy.sh`"; set -x
+   setpdy.sh
    . $DATA/check_tanks_${name}/PDY
 fi
-PDYm8=`/nwprod/util/exec/ndate  -24 ${PDYm7}00 | cut -c1-8`
-PDYm9=`/nwprod/util/exec/ndate  -24 ${PDYm8}00 | cut -c1-8`
-PDYm10=`/nwprod/util/exec/ndate -24 ${PDYm9}00 | cut -c1-8`
-
-# Run set-up if it has not yet been run
-[ ! -s $DATA/postmsg ]  &&  sh $utilscript/setup.sh
+PDYm8=`$NDATE -24 ${PDYm7}00 | cut -c1-8`
+PDYm9=`$NDATE -24 ${PDYm8}00 | cut -c1-8`
+PDYm10=`$NDATE -24 ${PDYm9}00 | cut -c1-8`
 
 #####env 
 

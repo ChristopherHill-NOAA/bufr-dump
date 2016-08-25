@@ -1031,6 +1031,10 @@ C  ----------------------------------------
       CALL UFBINT(LUBFI,DATA_8,10,255,NLEV,UARSTR)
  
       DO M=1,NLEV
+         if(NUARLV+1.gt.255) then
+           print *, 'WARNING!!!! - this level exceeds limit of 255,',
+     $              'cannnot add it to accumulation'
+         end if
          NUARLV = MIN(255,NUARLV+1)
          UARLV_8(1:8,NUARLV) = DATA_8(1:8,M)
       ENDDO

@@ -1,5 +1,5 @@
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-obsproc_dump release 3.3.1 --> released ??? ?, 2015
+obsproc_dump release 3.3.0 --> released ??? ?, 2015
                            --> implemented ??? ?, 2015
 
 files:
@@ -25,7 +25,7 @@ files:
    obsproc_dump/sorc/bufr_dupcor.fd/makefile
    obsproc_dump/sorc/bufr_dupmar.fd/dupmar.f
    obsproc_dump/sorc/bufr_dupmar.fd/makefile
-   obsproc_dump/sorc/bufr_dupmrg.fd/dupmrg.f
+ M obsproc_dump/sorc/bufr_dupmrg.fd/dupmrg.f
    obsproc_dump/sorc/bufr_dupmrg.fd/makefile
    obsproc_dump/sorc/bufr_duprad.fd/duprad.f
    obsproc_dump/sorc/bufr_duprad.fd/makefile
@@ -56,81 +56,141 @@ files:
    obsproc_dump/sorc/README.build
  M obsproc_dump/sorc/setlibs.rc
    obsproc_dump/ush/bufr_dump_obs.sh
-   obsproc_dump/ush/check_tanks.sh
+ M obsproc_dump/ush/check_tanks.sh
  M obsproc_dump/ush/dumpjb
 
 ( M - modified)
 
 
  USH script changes:
+   bufr_dump_obs.sh:
+    - Use NCO-established variables to point to root directories for main
+      software components and input/output directories in order to run on WCOSS
+      Phase 1 or Phase 2:
+       - $COMROOT which replaces hardwire to "/com".
+    - Use NCO-established variables (presumably obtained from modules) to point
+      to prod utilities:
+       - $GRBINDEX from module grib_util (default or specified version, loaded
+         in each network which executes this script in this version of
+         obsproc_dump) which replaces executable grbindex in non-versioned,
+         horizontal structure utility directory path defined by imported
+         variable $EXGRBIX.
+    - No longer references unused utility scripts getges.sh or setup.sh.
+    - Replaced path to prepobs_prepssmi NESDIS land/sea tag (mask) file from
+      non-versioned, horizontal structure utility directory $utilparm to
+      versioned, vertical structure fixed file directory $FIXbufr.
+   check_tanks.sh:
+    - Use NCO-established variables (presumably obtained from modules) to point
+      to prod utilities:
+       - $NDATE from module prod_util (default or specified version, loaded in
+         each network which executes this script in this version of
+         obsproc_dump) which replaces executable ndate in hardwired
+         non-versioned, horizontal structure utility directory path.
+    - No longer references unused utility script setup.sh.
    dumpjb:
-    -  Includes types MDCRS/ARINC (004.004), MDCRS/AFWA (004.007), Korean AMDAR
-       (from BUFR) (004.011) and catch-all AMDAR (from BUFR) (004.103) in
-        bufr_dupair dup-checking.
-       BENEFIT: See source code change to bufr_dupair below.
+    - No longer references unused utility script mpmd.sh.
+    - Use form of unix date command to replace executable ndate in hardwired
+      non-versioned, horizontal structure utility directory path.
+    BENEFIT: Avoid the use of prod utilities.
+    - Includes types MDCRS/ARINC (004.004), MDCRS/AFWA (004.007), Korean AMDAR
+      (from BUFR) (004.011) and catch-all AMDAR (from BUFR) (004.103) in
+       bufr_dupair dup-checking.
+      BENEFIT: See source code change to bufr_dupair below.
+    - Added mesonet reports (in BUFR type 255) to types which will be
+      processed by BUFR_EDTBFR.
 
  Source code changes:
+   load_libs.rc sorc directory:
+    - Increment the bufrlib version from v10.2.5 to v11.0.1.
    setlibs.rc in sorc directory:
     - Increment the bufrlib version from v10.2.5 to v11.0.1.
     - Point to /nwprod2 copy of all libs managed by NCO.
-   load_libs.rc sorc directory:
-    - Increment the bufrlib version from v10.2.5 to v11.0.1.
    bufr_dupair:
-    - Now duplicate checks MDCRS reports (004.004 or 004.007) which will later
-      be part of the "aircar" dump (duplcate check moved from upstream "dupcor"
-      code which did not consider height or obs time down to second as this
-      code does in its duplicate checking).  (This is only done if obs date is
-      after January 1, 2010; prior to this date duplicates for these types are
-      still removed by upstream "dupcor" code.)
+    - Added logic to duplicate check MDCRS reports (004.004 or 004.007) which
+      will later be part of the "aircar" dump (thus moving duplcate check from
+      upstream "dupcor" code which did not consider height or obs time down to
+      second as this code does in its duplicate checking). This is done only if
+      obs date is later than a specified control date (1/1/2010) and if new
+      script environment variable KEEP_NEARDUP_ACFT is imported as "YES";
+      otherwise duplicates for these types are still removed by upstream
+      "dupcor" code. (More about control date and KEEP_NEARDUP_ACFT in BENEFIT
+      below.)
     - Tolerances tightened to an exact match when duplicate checking MDCRS or
-      AMDAR report against like-type for obs date after January 1, 2010 when it
-      is known that AFWA was no longer re-encoding MDCRS or AMDAR report as
-      AIREPs.
+      AMDAR report against like-type when obs date is later than a specified
+      control date (1/1/2010) and when new script environment variable
+      KEEP_NEARDUP_ACFT is imported as "YES" (more about control date and
+      KEEP_NEARDUP_ACFTin BENEFIT below).
        - Tolerances remain as before (loosened) if 1 of 2 dups being checked is
-         an AIREP or PIREP or obs date is prior to January 1, 2010 for any type
-         (and remain even more loosened as before if 1 of 2 AIREPs or PIREPs is
-         from AFWA).
+         an AIREP or PIREP, or if obs date is prior to specified control date,
+         or if KEEP_NEARDUP_ACFT is imported as "NO" (default for anything other
+         than "YES") for any type (and remain even more loosened as before if 1
+         of 2 AIREPs or PIREPs is from AFWA).
     BENEFIT: Changes above prevent near-duplcate MDCRS or AMDAR reports from
              being tossed as before. This can result in thousands of reports
-             that were previously tossed now being retained.  Historic runs
-             (pre-2010) are not changed since re-encoded AFWA reports appeared
-             then. Duplcate AIREP and PIREP reports can still come in from
-             different sources with slightly different lat/lon, time or
-             elevation, thus old tolerances are kept for these.
-    - Now duplicate checks new Korean AMDAR reports (from BUFR) (004.011) and
-      catch-all AMDAR reports (from BUFR) (004.103) if they are present.
-      BEFEFIT: Add new types which will eventually be processed in production.
+             that were previously tossed now being retained. The control date
+             noted in both items above was originally expected to be set to
+             1/1/2010 since prior to this date AFWA was known to re-encode some
+             MDCRS and AMDAR reports as AIREPs, meaning duplcate AIREP and PIREP
+             reports could still come in from different sources with slightly
+             different lat/lon, time or elevation. The script script environment
+             variable KEEP_NEARDUP_ACFT was added to force near-duplcate MDCRS
+             or AMDAR reports to still be tossed even after 1/1/2010 in some
+             networks (when "NO").  This is needed because testing has
+             unfortunately shown that the new dup-check logic appears to be
+             degrading the GFS forecast five days out.  The GSI may need to be
+             updated to include thinning of aircraft reports before this tighter
+             dup-checking (allowing more reports through) can be introduced.
+             However, some networks (e.g., NAM and RAP) may be able to use the
+             tighter dup-checking sooner than the GFS.
+    - Now duplicate checks new Korean AMDAR reports (from BUFR) (004.011),
+      catch-all AMDAR reports (from BUFR) (004.103) and TAMDAR BUFR data from
+      either AirDAT (historical reruns) and from Panasonic (current) (004.010)
+      if they are present.  (TAMDAR use HMSL as height in sorting and dup-
+      checking rather than FLVLST which is also reported but is less likely to
+      represent pressure-altitude than HMSL.)
+      BENEFIT: Add new types which will eventually be processed in production.
                Catch-all AMDAR reports are those being migrated from TAC to
                BUFR.
     - Receipt time is now stored so that latest arriving report is selected
       when there are duplicates.
-      BENEFIT: Especially needed now that MDCRS are duplicate checked here
-               rather than in upstream "dupcor" code which, like most other
-               dup-check codes, stores latest arriving report when there are
-               duplicates.
+      BENEFIT: Especially needed for obs with dates later than the specified
+               control date when MDCRS are duplicate checked here rather than
+               in upstream "dupcor" code which, like most other dup-check
+               codes, stores latest arriving report when there are duplicates.
     - No longer checks reports already flagged as a duplicate against
       subsequent reports.
       BENEFIT: Allows code to run faster.  No change not change answers.
-    - Added requirement to retain AMDAR report when it duplicates an AIREP or
-      PIREP (thus tossing AIREP or PIREP), or to retain an AIREP report when it
-      duplicates a PIREP (thus tossing PIREP), or to retain either a European
-      AMDAR report from BUFR or a catch-all AMDAR report from BUFR when it
-      duplicates an AMDAR report from TAC (thus tossing AMDAR report from TAC).
+    - Added requirement to retain AMDAR report when it duplicates an AIREP,
+      PIREP or TAMDAR (thus tossing AIREP, PIREP or TAMDAR); or to retain an
+      AIREP report when it duplicates a PIREP (thus tossing PIREP); or to retain
+      either a European AMDAR report from BUFR or a catch-all AMDAR report from
+      BUFR when it duplicates an AMDAR report from TAC (thus tossing AMDAR
+      report from TAC).  Also retains any report with a non-missing height when
+      it duplicates any report with a missing height (some Korean AMDARs have
+      missing height). Also tosses any report with a missing id when it
+      duplicates any type of aircraft report {some Catch-all AMDAR reports
+      (which turn out to be re-encoded AIREPs) have missing tail number (tail
+      number used as id for AMDAR reports)}.
       BENEFIT: Ensures best quality report is retained.
     - Added diagnostic print for debugging.  This is commented out.
     - Added a more detailed report summary print at the end.
    bufr_dupcor:
-    - No longer tosses duplicates for MDCRS types (004.004 or 004.007) which
-      will later be part of the "aircar" dump.  Duplicate checking/tossing is
-      now done in downstream "dupair" code where height and obs time down to
-      the minute are considered. (This is only done if obs date is after
-      January 1, 2010; prior to this date duplicates for these types are still
-      removed by this code since these types are not duplicate checked by
-      downstream "dupair" code if they have obs date prior to January 1, 2010.)
-      BEFEFIT: See source code change to bufr_dupair above.
+    - Added logic to no longer toss duplicates for MDCRS types (004.004 or
+      004.007) which will later be part of the "aircar" dump. Duplicate
+      checking/tossing would instead be done in downstream "dupair" code where
+      height and obs time down to the minute are considered.  This is done only
+      if obs date is later than a specified control date(1/1/2010) and if new
+      script environment variable KEEP_NEARDUP_ACFT is imported as "YES";
+      otherwise duplicates for these types would still be removed by this code
+      since these types would not be duplicate checked by downstream "dupair"
+      code if they have obs date prior to specified control date or
+      KEEP_NEARDUP_ACFT is imported as "NO" (default for anything other than
+      "YES").  (More about control date and KEEP_NEARDUP_ACFT in BENEFIT below.)
+      BENEFIT: See BENEFIT for source code changes 1 and 2 to bufr_dupair
+               above.
     - No longer tosses duplicates for Canadian AMDARs (004.009) which will
       later be part of the "aircft" dump.
-      BEFEFIT: This corrects an oversight since these are supposed to be
+      BENEFIT: This corrects an oversight since these are supposed to be
                duplicate checked/tossed only in downstream "dupair" code, like
                most other aircraft types.  Prevents near-duplcate Canadian
                AMDAR reports from being tossed (although few actually were
@@ -147,18 +207,51 @@ files:
     - Updated report summary at end - e.g., no more references to "duplcates
       not removed".
     - Added ability to process (i.e., time-trim if requested) new AIRCFT types
-      containing Korean AMDAR (from BUFR) (004.011) and catch-all AMDAR (from
-      BUFR) (004.103) if they are present.
-      BEFEFIT: Add new types which will eventually be processed in production.
+      containing Korean AMDAR (from BUFR) (004.011), catch-all AMDAR (from BUFR)
+      (004.103) and TAMDAR BUFR data from either AirDAT (historical reruns) and
+      from Panasonic (current) (004.010) if they are present.
+      BENEFIT: Add new types which will eventually be processed in production.
                Catch-all AMDAR reports are those being migrated from TAC to
                BUFR.
+    - For AIRCAR types with obs date prior to a specified control date
+      (1/1/2010) or with new script environment variable KEEP_NEARDUP_ACFT
+      imported as "NO" (default for anything other than "YES"), added logic to
+      check if operator descriptors are used to increase the scale factor for
+      "CLAT" from the standard value of 2 to something larger.  If so, will
+      later round CLAT (and CLON by assumption) values read in for each subset
+      to their scale factor 2 values prior to sorting and duplicate checking
+      them.
+      BENEFIT: Version 7 BUFR MDCRS type 004.004 encodes "CLAT" and "CLON" to
+               0.001 degree precision (vs. 0.01 degree precision before this)
+               via use of operator descriptors which increase scale factor from
+               2 to 5. This rounding of CLAT and CLON back to 0.01 degree
+               precision allows these reports to be duplicate checked in the
+               manner consistent with other aircraft data having 0.01 degree
+               lat/lon precision.  (Otherwise many more near-duplicates would
+               be retained.)  This is needed only for MDCRS reports after
+               1/1/2010 when KEEP_NEARDUP_ACFT = NO since version 7 BUFR was
+               not used until the fall of 2016.
+    - Added diagnostic print for debugging.  This is commented out.
+   bufr_dupmrg:
+    - Added diagnostic warning print statement if the number of levels added to
+      the accumulation of merged upper-air levels exceeds the limit of 255.
    bufr_dupsat:
     - Fixed bug in code which failed to initialize a counting variable and led
       to incorrect print statements. It had no affect on answers.
+    - Comment updates to account for Himawari satellite.
    bufr_edtbfr:
+    - Added ability to apply QC flags to mesonet reports originally in the b255
+      tanks (that eventually go into the "msonet" dump). These are entered in
+      the sdmedit flag text file with new report type "MSO".
+      BENEFIT: Allows for a more straightforward method of rejecting mesonet
+               reports vs. the use of a reject-list file read by the GSI.
+############################################
+ --------> Note for later reference: This adds about 22 sec to a NAM dump run
+           time.
+############################################
     - Increased the maximum number of ID matches that can be listed in stdout
       when a wildcard ID entry is specified from 3000 to 3500.
-      BEFEFIT: All Mexican MDCRS are now in the sdmedit file with a wildcard
+      BENEFIT: All Mexican MDCRS are now in the sdmedit file with a wildcard
                ID.  There are > 3000 of these.
     - The print statement stops listing ID's if the maximum noted above is hit
       and a warning message is now printed.
@@ -169,11 +262,31 @@ files:
       BENEFIT: Identifes the wildcard ID-match listing for cases where there is
                more than one such entry in the sdmedit file.
     - Recognizes new Korean AMDAR aircraft (from BUFR) in message type 004,
-      subtype 011 and new catch-all AMDAR aircraft (from BUFR) in message type
-      004, subtype 103.
-      BEFEFIT: Add new types which will eventually be processed in production.
+      subtype 011, new catch-all AMDAR aircraft (from BUFR) in message type
+      004, subtype 103 and new TAMDAR aircraft (from BUFR, historical AirDAT or
+      current Panasonic) in message type 004, subtype 010.
+      BENEFIT: Add new types which will eventually be processed in production.
                Catch-all AMDAR reports are those being migrated from TAC to
                BUFR.
+    - Updated nomenclature for several existing aircraft types.
+    - Included E-AMDAR (BUFR type 004, subtype 006), TAMDAR (from Panasonic, or
+      before that AirDAT, 004, 010), PenAir TAMDAR (from MADIS, 004, 012),
+      Chautauqua TAMDAR (from MADIS, 004, 013) and "Catch-all" AMDAR (004, 103)
+      to types of aircraft reports which can encode a moisture QM from an
+      sdmedit flag text file entry.
+    - Corrected oversight in 2011-09-30 update whereby code was not obtaining
+      the id (in this case ACID) from PenAir and Chautauqua TAMDAR (from MADIS)
+      aircraft reports. (These are no longer available so this fix solely for
+      historical reruns.)
+    - Check for cases where operator descriptors transform mnemonics CLAT/CLON
+      from low- to high-accuracy (use BUFRLIB routine NEMSPECS to check scale
+      for CLAT in first subset in each file read in).  In this case, use lat/lon
+      matching tolerances designed for high-accuracy lat/lon (just as though
+      reports used CLATH/CLONH instead of operator descriptors on CLAT/CLON.
+      BENEFIT: The V7 BUFR MDCRS in NC004004 (coming in fall 2016) use operator
+               descriptors to increase precision of CLAT/CLON. Need this change
+               to use proper lat/lon tolerances in the matching process.
+    - Replaced explicit assignment of BMISS with GETBMISS function.
 
 
    <incomplete>

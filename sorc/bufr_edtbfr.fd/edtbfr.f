@@ -1,20 +1,20 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: BUFR_EDTBFR
-C   PRGMMR: KEYSER           ORG: NP22        DATE: 2016-01-14
+C   PRGMMR: KEYSER           ORG: NP22        DATE: 2016-08-15
 C
 C ABSTRACT: APPLIES REAL-TIME INTERACTIVE QUALITY CONTROL FLAGS,
 C   GENERATED FROM EITHER A "REJECT" LIST MAINTAINED BY NCEP/NCO OR
 C   FROM DECISIONS MADE BY THE THE NCEP/NCO SENIOR DUTY METEOROLOGIST
 C   (SDM), TO ALL TYPES OF SURFACE LAND (BUFR MESSAGE TYPE 000),
 C   SURFACE MARINE (BUFR MESSAGE TYPE 001), UPPER-AIR (BUFR MESSAGE
-C   TYPE 002), AIRCRAFT (BUFR MESSAGE TYPE 004) OR SATELLITE-DERIVED
-C   WIND (BUFR MESSAGE TYPE 005) REPORT DATA AS IT IS BEING DUMPED FROM
-C   THE /dcom BUFR DATABASE IN THE VARIOUS NCEP NETWORKS.  THE DATA
-C   TIME WINDOW AND THE BUFR INPUT FILE NAMES TO CHECK ARE READ FROM
-C   STANDARD INPUT.  ALL BUFR FILE CONNECTIONS (EXCEPT STANDARD INPUT
-C   WHICH IS PRE-CONNECTED) ARE MADE THROUGH THE FORTRAN OPEN
-C   STATEMENT.
+C   TYPE 002), AIRCRAFT (BUFR MESSAGE TYPE 004), SATELLITE-DERIVED WIND
+C   (BUFR MESSAGE TYPE 005) OR MESONET (BUFR MESSAGE TYPE 255) REPORT
+C   DATA AS IT IS BEING DUMPED FROM THE /dcom BUFR DATABASE IN THE
+C   VARIOUS NCEP NETWORKS.  THE DATA TIME WINDOW AND THE BUFR INPUT
+C   FILE NAMES TO CHECK ARE READ FROM STANDARD INPUT.  ALL BUFR FILE
+C   CONNECTIONS (EXCEPT STANDARD INPUT WHICH IS PRE-CONNECTED) ARE MADE
+C   THROUGH THE FORTRAN OPEN STATEMENT.
 C
 C PROGRAM HISTORY LOG:
 C 1997-02-01  J. WOOLLEN -- ORIGINAL AUTHOR
@@ -65,15 +65,15 @@ C       THAT THE REPORT BE FROM THIS BUFR MESSAGE TYPE
 C 2005-03-24  D. KEYSER  -- INCREASE THE SIZE FOR MXTB FROM 50000 TO
 C       300000 SO DUMPS OVER VERY WIDE TIME WINDOWS (E.G., 24-HOURS)
 C       CONTAINING MORE REPORTS WILL NOT HIT THE LIMIT
-C 2006-04-18  D. KEYSER  -- MODIFIED TO PROPERLY HANDLE E-ADAS AND
+C 2006-04-18  D. KEYSER  -- MODIFIED TO PROPERLY HANDLE E-AMDAR AND
 C       CANADIAN AMDAR AIRCRAFT (HI-ACCURACY LAT/LON, STN. ID FROM
-C       "ACRN"), TAMDAR AIRCRAFT (HI-ACCURACY LAT/LON, STN. ID FROM
-C       "ACID", MOISTURE AVAILABLE); UPDATED PRINT TO INCLUDE "NEW"
-C       SUBTYPES; LAT/LON TOLERANCE CHECK SET TO 0.01 FOR TYPES WHICH
-C       ENCODE HIGH-ACCURACY LAT/LON (LAT/LON TOLERANCE REMAINS 0.25
-C       FOR TYPES ENCODING LOW-ACCURACY LAT/LON); WILL AUTOMATICALLY
-C       ASSUME A TYPE ENCDOES HIGH-ACCUARACY LAT/LON IF LOW-ACCURACY
-C       LAT/LON IS MISSING
+C       "ACRN"), TAMDAR (from MADIS) AIRCRAFT (HI-ACCURACY LAT/LON, STN.
+C       ID FROM "ACID", MOISTURE AVAILABLE); UPDATED PRINT TO INCLUDE
+C       "NEW" SUBTYPES; LAT/LON TOLERANCE CHECK SET TO 0.01 FOR TYPES
+C       WHICH ENCODE HIGH-ACCURACY LAT/LON (LAT/LON TOLERANCE REMAINS
+C       0.25 FOR TYPES ENCODING LOW-ACCURACY LAT/LON); WILL
+C       AUTOMATICALLY ASSUME A TYPE ENCDOES HIGH-ACCUARACY LAT/LON IF
+C       LOW-ACCURACY LAT/LON IS MISSING
 C 2007-03-23  D. KEYSER   INTRODUCED ALLOCATABLE ARRAYS TO AVOID ARRAY
 C     OVERFLOW PROBLEMS, DETERMINES SIZE OF ARRAYS BY CALLING UFBTAB
 C     WITH NEGATIVE UNIT NUMBER TO SIMPLY COUNT SUBSETS
@@ -84,24 +84,24 @@ C     BEEN MARKED AS OBSOLETE}
 C 2011-09-30  D. KEYSER   IMPROVED COMMENTS; STREAMLINED CODE; ACCOUNTS
 C     FOR SHIP REPORTS NOW (OR SOON) BEING SPLIT INTO TWO TANKS,
 C     b001/xx001 (NOW ONLY RESTRICTED) AND NEW b001/xx013
-C     (UNRESTRICTED), ALSO ACCOUNTS FOR TAMDAR PENAIR IN b004/xx012 AND
-C     TAMDAR CHAUTAUQUA IN b004/xx013; AS A RESULT OF LATEST BUFRLIB
-C     WHICH CAN HANDLE EMBEDDED DICTIONARY MESSAGES, INCREASES AMOUNT
-C     OF BUFRLIB PRINTOUT DURING (ONLY) THE POINT WHEN READING IN
-C     MESSAGES IN ORDER TO DETECT ANY EMBEDDED DICTIONARY MESSAGES;
-C     ADDED MORE OPTIONS FOR WILD CARD ENTRIES IN REPORT ID LOCATION IN
-C     SDMEDIT FLAG FILE ENTRIES: "*" IN CHARACTER 1 FOLLOWED BY 7 BLANK
-C     CHARACTERS - ALL REPORTS ARE CONSIDERED TO HAVE A MATCHING REPORT
-C     ID (SUBJECT TO CONDITIONS), "*" IN CHARACTER 1 FOLLOWED BY 1-7
-C     VALID CHARACTERS - ALL REPORTS ENDING WITH THE CHARACTERS
-C     MATCHING THOSE AFTER "*" IN FLAG FILE ARE CONSIDERED TO HAVE A
-C     MATCHING REPORT ID, ONE OR MORE "?"'S IN ANY CHARACTER - ALL
-C     REPORTS MATCHING NON-"?" CHARACTERS IN FLAG FILE AND WITH ANY
-C     VALID CHARACTER IN "?" POSITION(S) ARE CONSIDERED TO HAVE A
-C     MATCHING REPORT ID (THIS ALSO APPLIES FOR REPORTS IN THE FLAG
-C     FILE BEGINNING WITH, OR ENDING WITH, "*"); ADDED OPTION TO ENTER
-C     ONLY THE HOUR IN TIME LOCATION IN SDMEDIT FLAG FILE ENTRIES, ALL
-C     REPORTS WHICH MATCH THE HOUR ARE CONSIDERED TO HAVE A MATCH IN
+C     (UNRESTRICTED), ALSO ACCOUNTS FOR TAMDAR (from MADIS) PENAIR IN
+C     b004/xx012 AND TAMDAR (from MADIS) CHAUTAUQUA IN b004/xx013; AS A
+C     RESULT OF LATEST BUFRLIB WHICH CAN HANDLE EMBEDDED DICTIONARY
+C     MESSAGES, INCREASES AMOUNT OF BUFRLIB PRINTOUT DURING (ONLY) THE
+C     POINT WHEN READING IN MESSAGES IN ORDER TO DETECT ANY EMBEDDED
+C     DICTIONARY MESSAGES; ADDED MORE OPTIONS FOR WILD CARD ENTRIES IN
+C     REPORT ID LOCATION IN SDMEDIT FLAG FILE ENTRIES: "*" IN CHARACTER
+C     1 FOLLOWED BY 7 BLANK CHARACTERS - ALL REPORTS ARE CONSIDERED TO
+C     HAVE A MATCHING REPORT ID (SUBJECT TO CONDITIONS), "*" IN
+C     CHARACTER 1 FOLLOWED BY 1-7 VALID CHARACTERS - ALL REPORTS ENDING
+C     WITH THE CHARACTERS MATCHING THOSE AFTER "*" IN FLAG FILE ARE
+C     CONSIDERED TO HAVE A MATCHING REPORT ID, ONE OR MORE "?"'S IN ANY
+C     CHARACTER - ALL REPORTS MATCHING NON-"?" CHARACTERS IN FLAG FILE
+C     AND WITH ANY VALID CHARACTER IN "?" POSITION(S) ARE CONSIDERED TO
+C     HAVE A MATCHING REPORT ID (THIS ALSO APPLIES FOR REPORTS IN THE
+C     FLAG FILE BEGINNING WITH, OR ENDING WITH, "*"); ADDED OPTION TO
+C     ENTER ONLY THE HOUR IN TIME LOCATION IN SDMEDIT FLAG FILE ENTRIES,
+C     ALL REPORTS WHICH MATCH THE HOUR ARE CONSIDERED TO HAVE A MATCH IN
 C     TIME REGARDLESS OF THEIR YEAR, MONTH OR DAY (ALLOWS REPORTS FOR
 C     ONLY ONE CYCLE EACH DAY, E.G. 00 OR 12Z, TO BE PUT ON THE REJECT
 C     LIST); ADDED OPTION TO ENTER ONLY THE YEAR, MONTH AND DAY IN TIME
@@ -165,8 +165,59 @@ C     NOW INCLUDES A PRINT OF THE COMPLETE SDMEDIT ENTRY CARD (TO
 C     IDENTIFY THE WILDCARD ID-MATCH LISTING FOR CASES WHERE THERE IS
 C     MORE THAN ONE SUCH ENTRY IN THE SDMEDIT FILE).
 C 2016-01-14  D. A. Keyser --  Recognizes new Korean AMDAR aircraft
-C     (from BUFR) in message type 004, subtype 011 and new catch-all
-C     AMDAR aircraft (from BUFR) in message type 004, subtype 103.
+C     (raw BUFR) in message type 004, subtype 011 and new "Catch-all"
+C     AMDAR aircraft (raw BUFR) in message type 004, subtype 103.
+C 2016-08-09  S. Melchior/D. Keyser
+C         - Recognizes new TAMDAR aircraft (raw BUFR) from Panasonic
+C           (as well as historical data from AirDAT) in message type
+C           004, subtype 010.
+C         - Updated nomenclature for several existing aircraft types.
+C         - Corrected comments re: which aircraft types contain
+C           moisture and what type of moisture observation is reported.
+C         - Included E-AMDAR (BUFR type 004, subtype 006), TAMDAR (from
+C           Panasonic, or before that AirDAT, 004, 010), PenAir TAMDAR
+C           (from MADIS, 004, 012), Chautauqua TAMDAR (from MADIS, 004,
+C           013) and "Catch-all" AMDAR (004, 103) to types of aircraft
+C           reports which can encode a moisture QM from an sdmedit flag
+C           text file entry.
+C         - Corrected comments re: which aircraft types use which
+C           height mnemonic when a pressure must be calculated from
+C           reported "height", and which aircraft types actually report
+C           pressure. (Needed when obs within a specified pressure
+C           layer are considered based on the sdmedit flag text file
+C           entry.)
+C         - Corrected oversight in 2016-01-14 update whereby code was
+C           not obtaining the reported height (in the form of mnemonic
+C           FLVLST) for Korean and "Catch-all" AMDAR aircraft reports.
+C           This is needed when a pressure must be calculated from
+C           reported "height" when obs within a specified pressure
+C           layer are considered based on the sdmedit flag text file
+C           entry.
+C         - Corrected oversight in 2016-01-14 update whereby code was
+C           not obtaining the id (in this case ACRN) from Korean and
+C           "Catch-all" AMDAR aircraft reports.
+C         - Corrected oversight in 2011-09-30 update whereby code was
+C           not obtaining the id (in this case ACID) from PenAir and
+C           Chautauqua TAMDAR (from MADIS) aircraft reports. (These are
+C           no longer available so this fix solely for historical
+C           reruns.)
+C         - Check for cases where operator descriptors transform
+C           mnemonics CLAT/CLON from low- to high-accuracy (use BUFRLIB
+C           routine NEMSPECS to check scale for CLAT in first subset in
+C           each file read in).  In this case, use lat/lon matching
+C           tolerances designed for high-accuracy lat/lon (just as
+C           though reports used CLATH/CLONH instead of operator
+C           descriptors on CLAT/CLON.
+C           BENEFIT: The V7 BUFR MDCRS in NC004004 (coming in fall 2016)
+C                    use operator descriptors to increase precision of
+C                    CLAT/CLON. Need this change to use proper lat/lon
+C                    tolerances in the matching process.
+C         - Replaced explicit assignment of BMISS with GETBMISS
+C           function.
+C 2016-08-15  D. A. Keyser --  Added ability to apply QC flags to
+C     mesonet reports originally in the b255 tanks (that eventually go
+C     into the "msonet" dump). These are entered in the sdmedit flag
+C     text file with report type "MSO".
 C
 C USAGE
 C   INPUT FILES:
@@ -199,7 +250,8 @@ C       W3NCO    - W3TAGB   W3TAGE   ERREXIT  W3DIFDAT
 C       BUFRLIB  - DATELEN  OPENBF   COPYMG   UFBTAB   OPENMB
 C                  COPYBF   COPYSB   CLOSMG   CLOSBF   IREADMG
 C                  IREADSB  UFBCPY   WRITSB   UFBINT   MESGBC
-C                  PARSTR   NMSUB    IBFMS    CAPIT
+C                  PARSTR   NMSUB    IBFMS    CAPIT    NEMSPECS
+C                  GETBMISS
 C
 C   EXIT STATES:
 C     COND =   0 - SUCCESSFUL RUN
@@ -212,13 +264,15 @@ C     (Note: Anything in character 129 or after in the SDMEDIT flag
 C            text file is ignored by this program.)
 C        Column        Description
 C        ------        -----------
-C        01-08         Reported call sign, WMO id, tail number (MDCRS
-C                      ACARS aircraft, E-ADAS aircraft, Canadian AMDAR
-C                      aircraft), flight number (all other aircraft),
-C                      or "SWsssnnn" (satellite-derived winds, where
-C                      "sss" is BUFR message subtype and "nnn" is BUFR
-C                      code table value for satellite number) - Left
-C                      justified, blank right fill
+C        01-08         Reported call sign, WMO id, tail number {MDCRS
+C                      aircraft, E-AMDAR aircraft, Canadian AMDAR
+C                      aircraft, TAMDAR (Panasonic or AirDAT) aircraft,
+C                      Korean AMDAR aircraft, "Catch-all" AMDAR (raw
+C                      BUFR) aircraft}, flight number (all other
+C                      aircraft), or "SWsssnnn" (satellite-derived
+C                      winds, where "sss" is BUFR message subtype and
+C                      "nnn" is BUFR code table value for satellite
+C                      number) - Left justified, blank right fill
 C                      Wild card value can also be entered as follows:
 C                        An asterisk ('*') in column 1 followed by
 C                         blanks in columns 2-7:
@@ -300,9 +354,10 @@ C                         "SHP" - Surface marine (BUFR message type 001)
 C                         "UPA" - Upper-air (BUFR message type 002)
 C                         "ACF" - Aircraft (BUFR message type 004)
 C                         "SAT" - Sat.-derived wind (BUFR msg type 005)
+C                         "MSO" - Mesonets (BUFR message type 255)
 C        40-41         Spares (blanks)
 C          42          Quality marker on pressure (see *)
-C                         For SFC - station & mean sea-level
+C                         For SFC and MSO - station & mean sea-level
 C                         For SHP - mean sea-level
 C                         For UPA - station and level pressure (note:
 C                                   if geopotential or height obs is
@@ -312,7 +367,7 @@ C                                   on geopot./height is set to that of
 C                                   pressure here)
 C                         For ACF and SAT - not used
 C          43          Quality marker on geopotential or height (see *)
-C                         For SFC, SHP, ACF and SAT - not used
+C                         For SFC, SHP, ACF, SAT and MSO - not used
 C                         For UPA - if geopotential or height obs is
 C                                   non-missing and this is not
 C                                   entered, q.m. on geopot./height is
@@ -322,17 +377,21 @@ C          44          Quality marker on air temperature (see *)
 C                         For SAT - not used
 C          45          Quality marker on moisture (see *)
 C                         For SAT, ACF {AIREP (subtype 001), PIREP
-C                           (002), E-ADAS (006), AFWA-ACARS (007),
-C                           CANADIAN AMDAR (009)} - not used
+C                           (002), AFWA-MDCRS (007), CANADIAN AMDAR
+C                           (009), KOREAN AMDAR (011)} - not used
 C                         For SFC, SHP, UPA - dewpoint temperature
-C                         For ACF {MDCRS-ACARS (subtype 004)}, TAMDAR
-C                           (subtype 008) - mixing ratio or relative
-C                           humidity
-C                         For ACF {AMDAR (subtype 003), RECCOs (005)} -
-C                           dewpoint temperature or relative humidity
+C                         For ACF {E-AMDAR (subtype 006)} - mixing ratio
+C                         For ACF {MDCRS (subtype 004)} - mixing ratio
+C                                 or relative humidity
+C                         For ACF {TAMDAR (Panasonic or AirDAT, subtype
+C                           010; MADIS, 008, 012, 013)} - rel. humidity
+C                         For ACF {AMDAR (subtype 003), RECCOs (005)}
+C                           and MSO - dewpoint temp. or r. humidity
+C                         For ACF {Catch-all AMDAR (subtype 103)} -
+C                           mixing ratio or dewpoint temperature
 C          46          Quality marker on wind (see *)
 C        47-48         Spares (blanks)
-C        49-52         For SFC, SHP, ACF, SAT - not used
+C        49-52         For SFC, SHP, ACF, SAT, MSO - not used
 C                      For UPA - Vertical significance qualifier
 C                         "SURF" - Surface level
 C                         "MAND" - Mandatory level
@@ -343,7 +402,7 @@ C                                  entered (all types of UPA levels are
 C                                  considered subject to the pressure
 C                                  levels in columns 55-65)
 C        53-54         Spares (blanks)
-C        55-65         For SFC, SHP, SAT - not used
+C        55-65         For SFC, SHP, SAT, MSO - not used
 C                      For UPA, ACF - Pressure(s) (in whole mb) over
 C                        which to apply quality markers
 C                          If only one pressure value is specified, it
@@ -369,17 +428,16 @@ C                          Note: The standard atmosphere pressure is
 C                                calculated and used here for all
 C                                levels which report height but not
 C                                pressure {e.g., winds-by-height
-C                                levels for UPA; types AMDAR, RECCO,
-C                                AIREP/PIREP, E-ADAS and Canadian AMDAR
-C                                for ACF}
+C                                levels for UPA; types AMDAR fmt, RECCO,
+C                                AIREP/PIREP, E-AMDAR, Canadian AMDAR &
+C                                TAMDAR (Panasonic and MADIS) for ACF}
 C        66-67         Spares (blanks)
 C        68-75         BUFR message type
 C                         "NCtttsss" - where ttt is BUFR report type
 C                                      and sss is BUFR report subtype
 C                                      (e.g., "NC004003" is the BUFR
 C                                      message type for automated
-C                                      AMDAR format ASDAR/ACARS
-C                                      aircraft reports)
+C                                      AMDAR format aircraft reports)
 C                         "----------" - BUFR message type not entered
 C                             or         (all BUFR message types are
 C                         "          "   considered)
@@ -447,7 +505,7 @@ C                            in columns 11-15 and 18-22, respectively
 C                            (if they are, then the value in columns
 C                            91-102 is ignored)
 C        103-104       Spares (blanks)
-C        105-107       For SFC, SHP, ACF, SAT - not used
+C        105-107       For SFC, SHP, ACF, SAT, MSO - not used
 C                      For UPA -
 C                         "ttt" - Upper-air instrument type (see BUFR
 C                                 Code Table 0-02-011 for definition of
@@ -456,7 +514,7 @@ C                         "---" - Upper-air instrument type not
 C                           or    entered (all upper-air instrument
 C                         "   "   types considered)
 C                      Note 1: The value for ttt is ignored for SFC,
-C                              SHP, ACF, SAT (ttt is not tested)
+C                              SHP, ACF, SAT, MSO (ttt is not tested)
 C                      Note 2: If the reported upper-air instrument
 C                              type in a report in the dump file is
 C                              missing, then the value for ttt is
@@ -595,40 +653,42 @@ C$$$
       LOGICAL,ALLOCATABLE :: EDIT(:),EDIT2(:,:)
 
       CHARACTER*80  BFRFIL,ASTR,DSTR,BSTR,TSTR,SSTR
-      CHARACTER*128 CARD,CARDS(0:5,MEDT)
-      CHARACTER*40  CTYPE(0:255,0:4),CTYPE_sat(10:90,5:5),CTYPE1
+      CHARACTER*128 CARD,CARDS(0:6,MEDT)
+      CHARACTER*40  CTYPE(0:255,0:4),CTYPE_sat(10:90,5:5),CTYPE1,
+     .              CTYPE_mso(1:161,255:255)
       CHARACTER*11  BUHDOR
       CHARACTER*8   STNID,SUBSET,MSGTYP,STNID_TEST,CARDS8,CARDS8_TRUN,
      .              STNID_TRUN,CBUHD,CBORG
       CHARACTER*8   STNID_MATCH(MEDT,ISTNID_MATCH)
       CHARACTER*4   NET
-      CHARACTER*3   CTYP(0:5),CTYP1,CITP
+      CHARACTER*3   CTYP(0:6),CTYP1,CITP
 
       DIMENSION    KTOT(MEDT)
-      DIMENSION    IREAD(0:5,MEDT,0:2400)
+      DIMENSION    IREAD(0:6,MEDT,0:2400)
       DIMENSION    ELAT(MEDT),ELON(MEDT)
       DIMENSION    DEXX(MEDT),DEXXH(MEDT),DEYY(MEDT),DEYYH(MEDT)
-      DIMENSION    NEDT(0:5),KREP(0:5),LREP(0:5),DTIM(MEDT)
+      DIMENSION    NEDT(0:6),KREP(0:6),LREP(0:6),DTIM(MEDT)
       DIMENSION    LYEAR(MEDT),LMNTH(MEDT),LDAYS(MEDT),LHOUR(MEDT)
-      DIMENSION    JDAT(8),IDAT(8),RINC(5),IFIRST(0:5,MEDT)
+      DIMENSION    JDAT(8),IDAT(8),RINC(5),IFIRST(0:6,MEDT)
 
       LOGICAL      SKIPIT(MEDT),LPRINT,LMATCH_LATLON
 
+      REAL(8)      BMISS, GETBMISS
       REAL(8)      ADATE,BDATE,EDATE,UFBTAB_8,RSTNID_8,BUHD_8,BORG_8
       REAL(8)      ADATE_YYYYMMDD,BDATE_YYYYMMDD,HOUR_8,MINU_8
 
       EQUIVALENCE  (STNID,RSTNID_8),(CBUHD,BUHD_8),(CBORG,BORG_8)
 
       COMMON /UEDIT/  IVSG(MEDT),PMIN(MEDT),PMAX(MEDT)
-      COMMON /COUNTS/ IPQM(0:5,0:14),IWQM(0:5,0:14),ITQM(0:5,0:14),
-     .                IGQM(0:5,0:14),IMQM(0:5,0:14)
+      COMMON /COUNTS/ IPQM(0:6,0:14),IWQM(0:6,0:14),ITQM(0:6,0:14),
+     .                IGQM(0:6,0:14),IMQM(0:6,0:14)
+      COMMON /BUFRLIB_MISSING/BMISS
 
       DATA ASTR  /'ACRN CLON CLAT YEAR MNTH DAYS HOUR BUHD BORG RATP'/
       DATA DSTR  /'ACID CLON CLAT YEAR MNTH DAYS HOUR BUHD BORG RATP'/
       DATA BSTR  /'RPID CLON CLAT YEAR MNTH DAYS HOUR BUHD BORG RATP'/
       DATA SSTR  /'SAID CLON CLAT YEAR MNTH DAYS HOUR BUHD BORG RATP'/
 
-      DATA BMISS  /10E10/
       DATA PI180  /.0174532/
       DATA LUEDT  /20/
       DATA LUBFI  /21/
@@ -683,19 +743,19 @@ C$$$
      .         1*'                                        ',
      .           'MANUAL AIREP FORMAT AIRCRAFT            ', ! 004.001
      .           'MANUAL PIREP FORMAT AIRCRAFT            ', ! 004.002
-     .           'AUTOMATED AMDAR FMT ASDAR/ACARS AIRCRAFT', ! 004.003
-     .           'AUTOMATED MDCRS ACARS AIRCFT(from ARINC)', ! 004.004
+     .           'AUTOMATED AMDAR FORMAT AIRCRAFT         ', ! 004.003
+     .           'AUTOMATED MDCRS AIRCRAFT (from ARINC)   ', ! 004.004
      .           'FLIGHT LEVEL RECONNAISSANCE AIRCRAFT    ', ! 004.005
-     .           'E-ADAS (Europ. ASDAR/ACARS ACFT in BUFR)', ! 004.006
-     .           'AUTO MDCRS ACARS AIRCFT (ARINC) via AFWA', ! 004.007
-     .           'AUTOMATED TAMDAR AIRCRAFT - Mesaba      ', ! 004.008
-     .           'CANADIAN ASDAR/ACARS AIRCRAFT (in BUFR) ', ! 004.009
-     .         1*'                                        ',
-     .           'KOREAN ASDAR/ACARS AIRCRAFT (in BUFR)   ', ! 004.011
-     .           'AUTOMATED TAMDAR AIRCRAFT - PenAIR      ', ! 004.012
-     .           'AUTOMATED TAMDAR AIRCRAFT - Chautauqua  ', ! 004.013
+     .           'AUTOMATED E-AMDAR AIRCRAFT (raw BUFR)   ', ! 004.006
+     .           'AUTO MDCRS AIRCRAFT (ARINC) (from AFWA) ', ! 004.007
+     .           'AUTO TAMDAR ACFT - Mesaba (from MADIS)  ', ! 004.008
+     .           'AUTOMATED CANADIAN AMDAR ACFT (raw BUFR)', ! 004.009
+     .           'AUTO TAMDAR ACFT (from Panasonic,AirDAT)', ! 004.010
+     .           'AUTO KOREAN AMDAR AIRCRAFT (raw BUFR)   ', ! 004.011
+     .           'AUTO TAMDAR ACFT - PenAIR (from MADIS)  ', ! 004.012
+     .           'AUTO TAMDAR ACFT-Chautauqua (from MADIS)', ! 004.013
      .        89*'                                        ',
-     .           'AUTO AMDAR FMT ASDAR/ACARS ACFT(in BUFR)', ! 004.103
+     .           'AUTO CATCH-ALL AMDAR AIRCRAFT (raw BUFR)', ! 004.103
      .       152*'                                        '/
 
       DATA CTYPE_sat
@@ -738,15 +798,68 @@ C$$$
      .         9*'                                        ',
      .           'NPP/VIIRS IR(LW) DERIVED CLOUD MOTION   '/ ! 005.090
 
-      DATA CTYP /'SFC','SHP','UPA','---','ACF','SAT'/
+      DATA CTYPE_mso
+     .          /'MESONET/MADIS: Denver Urban Drainage    ', ! 255.001
+     .           'MESONET/MADIS: NFIC Remote Auto. Wx Stns', ! 255.002
+     .           'MESONET/MADIS: MesoWest (many subprov.) ', ! 255.003
+     .           'MESONET/MADIS: Auto Pos Rpting Sys WxNet', ! 255.004
+     .           'MESONET/MADIS: Kansas Dept. of Transpo. ', ! 255.005
+     .           'MESONET/MADIS: Florida msonet(FAWN, USF)', ! 255.006
+     .           'MESONET/MADIS: Iowa Dept. of Transpo.   ', ! 255.007
+     .           'MESONET/MADIS: Minnesota Dept of Transpo', ! 255.008
+     .           'MESONET/MADIS: "Anything Weather"       ', ! 255.009
+     .           'MESONET/MADIS: Nat. Ocean Service-PORTS ', ! 255.010
+     .           'MESONET/MADIS: Army Aberdeen Prving Grds', ! 255.011
+     .           'MESONET/MADIS: "Weather for You"        ', ! 255.012
+     .           'MESONET/MADIS: NWS Cooperative Observers', ! 255.013
+     .           'MESONET/MADIS: NWS Hydromet Auto Dta Sys', ! 255.014
+     .           'MESONET/MADIS: AWS Convergence Tech.    ', ! 255.015
+     .           'MESONET/MADIS: Iowa Environmental       ', ! 255.016
+     .           'MESONET/MADIS: Oklahoma Mesonet         ', ! 255.017
+     .           'MESONET/MADIS: Colorado Dept. of Transpo', ! 255.018
+     .           'MESONET/MADIS: West Texas Mesonet       ', ! 255.019
+     .           'MESONET/MADIS: Wisconsin Dept of Transpo', ! 255.020
+     .           'MESONET/MADIS: LSU * JSU (Universities) ', ! 255.021
+     .           'MESONET/MADIS: Colorado East I-470      ', ! 255.022
+     .           'MESONET/MADIS: DC Net (Wash, DC & NYC)  ', ! 255.023
+     .           'MESONET/MADIS: Indiana Dept. of Transpo.', ! 255.024
+     .           'MESONET/MADIS: Florida Dept. of Transpo.', ! 255.025
+     .           'MESONET/MADIS: Alaska Dept. of Transpo. ', ! 255.026
+     .           'MESONET/MADIS: Georgia Dept. of Transpo.', ! 255.027
+     .           'MESONET/MADIS: Virginia Dept. of Transpo', ! 255.028
+     .           'MESONET/MADIS: MO Commercial Agr. Wx Net', ! 255.029
+     .           'MESONET/MADIS: Other than above         ', ! 255.030
+     .           'URBANET/MADIS: UrbaNet                  ', ! 255.031
+     .           'URBANET/MADIS: USouthAL                 ', ! 255.032
+     .        68*'                                        ',
+     .           'COOP/MADIS: NOAA Auto. NEPP, HCN-modrnzd', ! 255.101
+     .           'COOP/SHEF: NWS Cooperative Observer     ', ! 255.102
+     .         8*'                                        ',
+     .           'MESONET/MADIS: Climate Reference Network', ! 255.111
+     .        19*'                                        ',
+     .           'HYDRO/MADIS: Denver Urban Drainage      ', ! 255.131
+     .        28*'                                        ',
+     .           'HYDRO/MADIS: Other than above           ', ! 255.160
+     .           'SNOW/MADIS: Snow data frm many providers'/ ! 255.161
+
+
+      DATA CTYP /'SFC','SHP','UPA','---','ACF','SAT','MSO'/
 
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_EDTBFR',2016,0014,0067,'NP22')
+      CALL W3TAGB('BUFR_EDTBFR',2016,0228,0067,'NP22')
 
       print *
-      print * ,'---> Welcome to BUFR_EDTBFR - Version 01-14-2016'
+      print * ,'---> Welcome to BUFR_EDTBFR - Version 08-15-2016'
       print *
+
+C  ASSIGN DEFAULT VALUE FOR 'MISSING' TO LOCAL BMISS VARIABLE
+C  ----------------------------------------------------------
+
+      BMISS = GETBMISS()     ! assign default value for "missing"
+      print'(1X)'
+      print'(" BUFRLIB value for missing is: ",G0)', bmiss
+      print'(1X)'
 
       NET = '    '
       CALL GETENV('NET',NET)
@@ -756,15 +869,15 @@ C-----------------------------------------------------------------------
       IF(NET.NE.'    ')  PRINT'("    -- NETWORK = ''",A4,"''"/)', NET
 
 C     HARDWIRED PARAMETERS:
-C     DEYT  = 0.25 FOR TYPES REPORTING LOW-ACCURACY LAT
-C           = 0.01 FOR TYPES REPORTING HIGH-ACCURACY LAT
+C     DEYT  = 0.25 FOR TYPES REPORTING LOW-ACCURACY LAT (0.01)
+C           = 0.01 FOR TYPES REPORTING HIGH-ACCURACY LAT (>/= 0.001)
 C               TOLERANCE FOR LAT CHECKS IN DEGREES (UNLESS LAT NOT
 C               SPECIFIED FOR A REPORT ENTRY IN SDMEDIT FILE,
 C               THEN = 10E10)
 C     DEXT  = 0.25 * COS(LAT * 0.0174532) FOR TYPES REPORTING LOW-
-C             ACCURACY LON
+C             ACCURACY LON (0.01)
 C           = 0.01 * COS(LAT * 0.0174532) FOR TYPES REPORTING HIGH-
-C             ACCURACY LON
+C             ACCURACY LON (>/= 0.001)
 C               TOLERANCE FOR LON CHECKS IN DEGREES (WHERE LAT IS
 C               REPORT LAT ENTRY IN SDMEDIT FILE) (UNLESS LON NOT
 C               SPECIFIED FOR A REPORT ENTRY IN SDMEDIT FILE,
@@ -926,7 +1039,7 @@ C  .. Only a specific YYYYMMDDHH is checked for this record
             ENDIF
             IF(EDATE.GE.ADATE .AND. EDATE.LE.BDATE) THEN
 C     .. This card is w/i time window - store it according to rpt type
-               LOOP1n2: DO ITYP=0,5
+               LOOP1n2: DO ITYP=0,6
                   IF(CARD(37:39).EQ.CTYP(ITYP)) THEN
                      IF(NEDT(ITYP)+1.LE.MEDT) THEN
                         NEDT(ITYP) = NEDT(ITYP) + 1
@@ -943,7 +1056,7 @@ C     .. This card is w/i time window - store it according to rpt type
                      CYCLE LOOP1n1 ! move on to next sdmedit flag file
                                    !  card
                   ENDIF
-               ENDDO LOOP1n2 !  DO ITYP=0,5 ! storing cards w/i time
+               ENDDO LOOP1n2 !  DO ITYP=0,6 ! storing cards w/i time
                                             !  window according to
                                             !  report type
             ENDIF
@@ -996,7 +1109,8 @@ C  ------------------------------------------
      .    "DOESN''T EXIST OR IS EMPTY - SDMEDIT Q.C. FLAGS NOT APPLIED"/
      .    5X,"TO DUMP FILE(S)"/)', LUEDT
          GOTO 700
-      ELSEIF(MAX(NEDT(0),NEDT(1),NEDT(2),NEDT(4),NEDT(5)).EQ.0) THEN
+      ELSEIF(MAX(NEDT(0),NEDT(1),NEDT(2),NEDT(4),NEDT(5),NEDT(6)).EQ.0)
+     .  THEN
 
 C  Flag file doesn't contain any time-relevant rec. entries - all done
 C  -------------------------------------------------------------------
@@ -1008,7 +1122,7 @@ C  -------------------------------------------------------------------
       ELSE
          PRINT'(/"READ IN",I5," RECORDS FROM SDMEDIT FLAG FILE IN UNIT",
      .   I3)', NREC,LUEDT
-         DO ITYP=0,5
+         DO ITYP=0,6
             IF(ITYP.EQ.3) CYCLE
             PRINT'(7X,"For report type ",A,", a total of ",I5,
      .       " records are within requested time window and read into ",
@@ -1031,27 +1145,34 @@ C  ------------------------------------------------------------------
                             !  message type is associated with report
                             !  type index in cards
             IF(BFRFIL(I:I).EQ.'.') THEN
-               READ(BFRFIL(I-3:I+3),'(I3,1X,I3)',ERR=902) ITYP,JTYP
+               READ(BFRFIL(I-3:I+3),'(I3,1X,I3)',ERR=902) ITYP_true,JTYP
                EXIT LOOP2n1
             ENDIF
          ENDDO LOOP2n1
          CTYP1  = '---'
          CTYPE1 = ' '
-         IF(ITYP.GE.000 .AND. ITYP.LT.006) THEN
+         ITYP = ITYP_true
+         IF(ITYP_true.EQ.255) ITYP = 6
+         IF(ITYP.GE.000 .AND. ITYP.LT.007) THEN
             CTYP1 = CTYP(ITYP)
-            IF(ITYP.LT.005) THEN
-               IF(JTYP.GE.000 .AND. JTYP.LE.255) CTYPE1=CTYPE(JTYP,ITYP)
-            ELSE
-              IF(JTYP.GE.010.AND.JTYP.LT.091)CTYPE1=CTYPE_sat(JTYP,ITYP)
+            IF(ITYP_true.LT.005) THEN
+               IF(JTYP.GE.000 .AND. JTYP.LE.255) CTYPE1 =
+     .                                            CTYPE(JTYP,ITYP_true)
+            ELSE IF(ITYP_true.EQ.005) THEN
+              IF(JTYP.GE.010.AND.JTYP.LT.091) CTYPE1 =
+     .                                         CTYPE_sat(JTYP,ITYP_true)
+            ELSE IF(ITYP_true.EQ.255) THEN
+              IF(JTYP.GE.001.AND.JTYP.LT.161) CTYPE1 =
+     .                                         CTYPE_mso(JTYP,ITYP_true)
             ENDIF
          ENDIF
          PRINT'(//"===> NEXT BUFR FILE TO CHECK HAS TYPE=",I4.3,
-     .    ", SUBTYPE=",I4.3,", SDMEDIT TYPE: ",A,5X,A)',
-     .    ITYP,JTYP,CTYP1,CTYPE1
+     .    ", SUBTYPE=",I4.3,", SDMEDIT TYPE: ",A,5X,A)',ITYP_true,JTYP,
+     .    CTYP1,CTYPE1
          IF(CTYP1.EQ.'---') THEN
             PRINT'(16X,"- SKIP THIS FILE SINCE IT IS NOT A TYPE ",
      .       "CHECKED BY SDMEDIT (BUFR MESSAGE TYPE .NE. 000,"/18X,
-     .       "001, 002, 004 OR 005)"/)'
+     .       "001, 002, 004, 005 OR 255)"/)'
             CYCLE LOOP2 ! move on to next BUFR dump file
          ENDIF
          IF(NEDT(ITYP).EQ.0) THEN
@@ -1231,9 +1352,10 @@ C  -------------------------------------------------------------------
 
          TSTR = BSTR
          IF(ITYP.EQ.004) THEN
-            IF(JTYP.EQ.004 .OR. JTYP.EQ.006 .OR. JTYP.EQ.009) THEN
+            IF(JTYP.EQ.004 .OR. JTYP.EQ.006 .OR. JTYP.EQ.009 .OR.
+     .         JTYP.EQ.010 .OR. JTYP.EQ.011 .OR. JTYP.EQ.103) THEN
                TSTR = ASTR
-            ELSEIF(JTYP.EQ.008) THEN
+            ELSEIF(JTYP.EQ.008 .OR. JTYP.EQ.012 .OR. JTYP.EQ.013) THEN
                TSTR = DSTR
             ENDIF
          ELSEIF(ITYP.EQ.005) THEN
@@ -1281,7 +1403,38 @@ C  -----------------------------------------------------------------
             DEXX = DEXXH
             DEYY = DEYYH
          ELSE
+C  ... check for operator descriptors transforming CLAT/CLON from low-
+C      to high-accuracy (check scale for CLAT in first subset in file)
+            nscl = 2
+            iflg_nemspecs = 0
+            call openbf(lubfi,'IN ',lubfi)
+            if(ireadmg(lubfi,subset,idate).eq.0) then
+               if(ireadsb(lubfi).eq.0) then
+                  call nemspecs(lubfi,'CLAT',1,nscl,nref,nbts,iret)
+                  if(iret.eq.0) then
+                     iflg_nemspecs = 1
+cpppppppppp
+                     print *, '     ---> For CLAT, NSCL = ',NSCL
+                     print *
+cpppppppppp
+                  endif
+               endif
+            endif
+            call closbf(lubfi)
+            if(iflg_nemspecs.eq.0) then
+               print *
+               print *,'##WARNING: NSCL for CLAT could not be returned',
+     .                 ' by BUFRLIB routine NEMSPECS, NSCL assumed to ',
+     .                 'be 2 (low-accuracy lat/lon).'
+               print *
+            endif
+            if(nscl.gt.2) then
+          print *, '     -----> This type encodes high-accuracy lat/lon'
+               DEXX = DEXXH
+               DEYY = DEYYH
+            else
           print *, '     -----> This type encodes low-accuracy lat/lon'
+            endif
          ENDIF
 
          IF(CTYP1.EQ.'SAT') THEN
@@ -1304,7 +1457,7 @@ C         the time tolerance is calculated); reported minutes (if
 C         present) is NOT considered here}
 C  --------------------------------------------------------------------
 
-         WRITE(MSGTYP,'("NC",2I3.3)') ITYP,JTYP
+         WRITE(MSGTYP,'("NC",2I3.3)') ITYP_true,JTYP
          IMATCH_STNID = 0
          EDIT  = .FALSE.
          EDIT2 = .FALSE.
@@ -1785,6 +1938,14 @@ C  -----
          PRINT 104, IWQM(5,0),IWQM(5,12),IWQM(5,14)
          PRINT 116, LREP(5)
       ENDIF
+      IF(KREP(6).GT.0) THEN
+         PRINT 118, KREP(6)
+         PRINT 103, IPQM(6,0),IPQM(6,12),IPQM(6,14)
+         PRINT 104, IWQM(6,0),IWQM(6,12),IWQM(6,14)
+         PRINT 105, ITQM(6,0),ITQM(6,12),ITQM(6,14)
+         PRINT 106, IMQM(6,0),IMQM(6,12),IMQM(6,14)
+         PRINT 119, LREP(6)
+      ENDIF
       PRINT 117, MREP
 101   FORMAT(/114('=')/'SUMMARY:'/3X,'TOTAL NUMBER OF REPORTS OF ALL ',
      . 'TYPES READ FROM ALL DUMPS CHECKED IN THIS GROUP ',25('.'),I7/)
@@ -1836,6 +1997,12 @@ C  -----
 117   FORMAT(3X,111('+')//3X,'TOTAL NUMBER OF REPORTS OF ALL TYPES ',
      . 'WRITTEN BACK TO ALL DUMPS CHECKED IN THIS GROUP ',19('.'),I7//
      . 114('=')/)
+118   FORMAT(3X,111('+')//3X,'Total number of mesonet reports read ',
+     . 'from all dumps checked in this group ',30('.'),I7/3X,
+     . 'Number of reports with a q.m. change due to matching a SDMEDIT',
+     . ' flag file q.m. change entry:'/)
+119   FORMAT(/3X,'Total number of mesonet reports written back to all ',
+     . 'dumps checked in this group ',24('.'),I7/)
 
 700   CONTINUE
       write(60,'("ALL DONE")')
@@ -1888,7 +2055,7 @@ C  -----
 C$$$  SUBPROGRAM DOCUMENTATION BLOCK
 C
 C SUBPROGRAM:    APPLY
-C   PRGMMR: KEYSER           ORG: NP22       DATE: 2014-03-05
+C   PRGMMR: KEYSER           ORG: NP22       DATE: 2016-08-15
 C
 C ABSTRACT: ENCODES SDMEDIT Q.C. FLAGS (KEEP, REJECT OR PURGE) INTO
 C   BUFR REPORTS.  THE FOLLOWING DATA TYPES CAN ENCODE Q.C. FLAGS
@@ -1908,6 +2075,34 @@ C       (MOISTURE AVAILABLE)
 C 2014-03-05  D. A. KEYSER -- INCREASED MAXIMUM NUMBER OF TIME- AND
 C     REPORT TYPE-RELEVANT ENTRIES ALLOWED IN THE SDMEDIT FLAG FILE
 C     FROM 1000 TO 2000 (PARAMETER "MEDT")
+C 2016-08-09  S. Melchior/D. Keyser
+C         - Corrected comments re: which aircraft types contain
+C           moisture and what type of moisture observation is reported.
+C         - Included E-AMDAR (BUFR type 004, subtype 006), TAMDAR (from
+C           Panasonic, or before that AirDAT, 004, 010), PenAir TAMDAR
+C           (from MADIS, 004, 012), Chautauqua TAMDAR (from MADIS, 004,
+C           013) and "Catch-all" AMDAR (004, 103) to types of aircraft
+C           reports which can encode a moisture QM from an sdmedit flag
+C           text file entry.
+C         - Corrected comments re: which aircraft types use which
+C           height mnemonic when a pressure must be calculated from
+C           reported "height", and which aircraft types actually report
+C           pressure. (Needed when obs within a specified pressure
+C           layer are considered based on the sdmedit flag text file
+C           entry.)
+C         - Corrected oversight in 2016-01-14 update whereby code was
+C           not obtaining the reported height (in the form of mnemonic
+C           FLVLST) for Korean and "Catch-all" AMDAR aircraft reports.
+C           This is needed when a pressure must be calculated from
+C           reported "height" when obs within a specified pressure
+C           layer are considered based on the sdmedit flag text file
+C           entry.
+C         - Replace assignment of BMISS and instead pass in R*8 value
+C           set in main program (using GETBMISS) via COMMON.
+C 2016-08-15  D. A. Keyser --  Added ability to apply QC flags to
+C     mesonet reports originally in the b255 tanks (that eventually go
+C     into the "msonet" dump). These are entered in the sdmedit flag
+C     text file with report type "MSO".
 C
 C USAGE:    CALL APPLY (LUBFJ, CARD, M, ITYP, JTYP, LPRINT)
 C   INPUT ARGUMENT LIST:
@@ -1915,9 +2110,11 @@ C     LUBFJ    - INTEGER, UNIT NUMBER OF OUTPUT BUFR FILE
 C     CARD     - CHARACTER*128, STRING CONTAINING ONE ENTIRE LINE
 C                (RECORD) AS READ IN FROM THE SDMEDIT FLAG FILE
 C     M        - INTEGER, INDEX IN MEMORY POINTING TO THE RECORD NUMBER
-C     ITYP     - INTEGER, BUFR MESSAGE TYPE (000 - SURFACE LAND, 001 -
-C                SURFACE MARINE, 002 - UPPER-AIR, 004 - AIRCRAFT, 005 -
-C                SATELLITE-DERIVED WIND)
+C     ITYP     - INTEGER,
+C                  IF 000 THROUGH 005: BUFR MESSAGE TYPE (000 - SURFACE
+C                    LAND, 001 - SURFACE MARINE, 002 - UPPER-AIR, 004 -
+C                    AIRCRAFT, 005 - SATELLITE-DERIVED WIND)
+C                  IF 006: MESONET (WHICH IS BUFR MESSAGE TYPE 255)
 C     JTYP     - INTEGER, BUFR MESSAGE SUBTYPE (SEE BUFR TABLES)
 C     LPRINT   - LOGICAL, IF TRUE THIS IS THE FIRST TIME THIS
 C                PARTICULAR RECORD FROM THE SDMEDIT FLAG FILE HAS
@@ -1946,20 +2143,21 @@ C$$$
       CHARACTER*128 CARD
       CHARACTER*80  PQMST
 
-      DIMENSION    PQMS(10,255),ZQMS(6),JFIRST(5),IFIRST(0:255)
+      DIMENSION    PQMS(10,255),ZQMS(7),JFIRST(5),KFIRST(0:255)
 
       LOGICAL      EDIT_UPA,EDIT_ACF,ALL,LPRINT
 
-      REAL(8)      PQMS_8(10,255),ZQMS_8(6),UFBINT_8,HOUR_8,MINU_8,
-     .             HGHT_8
+      REAL(8)      PQMS_8(10,255),ZQMS_8(7),UFBINT_8,HOUR_8,MINU_8,
+     .             HGHT_8,BMISS
 
       COMMON /UEDIT/  IVSG(MEDT),PMIN(MEDT),PMAX(MEDT)
-      COMMON /COUNTS/ IPQM(0:5,0:14),IWQM(0:5,0:14),ITQM(0:5,0:14),
-     .                IGQM(0:5,0:14),IMQM(0:5,0:14)
+      COMMON /COUNTS/ IPQM(0:6,0:14),IWQM(0:6,0:14),ITQM(0:6,0:14),
+     .                IGQM(0:6,0:14),IMQM(0:6,0:14)
+      COMMON /BUFRLIB_MISSING/BMISS
 
       DATA PQMST /'VSIG PRLC GP07 GP10 QMPR QMGP QMAT QMDD QMWN'/
 
-      DATA BMISS /10E10/,IFIRST/256*0/
+      DATA KFIRST/256*0/
       DATA FILL  / 10E5/
       DATA GRAV  /  9.8/
 
@@ -1971,7 +2169,7 @@ C-----------------------------------------------------------------------
 C  PRINT SDMEDIT FLAG FILE RECORD USED TO APPLY Q.C. MARKS FOR THIS RPT
 C  --------------------------------------------------------------------
 
-      IF(IFIRST(JTYP).EQ.0) THEN
+      IF(KFIRST(JTYP).EQ.0) THEN
          PRINT'(/"THE FOLLOWING REPORTS ARE MODIFIED AS INDICATED HERE",
      .    " BY THIS PROGRAM (SEE DOCBLOCK FOR DOCUMENTATION ON FORMAT ",
      .    "BELOW):"//"RPT. ID   N-LAT  W-LON  YYYYMMDDHH  TYP  ",
@@ -1979,7 +2177,7 @@ C  --------------------------------------------------------------------
      .    "LAT-LON-BDRY  ITP  NCEP-ANL-NETWORK(S)"/8("-"),2X,2(5("-"),
      .    2X),10("-"),"  ---  -----  ----  -----------  --------  ",
      .    "-----------  ------------  ---  -------------------")'
-         IFIRST(JTYP) = 1
+         KFIRST(JTYP) = 1
       ENDIF
 
       IF(LPRINT) THEN
@@ -1998,19 +2196,25 @@ C  PARSE THE SDMEDIT QUALITY FLAGS FOR THIS ENTRY
 C  ----------------------------------------------
 
       IQMPR = IQMF(CARD(42:42))  ! Quality mark on pressure
-                                 !  For SFC - station & mean sea-level
+                                 !  For SFC, MSO - stn & mean sea-level
                                  !  For SHP - mean sea-level
                                  !  For UPA - station and level pressure
       IQMGP = IQMF(CARD(43:43))  ! Quality mark on geopotential or hght
       IQMAT = IQMF(CARD(44:44))  ! Quality mark on air temperature
       IQMDD = IQMF(CARD(45:45))  ! Quality mark on moisture
-                                 !  For SFC, SHP, UPA - dewpoint temp.
-                                 !  For ACF {MDCRS-ACARS (subtype 004),
-                                 !     TAMDAR (008)} - mixing ratio or
-                                 !     r.h.
-                                 !  For ACF {{AMDAR (subtype 003),
-                                 !     RECCOs (005)} - dewpoint temp.
-                                 !     or r.h.
+                                 !  For SFC, SHP, UPA - dwpt temp
+                                 !  For ACF E-AMDAR (subtype 006)} -
+                                 !     mixing ratio
+                                 !  For ACF {MDCRS (subtype 004)} -
+                                 !     mixing ratio or rh
+                                 !  For ACF {TAMDAR (Panasonic or
+                                 !     AirDAT, subtype 010; MADIS, 008,
+                                 !     012, 013)} - rh
+                                 !  For ACF {{AMDAR fmt (subtype 003);
+                                 !     RECCOs (005)}, MSO - dwpt temp
+                                 !     or rh
+                                 !  For ACF {Catch-all AMDAR (subtype
+                                 !     103)} - mixing ratio or dwpt temp
       IQMWN = IQMF(CARD(46:46))  ! Quality mark on wind
 
 C  ENCODE QUALITY FLAGS INTO THIS BUFR REPORT
@@ -2035,8 +2239,10 @@ C  Satellite-derived winds encode only wind q.m. (into SWQM)
             if(lprint) print'("    ... SWQM set to ",F3.0)', ufbint_8
             IWQM(ITYP,IQMWN) = IWQM(ITYP,IQMWN) + 1
          ENDIF
-      ELSEIF(CARD(37:39).EQ.'SFC'.OR.CARD(37:39).EQ.'SHP') THEN
-C  Surface land and marine reports encode all q.m. except geopot./height
+      ELSEIF(CARD(37:39).EQ.'SFC'.OR.CARD(37:39).EQ.'SHP'.OR.
+     .       CARD(37:39).EQ.'MSO') THEN
+C  Surface land, marine and mesonet reports encode all q.m. except
+C   geopot./height
          IF(IQMPR.GE.0) THEN
             UFBINT_8 = IQMPR
             CALL UFBINT(LUBFJ,UFBINT_8,1,1,IRET,'QMPR')
@@ -2075,35 +2281,43 @@ C   pressure and geopot./height
      .       "encoded into reports of type ",A)', IQMGP,CARD(37:39)
          ENDIF
 C  Read back report data from aircraft BUFR file
-         CALL UFBINT(-LUBFJ,ZQMS_8,6,1,NLEV,
-     .               'PSAL FLVL IALT PRLC HEIT HMSL'); ZQMS=ZQMS_8
+         CALL UFBINT(-LUBFJ,ZQMS_8,7,1,NLEV,
+     .               'PSAL FLVL IALT PRLC HEIT HMSL FLVLST');ZQMS=ZQMS_8
          ALL = PMIN(M).LE.0 .AND. PMAX(M).GE.BMISS
          IF(.NOT.ALL) THEN
             IF(IBFMS(ZQMS_8(4)).NE.0) THEN  ! If press missing, use hght
                                     !  to est. pressure (U.S. Std. Atm.)
                PRES = BMISS
                IF(IBFMS(ZQMS_8(1)).EQ.0) THEN
-                  HGHT = ZQMS(1)  ! PSAL, 1st choice for HGHT (AMDAR,
-                                  !                            RECCOS)
+                  HGHT = ZQMS(1) ! PSAL, 1st choice for HGHT (most AMDAR
+                                 !                            fmt,
+                                 !                          some RECCOS)
                ELSE  IF(IBFMS(ZQMS_8(2)).EQ.0) THEN
-                  HGHT = ZQMS(2)  ! FLVL, 2nd ch. for HGHT (AIREP/PIREP)
+                  HGHT = ZQMS(2) ! FLVL, 2nd ch. for HGHT (AIREP/PIREP,
+                                 !                      some AMDAR fmt)
                ELSE  IF(IBFMS(ZQMS_8(3)).EQ.0) THEN
-                  HGHT = ZQMS(3)  ! IALT, 3rd choice for HGHT
+                  HGHT = ZQMS(3) ! IALT, 3rd choice for HGHT
                ELSE  IF(IBFMS(ZQMS_8(5)).EQ.0) THEN
-                  HGHT = ZQMS(5)  ! HEIT, 4th choice for HGHT
+                  HGHT = ZQMS(5) ! HEIT, 4th choice for HGHT
                ELSE  IF(IBFMS(ZQMS_8(6)).EQ.0) THEN
-                  HGHT = ZQMS(6)  ! HMSL, 5th choice for HGHT (E-ADAS,
-                                  !                    Canadian AMDAR)
+                  HGHT = ZQMS(6) ! HMSL, 5th choice for HGHT (E-AMDAR,
+                                 !                    Canadian AMDAR,
+                                 !            TAMDAR (from Panasonic)
+               ELSE  IF(IBFMS(ZQMS_8(7)).EQ.0) THEN
+                  HGHT = ZQMS(7) ! FLVLST, 6th choice for HGHT
+                                 !       {Catch-all AMDAR (raw BUFR),
+                                 !                 most Korean AMDAR}
                ELSE
-                  HGHT = BMISS
+                  HGHT = BMISS   ! some Korean AMDAR
                ENDIF
                IF(HGHT.LT.BMISS) THEN
                   IF(HGHT.LE.11000) PRES  = NINT(PRS1(HGHT)*10.)
                   IF(HGHT.GT.11000) PRES  = NINT(PRS2(HGHT)*10.)
                ENDIF
             ELSE
-               PRES = NINT(ZQMS(4)*.1) ! Reported pressure (only for
-                                    !      MDCRS-ACARS and TAMDAR)
+               PRES = NINT(ZQMS(4)*.1) ! Reported pressure {only for
+                                    !      MDCRS, TAMDAR (from AirDAT
+                                    !      and from MADIS), some RECCOs}
             ENDIF
             IF(PRES.LT.BMISS) THEN
                EDIT_ACF = PRES.GE.PMIN(M)*10. .AND. PRES.LE.PMAX(M)*10.
@@ -2126,15 +2340,16 @@ C  Read back report data from aircraft BUFR file
                ENDIF
             ENDIF
             IF(IQMDD.GE.0) THEN
-               IF((JTYP.LT.3 .OR. JTYP.GT.5) .AND. JTYP.NE.8) THEN
-C  .... AIREP, PIREP, E-ADAS, AFWA-ACARS and CANADIAN AMDAR subtypes do
-C        not encode moisture q.m.
+               IF(JTYP.LE. 2 .OR. JTYP.EQ. 7 .OR. JTYP.EQ. 9 .OR.
+     .            JTYP.EQ.11) THEN
+C  .... AIREP, PIREP, AFWA-MDCRS, CANADIAN AMDAR and KOREAN AMDAR
+C        subtypes do not encode moisture q.m.
                   print'("    ... QMDD (=",I2,") is NOT encoded into ",
      .             "this report subtype (",I3.3,") of type ",A)',
      .             IQMDD,JTYP,CARD(37:39)
                ELSE
-C  .... AMDAR, MDCRS-ACARS, RECCO and TAMDAR(MADIS) subtypes do encode
-C        moisture q.m.
+C  .... AMDAR fmt, MDCRS, RECCO, E-AMDAR, TAMDAR( all types) and
+C        "Catch-all" AMDAR subtypes do encode moisture q.m.
                   IF(ALL) THEN
                      print'("    ... QMDD set to ",F3.0," on ALL ",
      .                "levels")',REAL(IQMDD)
@@ -2166,9 +2381,11 @@ C        moisture q.m.
             ITQM(ITYP,IQMAT) = ITQM(ITYP,IQMAT) + 1
          ENDIF
          IF(IQMDD.GE.0) THEN
-            IF((JTYP.GE.3 .AND. JTYP.LE.5) .OR. JTYP.EQ.8) THEN
-C  .... AMDAR, MDCRS-ACARS, RECCO and TAMDAR(MADIS) subtypes do encode
-C        moisture q.m.
+            IF((JTYP.GE.3 .AND. JTYP.LE.6) .OR. JTYP.EQ.8 .OR.
+     .          JTYP.EQ.10 .OR. JTYP.EQ.12 .OR. JTYP.EQ.13. OR.
+     .          JTYP.EQ.103) THEN
+C  .... AMDAR fmt, MDCRS, RECCO, E-AMDAR, TAMDAR( all types) and
+C        "Catch-all" AMDAR subtypes do encode moisture q.m.
                UFBINT_8 = IQMDD
                CALL UFBINT(LUBFJ,UFBINT_8,1,1,IRET,'QMDD')
                IMQM(ITYP,IQMDD) = IMQM(ITYP,IQMDD) + 1
@@ -2385,7 +2602,7 @@ C  Encode any new q.m.'s
 C$$$  SUBPROGRAM DOCUMENTATION BLOCK
 C
 C SUBPROGRAM:    PRSRNG
-C   PRGMMR: KEYSER           ORG: NP22       DATE: 2014-03-05
+C   PRGMMR: KEYSER           ORG: NP22       DATE: 2016-08-09
 C
 C ABSTRACT: PARSES VERTICAL SIGNIFICANCE QUALIFIER AND PRESSURE RANGES
 C   FOR APPLYING QUALITY MARKS ENTRIES FROM A PARTICULAR RECORD (CARD)
@@ -2410,6 +2627,8 @@ C     BEEN MARKED AS OBSOLETE}
 C 2014-03-05  D. A. KEYSER -- INCREASED MAXIMUM NUMBER OF TIME- AND
 C     REPORT TYPE-RELEVANT ENTRIES ALLOWED IN THE SDMEDIT FLAG FILE
 C     FROM 1000 TO 2000 (PARAMETER "MEDT")
+C 2016-08-09  D. A. Keyser -- Replace assignment of BMISS and instead
+C     pass in R*8 value set in main program (using GETBMISS) via COMMON.
 C
 C USAGE:    CALL PRSRNG (CARD, M, IER)
 C   INPUT ARGUMENT LIST:
@@ -2441,9 +2660,10 @@ C$$$
       CHARACTER*128 CARD
       CHARACTER*20  PLEV(11)
 
-      COMMON /UEDIT/ IVSG(MEDT),PMIN(MEDT),PMAX(MEDT)
+      REAL(8)      BMISS
 
-      DATA BMISS /10E10/
+      COMMON /UEDIT/ IVSG(MEDT),PMIN(MEDT),PMAX(MEDT)
+      COMMON /BUFRLIB_MISSING/BMISS
 
 C  LOOK FOR A VERITCAL SIGNIFICANCE QUALIFIER IN THE SDMEDIT ENTRY
 C  ---------------------------------------------------------------

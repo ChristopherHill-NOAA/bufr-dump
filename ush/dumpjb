@@ -5,7 +5,7 @@
 #
 # Script name:   dumpjb      Dump script to get data from BUFR tanks
 #
-# RFC contact:  Melchior    Org: NP22        Date: 2015-07-27
+# RFC contact:  Keyser      Org: NP22        Date: 2016-08-15
 #
 # Abstract: The dumpjb script is an all-purpose dump utility for time
 #   windowing, geographical filtering, eliminating duplicates, and applying
@@ -295,12 +295,22 @@
 # 2015-07-27  S. Melchior  Includes new types Korean AMDAR aircraft (from BUFR)
 #     (004.011) and catch-all AMDAR aircraft (from BUFR) (004.103) in
 #     bufr_dupair dup-checking.
+# 2016-04-22  D. Keyser  No longer references unused utility script mpmd.sh.
+#     Uses form of unix date command to replace executable ndate in hardwired
+#     non-versioned, horizontal structure utility directory path.
+# 2016-08-15  D. Keyser  Added mesonet reports (in BUFR type 255) to types
+#     which will be processed by BUFR_EDTBFR.
 #
 #
 # Usage: dumpjb  yyyymmddhh<.hh> hh<.hh> dgrp1 dgrp2 dgrp3 ... dgrpN
 #
 #   Script parameters:
-#     yyyymmddhh<.hh> - center of time window for dump
+#     yyyymmddhh<.hh> - center of time window for dump, where
+#                        yyyy  is center time year
+#                          mm  is center time month
+#                          dd  is center time day
+#                          hh  is center time hour
+#                       <.hh>  is optional fraction of an hour (defaults to 0)
 #
 #     hh<.hh>         - radius of time window for dump (i.e., the dump time
 #                       window would be hh<.hh> hours PRIOR to yyyymmddhh<.hh>
@@ -388,13 +398,12 @@
 #-----------------------------------------------------------------------
 #
 #   Modules and files referenced:
-#     scripts     : mpmd.sh
+################     scripts     : mpmd.sh (no longer referenced)
 #     fixed fields: bufr_dumplist
 #     executables : bufr_raddate bufr_dumpmd bufr_dupcor bufr_dupsat
 #                   bufr_dupsst  bufr_dupmrg bufr_edtbfr bufr_quipc
 #                   bufr_chkbfr  bufr_combfr bufr_dupair bufr_dupshp
 #                   bufr_dupmar  bufr_geofil bufr_duprad
-#                   /nwprod/util/exec/ndate
 #
 # Remarks:
 #
@@ -683,7 +692,9 @@
 #   QPRM   -  directory path/filename of QUIPS flag file
 #                                           (default:${DCOMROOT}/us007003/quips)
 #   MPMD   -  directory path/filename of mpmd utility script that
-#              executes poe                   (default:/nwprod/util/ush/mpmd.sh)
+#              executes poe           (default:< this script is not available >)
+#             [ currently, POE=on is not supported -- untested on WCOSS and
+#               MDMP is not defined]
 #   FORM   -  if != copy, the suffix qualifier for database dump files in
 #               $DATA {the database dump files for each data group will be
 #                      combined into a single file called $DATA/dgrp.$FORM }
@@ -845,7 +856,7 @@ echo
 echo "********************************************************************"
 echo "********************************************************************"
 echo "     STARTING EXECUTION OF THE UNIVERSAL DUMP SCRIPT - DUMPJB       "
-echo "                            07-27-2015                              "
+echo "                            08-15-2016                              "
 echo "             Start time: `date -u`                                  "
 echo "********************************************************************"
 echo "********************************************************************"
@@ -940,7 +951,9 @@ echo
 [ -z "$TANK" ]   && TANK=${DCOMROOT}/us007003
 [ -z "$EPRM" ]   && EPRM=${DCOMROOT}/us007003/sdmedit
 [ -z "$QPRM" ]   && QPRM=${DCOMROOT}/us007003/quips
-[ -z "$MPMD" ]   && MPMD=/nwprod/util/ush/mpmd.sh
+###################[ -z "$MPMD" ]   && MPMD=< this script is not available >
+           # [ currently, POE=on is not supported -- untested on WCOSS and
+           #   MDMP is not defined]
 
 if [ -n "$DATA_DUMPJB" ]; then
   data_dumpjb_imported=YES
@@ -1088,7 +1101,9 @@ LIST = $LIST
 TANK = $TANK
 EPRM = $EPRM
 QPRM = $QPRM
-MPMD = $MPMD
+###################MPMD = $MPMD
+           # [ currently, POE=on is not supported -- untested on WCOSS and
+           #   MDMP is not defined]
 DATA = $DATA
 TMPDIR = $TMPDIR
 DATA_DUMPJB = $DATA_DUMPJB
@@ -1456,8 +1471,7 @@ cut -c1-3`-`echo "$LALO"|cut -c4-6` N lat, `echo "$LALO"|cut -c7-9`-`echo \
 #  -------------------------------------------------------------------------
 
    if [ "${#DAT1}" -eq '8' ]; then
-      DAT1m1=`/nwprod/util/exec/ndate -24 ${DAT1}00`
-      DAT1m1=`echo $DAT1m1 | cut -c1-8`
+      DAT1m1=$(date --date="$DAT1 -1 day" +%Y%m%d)
       fil1=$TANK/$DAT1m1/b$mt/xx$st
       if [ -f $fil1 ]; then
          FIL1=$fil1
@@ -1778,11 +1792,15 @@ if [ -s $DATA_DUMPJB/poe.cmd ]; then
 #  with poe command!!!
 #########TIMEIT=/usr/bin/timex
 #VVVVVVVVVVVVVVV
-   $MPMD $DATA_DUMPJB/poe.cmd 2>&1
+##########   $MPMD $DATA_DUMPJB/poe.cmd 2>&1
+#             [ currently, POE=on is not supported -- untested on WCOSS and
+#               MDMP is not defined]
+
 #########/usr/bin/poe -pgmmodel mpmd -cmdfile $DATA_DUMPJB/poe.cmd \
 ######### -ilevel 2 -labelio no -stdoutmode ordered 2>&1
 #AAAAAAAAAAAAAAA
-   errmpmd=$?
+#########   errmpmd=$?
+   errmpmd=99
    [ $errmpmd -ne 0 ]  &&  exit 99
 else
    echo
@@ -1884,13 +1902,13 @@ echo
 rc_dupair=0
 dupair_run=no
 grep -q -e "004.001" -e "004.002" -e "004.003" -e "004.004" -e "004.006" \
--e "004.007" -e "004.009" -e "004.011" -e "004.103" $FILES
+-e "004.007" -e "004.009" -e "004.010" -e "004.011" -e "004.103" $FILES
 errgrepa=$?
 if [ $errgrepa -eq 0 ]; then
    if [ $DUPC = on ]; then
      echo "--------------------------------------------------------------------"
       echo "Duplicate check combined aircraft and aircar reports in \
-004.001 - 004.004, 004.006, 004.007, 004.009, 004.011 and 004.103"
+004.001 - 004.004, 004.006, 004.007, 004.009, 004.010, 004.011 and 004.103"
       echo "Duplicate check program: $AIRX"
      echo "--------------------------------------------------------------------"
       time cat $FILES | $AIRX
@@ -1903,8 +1921,8 @@ if [ $errgrepa -eq 0 ]; then
    else
      echo "--------------------------------------------------------------------"
       echo "Duplicate check of combined aircraft and aircar reports in \
-004.001 - 004.004, 004.006, 004.007, 004.009, 004.011 and 004.103 NOT \
-PERFORMED (turned off by user)"
+004.001 - 004.004, 004.006, 004.007, 004.009, 004.010, 004.011 and 004.103 \
+NOT PERFORMED (turned off by user)"
      echo "--------------------------------------------------------------------"
    fi
    echo "--------------------------------------------------------------------"
@@ -1941,8 +1959,8 @@ fi
 if [ $dupair_run = yes ]; then
    echo
    echo "Duplicate checking completed for combined aircraft and aircar \
-reports in 004.001 - 004.004, 004.006, 004.007, 004.009, 004.011 and \
-004.103"
+reports in 004.001 - 004.004, 004.006, 004.007, 004.009, 004.010, \
+004.011 and 004.103"
 fi
 if [ $dupshp_run = yes ]; then
    echo
@@ -1954,13 +1972,13 @@ fi
 
 rc_edtbfr=0
 edtbfr_run=no
-grep -q -e "000." -e "001." -e "002." -e "004." -e "005." $FILES
+grep -q -e "000." -e "001." -e "002." -e "004." -e "005."  -e "255." $FILES
 errgrepe=$?
 if [ $errgrepe -eq 0 ]; then
    echo "--------------------------------------------------------------------"
    echo "Apply q.c. changes from SDMEDIT flag file entries to all subtypes in"
-   echo "BUFR types 000.* - 002.*, 004.* and 005.* (surface land, surface"
-   echo "marine, upper-air, aircraft, satellite-derived wind)"
+   echo "BUFR types 000.* - 002.*, 004.*, 005* and 255.* (surface land,"
+   echo "surface marine, upper-air, aircraft, satellite-derived wind, mesonet)"
    echo
    echo "SDMEDIT flag file: $EPRM"
    echo "Program: $EDTX"

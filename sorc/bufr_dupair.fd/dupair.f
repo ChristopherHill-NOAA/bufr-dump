@@ -1,38 +1,40 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: BUFR_DUPAIR
-C   PRGMMR: MELCHIOR/KEYSER  ORG: NP22        DATE: 2016-01-14
+C   PRGMMR: MELCHIOR/KEYSER  ORG: NP22        DATE: 2016-08-18
 C
-C ABSTRACT: PROCESSES ANY COMBINATION UP TO NINE DUMP FILES
-C   CONTAINING TYPES THAT ULTIMATELY GO INTO EITHER THE "AIRCFT" DUMP
-C   {BUFR MESSAGE TYPE 004, SUBTYPES 001 (AIREP FORMAT), 002 (PIREP
-C   FORMAT), 003 (AMDAR FORMAT), 006 (EUROPEAN AMDAR, BUFR FORMAT),
-C   009 (CANADIAN AMDAR, BUFR FORMAT), 011 (KOREAN AMDAR, BUFR
-C   FORMAT), 103 (CATCH-ALL AMDAR, BUFR FORMAT)} OR INTO THE "AIRCAR"
-C   DUMP {BUFR MESSAGE TYPE 004, SUBTYPES 004 (MDCRS FROM AIRINC) AND
-C   007 (MDCRS FROM AFWA)}.  PERFORMS A SINGLE DUP-CHECK FOR REPORTS
-C   ACROSS ALL APPLICABLE FILES GOING INTO EITHER THE "AIRCFT" DUMP
-C   OR INTO THE "AIRCAR" DUMP.  DOES NOT INCLUDE TAMDAR IN SUBTYPES
-C   008, 010, 012 AND 013 WHICH GO INTO "AIRCFT" DUMP.  INFORMATION
-C   IS READ SEPARATELY FROM EACH FILE THAT IS PRESENT, AND IS THEN
-C   COMBINED INTO TABLES USED FOR THE DUP-CHECK.  THE ALGORITHM SORTS
-C   THE REPORTS IN ASCENDING ORDER OF LAT, LON, OBS TIME (DAY DOWN TO
-C   SECOND), HEIGHT, AND RECEIPT TIME (YEAR DOWN TO MINUTE).  IN THE
-C   DUPLICATE CHECKING LOGIC, ADJACENT, SORTED REPORT PAIRS ARE CHECKED
-C   FOR LAT, LON, OBS TIME (TO THE SECOND) AND FLIGHT LEVEL, ALL BASED
-C   ON TOLERANCE LIMITS WHICH CAN VARY BASED ON THE TYPE OF REPORT
-C   (E.G., AIREP, PIREP, AMDAR, MDCRS), WHETHER OR NOT THE REPORT IS
-C   RE-ENCODED FROM AN ORIGINAL AIREP OR AMDAR TYPE INTO AN AIREP TYPE
-C   BY AFWA (OR PREVIOUSLY CARSWELL OR TINKER), AND WHETHER THIS IS A
-C   REAL-TIME OR HISTORICAL RUN.  THE REPORT USUALLY SELECTED IS THE
-C   BULLETIN LAST RECEIVED, HOWEVER IF ONE REPORT IN THE PAIR IS FROM
-C   AFWA AND THE OTHER IS NOT, THE NON-AFWA REPORT IS ALWAYS SELECTED.
-C   THE WORKING FILE NAMES OF THE INPUT DUMP FILES (IN EITHER THE "NEW"
-C   FORM x_ttt.sss, WHERE ttt IS BUFR TYPE, sss IS BUFR SUBTYPE, AND x
-C   IS AN ORDERING INDEX; OR THE "OLD" FORM ttt.sss) ARE READ FROM
-C   STANDARD INPUT (UNIT 5) AT THE START OF THIS PROGRAM. THE OUTPUT
-C   DUP-CHECKED FILES WILL BE WRITTEN TO THE SAME FILE NAMES.  ALL
-C   OTHER FILE CONNECTIONS ARE MADE THROUGH THE FORTRAN OPEN STATEMENT.
+C ABSTRACT: PROCESSES ANY COMBINATION UP TO TEN DUMP FILES CONTAINING
+C   TYPES THAT ULTIMATELY GO INTO EITHER THE "AIRCFT" DUMP {BUFR
+C   MESSAGE TYPE 004, SUBTYPES 001 (AIREP FORMAT), 002 (PIREP FORMAT),
+C   003 (AMDAR FORMAT), 006 (EUROPEAN AMDAR, BUFR), 009 (CANADIAN
+C   AMDAR, BUFR), 010 (TAMDAR, BUFR FROM PANASONIC OR AirDAT), 011
+C   (KOREAN AMDAR, BUFR), 103 (CATCH-ALL AMDAR, BUFR)} OR INTO THE
+C   "AIRCAR" DUMP {BUFR MESSAGE TYPE 004, SUBTYPES 004 (MDCRS FROM
+C   ARINC) AND 007 (MDCRS FROM AFWA)}.  PERFORMS A SINGLE DUP-CHECK FOR
+C   REPORTS ACROSS ALL APPLICABLE FILES GOING INTO EITHER THE "AIRCFT"
+C   DUMP OR INTO THE "AIRCAR" DUMP. DOES NOT INCLUDE TAMDAR FROM MADIS
+C   IN SUBTYPES 008, 012 AND 013 WHICH GO "AIRCFT" DUMP.  INFORMATION IS
+C   READ SEPARATELY FROM EACH FILE THAT IS PRESENT, AND IS THEN COMBINED
+C   INTO TABLES USED FOR THE DUP-CHECK.  THE ALGORITHM SORTS THE REPORTS
+C   IN ASCENDING ORDER OF LAT, LON, OBS TIME (DAY DOWN TO SECOND),
+C   HEIGHT, AND RECEIPT TIME (YEAR DOWN TO MINUTE).  IN THE DUPLICATE
+C   CHECKING LOGIC, ADJACENT, SORTED REPORT PAIRS ARE CHECKED FOR LAT,
+C   LON, OBS TIME (TO THE SECOND) AND FLIGHT LEVEL, ALL BASED ON
+C   TOLERANCE LIMITS WHICH CAN VARY BASED ON THE TYPE OF REPORT {E.G.,
+C   AIREP, PIREP, AMDAR, TAMDAR (FROM PANASONIC OR AirDAT), MDCRS},
+C   WHETHER OR NOT THE REPORT IS RE-ENCODED FROM AN ORIGINAL AIREP OR
+C   AMDAR TYPE INTO AN AIREP TYPE BY AFWA (OR PREVIOUSLY CARSWELL OR
+C   TINKER), AND WHETHER THIS IS A REAL-TIME OR HISTORICAL RUN.  THE
+C   REPORT USUALLY SELECTED IS THE BULLETIN LAST RECEIVED, HOWEVER IF
+C   ONE REPORT IN THE PAIR IS FROM AFWA AND THE OTHER IS NOT, THE NON-
+C   AFWA REPORT IS ALWAYS SELECTED.  THERE ARE OTHER RULES FOR SELECTING
+C   THE "BEST" REPORT IN THE DUPLICATE PAIR (SEE CODE).  THE WORKING
+C   FILE NAMES OF THE INPUT DUMP FILES (IN EITHER THE "NEW" FORM
+C   x_ttt.sss, WHERE ttt IS BUFR TYPE, sss IS BUFR SUBTYPE, AND x IS AN
+C   ORDERING INDEX; OR THE "OLD" FORM ttt.sss) ARE READ FROM STANDARD
+C   INPUT (UNIT 5) AT THE START OF THIS PROGRAM. THE OUTPUT DUP-CHECKED
+C   FILES WILL BE WRITTEN TO THE SAME FILE NAMES.  ALL OTHER FILE
+C   CONNECTIONS ARE MADE THROUGH THE FORTRAN OPEN STATEMENT.
 C
 C PROGRAM HISTORY LOG:
 C 1997-01-22  J. WOOLLEN  ORIGINAL VERSION FOR IMPLEMENTATION
@@ -95,7 +97,7 @@ C     SUBSETS (REPORTS) ARE READ IN (BEFORE COULD SEG FAULT)
 C 2014-11-07  D. KEYSER   DECLARE FUNCTION GETBMISS AND ITS RETURN
 C     VALUE BMISS AS REAL*8 TO GET A RELIABLE VALUE FOR BMISS IN PRINT
 C     STATEMENTS
-C 2015-06-16  S. Melchior
+C 2015-06-15  S. Melchior
 C      - Now duplicate checks MDCRS reports (004.004 or 004.007) which
 C        will later be part of the "aircar" dump (duplcate check moved
 C        from upstream "dupcor" code which did not consider height or
@@ -116,7 +118,7 @@ C      that were previously tossed now being retained.  Historic runs
 C      (pre-2010) are not changed since re-encoded AFWA reports
 C      appeared then. Duplcate AIREP and PIREP reports can still come
 C      in from different sources with slightly different lat/lon, time
-C      or elevation, thus old tolerances are kept for these.
+C      or height, thus old tolerances are kept for these.
 C 2015-06-16  D. Keyser
 C      - Additional changes related to above:
 C         - Receipt time is now stored so that latest arriving report
@@ -140,32 +142,98 @@ C         - Added diagnostic print for debugging.  This is commented
 C           out.
 C         - Added a more detailed report summary print at the end.
 C 2015-09-03  S. Melchior Added ability to process new dump files
-C      containing Korean AMDAR (from BUFR) in NC004011 and catch-all
-C      AMDAR (from BUFR) in NC004103 if they are present.  If a
-C      duplicate is found consisting of an AMDAR from TAC format and
-C      either a European AMDAR from BUFR or a catch-all AMDAR from
-C      BUFR, the AMDAR from TAC format is always tossed.
+C     containing Korean AMDAR (from BUFR) in NC004011 and catch-all
+C     AMDAR (from BUFR) in NC004103 if they are present.  If a
+C     duplicate is found consisting of an AMDAR from TAC format and
+C     either a European AMDAR from BUFR or a catch-all AMDAR from
+C     BUFR, the AMDAR from TAC format is always tossed.
 C 2016-01-14  D. Keyser   Corrected a bug introduced in 2015-09-03
-C      update (which had not yet been implemented) which prevented this
-C      code from processing MDCRS reports from "aircar" dump.
+C     update (which had not yet been implemented) which prevented this
+C     code from processing MDCRS reports from "aircar" dump.
+C 2016-04-18  D. Keyser   Failback on 2015-06-15 Melchior changes for now.
+C     Will do no processing of MDCRS types (004.004 or 004.007),
+C     assuming dup-checking is still done in upstream "dupcor" code
+C     (that code as also been failed-back).  Will keep loosened
+C     tolerances on AMDAR report dup-checking in this code.  Will not
+C     remove logic added in 2015-06-15, 2015-06-16, 2015-09-03 and
+C     2016-01-14 changes above, but rather change date check such that
+C     logic operates as though obs date is prior to January 1, 2010
+C     regardless of obs date (done by setting control date to 1/1/3000
+C     rather than 1/1/2010).  Necessary because testing shows new dup-
+C     check logic appears to be degrading GFS forecast at 5 days.
+C     This needs to be examined carefully.  GSI may need to be updated
+C     to include thinning of aircraft reports.  More to come on this...
+C 2016-08-09  S. Melchior/D. Keyser
+C      - Added ability to process TAMDAR BUFR data from either AirDAT
+C        (historical reruns) and from Panasonic (current). These are
+C        part of the "aircft" dump file and are treated like all other
+C        types in this dump. E.G.:
+C         - Tolerances tightened to an exact match when duplicate
+C           checking TAMDAR (Panasonic or AirDAT) against like-type for
+C           obs date after January 1, 2010 (** see 2016-04-18 change
+C           above! **) when it is known that AFWA was no longer re-
+C           encoding MDCRS or AMDAR report as AIREPs.
+C           - Tolerances remain as before (loosened) if the other dup
+C             being checked is an AIREP or PIREP or obs date is prior
+C             to January 1, 2010 (** see 2016-04-18 change above! **)
+C             (and remain even more loosened as before if the other dup
+C             being checked is an AIREP or PIREP from AFWA).
+C         Changes above prevent near-duplcate TAMDAR (Panasonic or
+C         AirDAT) reports from being tossed.  Historic runs (pre-2010)
+C         are not changed since re-encoded AFWA reports appeared then.
+C         Duplcate AIREP and PIREP reports can still come in from
+C         different sources with slightly different lat/lon, time or
+C         height, thus old tolerances are kept for these.
+C      - TAMDAR ((Panasonic or AirDAT) reports will use HMSL as height
+C        in sorting and dup-checking rather than FLVLST which is also
+C        reported but is less likely to represent pressure-altitude
+C        than HMSL.
+C      - Added requirement to retain BUFR AMDAR report when it
+C        duplicates a TAMDAR (Panasonic or AirDAT) report (thus tossing
+C        TAMDAR report).  Assumes BUFR AMDARS are of better quality
+C        than TAMDARs.
+C      - Added requirement to retain any report with a non-missing
+C        height when it duplicates any report with a missing height
+C        (some Korean AMDARs have missing height).
+C      - Instead of using the bogus control date of 1/1/3000 to "fool"
+C        the code into treating dup-checking the same as before
+C        2015-06-15 Melchior changes (see 2016-04-18 change), will
+C        revert back to original/actual date of 1/1/2010 to define the
+C        point when this code will update dup-checking as noted in
+C        2015-06-15 Melchior changes, but force these changes to NOT
+C        occur after this date IF the new script environment variable
+C        KEEP_NEARDUP_ACFT is imported as "NO" (default for anything
+C        other than "YES").
+C        BENEFIT: Allows different networks to invoke or not invoke
+C                 these changes after 1/1/2010, and allows for future
+C                 changes in setting of KEEP_NEARDUP_ACFT without any
+C                 need to change this source code.  Also removes clumsy
+C                 temporary date setting (1/1/3000) to retain old logic.
+C 2016-08-18  D. Keyser   Added requirement to toss any report with a
+C     missing report identifier when it duplicates any type of aircraft
+C     report {"Catch-all AMDAR BUFR reports with bulletin header
+C     "IUAS02 NZKL" are actually re-encoded AIREPS with missing tail
+C     number (AIREPS have missing tail number and use flight number as
+C     report identifier) - AMDAR reports use only tail number for
+C     report identifier}.
 C
 C USAGE:
 C   INPUT FILES:
 C     UNIT 05  - STANDARD INPUT - RECORDS CONTAINING THE WORKING INPUT
 C                FILE NAMES FOR ALL AIRCRAFT TYPES EVENTUALLY BEING
 C                COMBINED INTO A SINGLE DUMP FILE (for either "aircft"
-C                or "aircar" dumps) - THE ONLY FILE NAMES CONSIDERED
-C                BY THIS PROGRAM ARE *004.001 (AIREP FORMAT), *004.002
+C                or "aircar" dumps) - THE ONLY FILE NAMES CONSIDERED BY
+C                THIS PROGRAM ARE *004.001 (AIREP FORMAT), *004.002
 C                (PIREP FORMAT), *004.003 (AMDAR FORMAT), *004.006
-C                (EUROPEAN AMDAR, BUFR FORMAT), *004.009 (CANADIAN
-C                AMDAR, BUFR FORMAT), *004.011 (KOREAN AMDAR, BUFR
-C                FORMAT) and *004.103 (CATCH-ALL AMDAR, BUFR FORMAT)
-C                (all included in the "aircft" dump), or *004.004
-C                (MDCRS from ARINC) and *004.007 (MDCRS from AFWA)
-C                (both included in the "aircar" dump) - OTHER FILES MAY
-C                BE INCLUDED HERE, BUT THEY WILL NOT BE MODIFIED BY
-C                THIS PROGRAM; THE OUTPUT FILE NAMES WILL BE THE SAME
-C                AS THE INPUT NAMES HERE.
+C                (EUROPEAN AMDAR, BUFR), *004.009 (CANADIAN AMDAR,
+C                BUFR), *004.010 (TAMDAR, BUFR, from Panasonic or
+C                AirDAT), *004.011 (KOREAN AMDAR, BUFR) and *004.103
+C                (CATCH-ALL AMDAR, BUFR) (all included in the "aircft"
+C                dump), or *004.004 (MDCRS, BUFR, from ARINC) and
+C                *004.007 (MDCRS, from AFWA) (both included in the
+C                "aircar" dump) - OTHER FILES MAY BE INCLUDED HERE, BUT
+C                THEY WILL NOT BE MODIFIED BY THIS PROGRAM; THE OUTPUT
+C                FILE NAMES WILL BE THE SAME AS THE INPUT NAMES HERE.
 C     UNIT 20  - UNCHECKED BUFR FILE(S)
 C
 C   OUTPUT FILES:
@@ -195,7 +263,7 @@ C$$$
       PROGRAM BUFR_DUPAIR
  
       PARAMETER (MXTS=15,MXTS2=2)
-      PARAMETER (NFILES=9)  ! Number of input files being considered
+      PARAMETER (NFILES=10)  ! Number of input files being considered
  
       REAL(8),ALLOCATABLE :: TAB_8(:,:)
       REAL(8),ALLOCATABLE :: TAB2_8(:,:)
@@ -205,13 +273,12 @@ C$$$
       INTEGER,ALLOCATABLE :: JDUP(:)
 
       REAL(8) UFBTAB_8,TAB7_8,BMISS,GETBMISS,tab1_i_8,tab1_j_8,
-     $ tab2_i_8
-      CHARACTER*80 TSTR,TSTRH,TSTR_N,TSTR_O,TSTRH_N,TSTRH_O,
-     $ FILI(NFILES),FILO,FILE,rstr,tstr_n_mdcrs,tstr_o_mdcrs,
-     $ TSTR2,TSTRH2
-      CHARACTER*8  SUBSET,CTAB7,ctab1_i,ctab1_j,ctab2_i
+     $ tab2_i_8,FLVL_save_8,i_missing
+      CHARACTER*80 TSTR,TSTH,TSTR_N,TSTR_O,TSTH_N,TSTH_O,
+     $ FILI(NFILES),FILO,FILE,rstr,tstr_n_mdcrs,tstr_o_mdcrs,TSTR2
+      CHARACTER*8  SUBSET,CTAB7,ctab1_i,ctab1_j,ctab2_i,c_missing
       character*20 ctext_file(nfiles)
-      CHARACTER*3  DUMMY_MSGS
+      CHARACTER*3  DUMMY_MSGS,KEEP_NEARDUP_ACFT
       CHARACTER*1  CDUMMY
 
       DIMENSION    IMST(103),ntab_file(nfiles)
@@ -221,18 +288,18 @@ C$$$
 
       EQUIVALENCE  (TAB7_8,CTAB7)
       equivalence  (tab1_i_8,ctab1_i),(tab1_j_8,ctab1_j),
-     $ (tab2_i_8,ctab2_i)
+     $ (tab2_i_8,ctab2_i),(c_missing,i_missing)
 
       DATA TSTR_N
      $ /'RPID CLAT  CLON  DAYS HOUR MINU BORG PSAL FLVL HEIT HMSL
      $ IALT FLVLST SECO YEAR '/
-      DATA TSTRH_N
+      DATA TSTH_N
      $ /'ACRN CLATH CLONH DAYS HOUR MINU BORG PSAL FLVL HEIT HMSL
      $ IALT FLVLST SECO YEAR '/
       DATA TSTR_O
      $ /'RPID CLAT  CLON  DAYS HOUR MINU ICLI PSAL FLVL HEIT HMSL
      $ IALT NUL    SECO YEAR '/
-      DATA TSTRH_O
+      DATA TSTH_O
      $ /'ACRN CLATH CLONH DAYS HOUR MINU ICLI PSAL FLVL HEIT HMSL
      $ IALT NUL    SECO YEAR '/
       data tstr_n_mdcrs
@@ -251,12 +318,17 @@ C$$$
      $           'EUROPEAN AMDAR/BUFR ',
      $           'MDCRS-AWFA/BUFR     ',
      $           'CANADIAN AMDAR/BUFR ',
+     $           'TAMDAR/BUFR(Pan/ArD)',
      $           'KOREAN AMDAR/BUFR   ',
      $           'CATCH-ALL AMDAR/BUFR'/
 
-C  Tolerance parameters for reports with obs time after January 01,
-C   2010 -and- the pair being checked contains some combination of
-C   MDCRS 004004 or 004007) or AMDAR (004003, 004006, 004009) reports:
+      data c_missing/'missing-'/
+
+C  Tolerance parameters for reports with obs time after January 01, 2010
+C   -AND- when script environment variable KEEP_NEARDUP_ACFT is imported
+C   as "YES" -AND- the pair being checked contains some combination of
+C   MDCRS 004004 or 004007), AMDAR (004003, 004006, 004009, 004011,
+C   004103), or TAMDAR (from Panasonic or AirDAT) (004010) reports:
 C  -------------------------------------------------------------------
 
       data dexyn   / 0.0/ ! lat/lon
@@ -264,8 +336,10 @@ C  -------------------------------------------------------------------
       data delvn   / 0.0/ ! height
 
 C  Tolerance parameters for reports with obs time prior to January 01,
-C   2010 -or- at least one of the pair being checked contains an AIREP
-C   (004001) or PIREP (004002) report:
+C   2010 -OR- when script environment variable KEEP_NEARDUP_ACFT is
+C   imported as "NO" (default for anything other than "YES") -OR- at
+C   least one of the pair being checked contains an AIREP (004001) or
+C   PIREP (004002) report:
 C  -------------------------------------------------------------------
 
       data dexyo   / 0.05/! lat/lon if neither report in pair is AFWA
@@ -281,14 +355,14 @@ C  -------------------------------------
 
 
       DATA IMST  /   1,   2,   3,   4, -99,   5,   6, -99,   7,
-     $             -99,   8,   91*-99,   9/
+     $               8,   9,   91*-99,  10/
  
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_DUPAIR',2016,0014,0054,'NP22')
+      CALL W3TAGB('BUFR_DUPAIR',2016,0231,0054,'NP22')
 
       print *
-      print * ,'---> Welcome to BUFR_DUPAIR - Version 01-14-2016'
+      print * ,'---> Welcome to BUFR_DUPAIR - Version 08-18-2016'
       print *
 
       CALL DATELEN(10)
@@ -317,6 +391,15 @@ C  --------------------------------------------------
       AIRCFT = .FALSE.
       mdcrs = .false.
  
+      KEEP_NEARDUP_ACFT = 'NO'
+      CALL GETENV('KEEP_NEARDUP_ACFT',KEEP_NEARDUP_ACFT)
+      IF(KEEP_NEARDUP_ACFT.NE.'YES') KEEP_NEARDUP_ACFT = 'NO'
+cpppppppppp
+      print *
+      print *, '---> KEEP_NEARDUP_ACFT = ',KEEP_NEARDUP_ACFT
+      print *
+cpppppppppp
+
 1     CONTINUE
 
       READ(5,'(A80)',END=2) FILE
@@ -324,7 +407,7 @@ C  --------------------------------------------------
          IF(FILE(I:I+3).EQ.'004.') THEN
             READ(FILE(I+4:I+6),'(I3)') MST
             IF(MST.LE.4.OR.MST.EQ.6.or.mst.eq.7.OR.MST.EQ.9.OR.
-     .         MST.EQ.11.OR.MST.EQ.103) THEN
+     .         MST.EQ.10.OR.MST.EQ.11.OR.MST.EQ.103) THEN
                FILI(IMST(MST)) = FILE
                AIRCFT = .TRUE.
                PRINT *, ' >> WILL CHECK ',FILE(I:I+6)
@@ -348,15 +431,19 @@ C  --------------------------------------------------
   200 FORMAT(/'BUFR_DUPAIR PARAMETERS:'/
      .        'For all reports:'/
      .        3X,'TOLERANCE FOR DAY CHECK (IN DAYS) .......... ',F7.3/
-     .        'For reports with obs time after January 01, 2010 -and-'/
-     .        ' the pair being checked contains some combination of ',
-     .        'MDCRS or AMDAR reports:'/
+     .        'For reports with obs time after January 01, 2010 -AND- ',
+     .        'when script environment variable KEEP_NEARDUP_ACFT is ',
+     .        'imported as "YES" -AND-'/' the pair being checked ',
+     .        'contains some combination of MDCRS, AMDAR or TAMDAR ',
+     .        '(from Panasonic or AirDAT) rpts:'/
      .        3X,'TOLERANCE FOR LAT/LON CHECKS (IN DEGREES) .. ',F7.3/
      .        3X,'TOLERANCE FOR HOUR CHECK (IN HOURS) ........ ',F7.3/
      .        3X,'TOLERANCE FOR HEIGHT CHECK (IN METERS) ..... ',F7.3/
      .        'For reports with obs time prior to January 01, 2010 ',
-     .        '-or-'/' one of the pair being checked contains an AIREP',
-     .        ' or PIREP report:'/
+     .        '-OR- when script environment variable KEEP_NEARDUP_ACFT',
+     .        ' is imported as anything'/' other than "YES" -OR- one ',
+     .        'of the pair being checked contains an AIREP or PIREP ',
+     .        'report:'/
      .        3X,'TOLERANCE FOR LAT/LON CHECKS (IN DEGREES) IF'/
      .        5X,'ONE OR BOTH REPORTS IN PAIR IS FROM AFWA . ',F7.3/
      .        3X,'TOLERANCE FOR LAT/LON CHECKS (IN DEGREES) IF'/
@@ -448,31 +535,28 @@ C  -------------------------------------------------------------
             CALL CLOSBF(LUBFI)
             OPEN(LUBFI,FILE=FILI(I),FORM='UNFORMATTED')
             IF(IRET.GT.0) THEN
+ ! Modern aircraft reports (post-May 2002)
+   ! Case 1 : Non-MDCRS w/ lo-res lat/lon (rpts RPID for id)
                TSTR  = TSTR_N
-               TSTR2 = 'MNTH NUL'
-               IF(I.EQ.4) THEN
-                  TSTR  = TSTR_N_MDCRS
-                  TSTR2 = 'MNTH NUL'
-               ENDIF
-               TSTRH  = TSTRH_N
-               TSTRH2 = 'MNTH ACID'
+   ! Case 2 : MDCRS w/ lo-res lat/lon (rpts ACRN for id)
+               IF(I.EQ.4)
+     $            TSTR  = TSTR_N_MDCRS
+   ! Case 3 : All types w/ hi-res lat/lon (rpts ACRN for id, else ACID)
+               TSTH  = TSTH_N
+               TSTR2 = 'MNTH ACID'
             ELSE
+ ! Historical aircraft reports (pre-May 2002)
                TSTR  = TSTR_O
+               IF(I.EQ.4) TSTR  = TSTR_O_MDCRS
+               TSTH  = TSTH_O
                TSTR2 = 'MNTH NUL'
-               IF(I.EQ.4) THEN
-                  TSTR  = TSTR_O_MDCRS
-                  TSTR2 = 'MNTH NUL'
-               endif
-               TSTRH  = TSTRH_O
-               TSTRH2 = 'MNTH NUL'
             ENDIF
 
             CALL UFBTAB(LUBFI,TAB_8(1,IPT),MXTS,MXTB-IPT+1,NTAB,TSTR)
             CALL UFBTAB(LUBFI,TAB2_8(1,IPT),MXTS2,MXTB-IPT+1,NTAB,TSTR2)
-            IF(IBFMS(TAB_8(2,IPT)).EQ.1) THEN             ! data missing
-         OPEN(LUBFI,FILE=FILI(I),FORM='UNFORMATTED')
-         CALL UFBTAB(LUBFI,TAB_8(1,IPT),MXTS,MXTB-IPT+1,NTAB,TSTRH)
-         CALL UFBTAB(LUBFI,TAB2_8(1,IPT),MXTS2,MXTB-IPT+1,NTAB,TSTRH2)
+            IF(IBFMS(TAB_8(2,IPT)).EQ.1) THEN             ! CLAT missing
+               OPEN(LUBFI,FILE=FILI(I),FORM='UNFORMATTED')
+               CALL UFBTAB(LUBFI,TAB_8(1,IPT),MXTS,MXTB-IPT+1,NTAB,TSTH)
             ENDIF
             call ufbtab(lubfi,rab_8(1,ipt),mxts,mxtb-ipt+1,ntab,rstr)
             IPTR(1,I) = IPT
@@ -500,21 +584,24 @@ C  ---------------------------------------
       NDUP = 0
       ndup_file = 0
       ntab_file = 0
- 
+
 C  Check obs time (year, month and day) of first report stored in
 C   memory and save its Julian day in jnddata
 C  Store control Julian day for January 1, 2010 in jndcntrl
-C  - these will be used later to determine the tolerances for dup-check
-C    and whether or not MDCRS reports should be duplicate checked here
+C  - these will be used later, in part with value for KEEP_NEARDUP_ACFT,
+C    to determine the tolerances for dup-check and whether or not MDCRS
+C    reports should be duplicate checked here
 C  --------------------------------------------------------------------
 
       jnddata= iw3jdn(int(tab_8(15,1)),int(tab2_8(1,1)),int(tab_8(4,1)))
       jndcntrl = iw3jdn(2010,1,1)
 
-      if(mdcrs.and.jnddata.lt.jndcntrl) then
+      if(mdcrs.and.
+     .   (jnddata.lt.jndcntrl.or.KEEP_NEARDUP_ACFT.eq.'NO')) then
          print 203
-  203 format(/'@@@@ MDCRS DATA PRIOR TO JAN 1 2010 ARE NOT PROCESSED ',
-     . 'BY THIS PROGRAM'/'@@@@ THIS PROGRAM IS DONE - STOP')
+  203 format(/'@@@@ MDCRS DATA NOT PROCESSED IF BEFORE 1/1/2010 OR ',
+     . 'SCRIPT ENVIR. VARIABLE KEEP_NEARDUP_ACFT IMPORTED AS ANYTHING ',
+     . 'OTHER THAN "YES"'/'@@@@ THIS PROGRAM IS DONE - STOP')
          write(60,'("ALL DONE")')
          call w3tage('BUFR_DUPAIR')
          call errexit(00)
@@ -528,41 +615,22 @@ C  --------------------------------------------------------------------
          if(ibfms(tab_8(14,n)).eq.1) tab_8(14,n) = 0  ! data missing
          TAB_8(5,N) = TAB_8(5,N)+((TAB_8(6,N)+(TAB_8(14,N)/60.))/60.)
 
-C  Find the height and store back in what was "MINU" slot
-C  ------------------------------------------------------
-
-         IF(IBFMS(TAB_8(8,N)).EQ.0) THEN              ! data not missing
-            TAB_8(6,N) = TAB_8(8,N) ! PSAL - Height for AMDAR format
-         ELSE  IF(IBFMS(TAB_8(9,N)).EQ.0) THEN        ! data not missing
-            TAB_8(6,N) = TAB_8(9,N) ! FLVL - Height for AIREP/PIREP fmt
-         ELSE IF(IBFMS(TAB_8(12,N)).EQ.0) THEN        ! data not missing
-            TAB_8(6,N) = TAB_8(12,N)! IALT - Height for MDCRS fmt
-         ELSE  IF(IBFMS(TAB_8(10,N)).EQ.0) THEN       ! data not missing
-            TAB_8(6,N) = TAB_8(10,N)! HEIT - 1st choice height for
-                                    !        EUROPEAN & CANADIAN AMDAR
-                                    !        (currently missing)
-         ELSE  IF(IBFMS(TAB_8(13,N)).EQ.0) THEN       ! data not missing
-            tab_8(6,n) = tab_8(13,n)! FLVLST - Height for KOREAN &
-                                    !          Catch-all AMDAR (BUFR fmt)
-         ELSE
-            TAB_8(6,N) = TAB_8(11,N)! HMSL - 2nd choice height for
-                                    !        EUROPEAN & CANADIAN AMDAR
-                                    !        (available) -- or --
-                                    !        default if all are missing
-         ENDIF
-
 C  Store input file index back in what was "FLVL" slot
-C   TAB_8(9,N) = 1 --> b004/xx001 (AIREP format)
-C              = 2 --> b004/xx002 (PIREP format)
-C              = 3 --> b004/xx003 (AMDAR format)
-C              = 4 --> b004/xx004 (MDCRS-ARINC/BUFR)
-C              = 5 --> b004/xx006 (EUROPEAN AMDAR/BUFR)
-C              = 6 --> b004/xx007 (MDCRS-AWFA/BUFR)
-C              = 7 --> b004/xx009 (CANADIAN AMDAR/BUFR)
-C              = 8 --> b004/xx011 (KOREAN AMDAR/BUFR)
-C              = 9 --> b004/xx103 (CATCH-ALL AMDAR/BUFR)
-C  -----------------------------------------------------
+C   TAB_8(9,N) = 1  --> b004/xx001 (AIREP format)
+C              = 2  --> b004/xx002 (PIREP format)
+C              = 3  --> b004/xx003 (AMDAR format)
+C              = 4  --> b004/xx004 (MDCRS-ARINC/BUFR)
+C              = 5  --> b004/xx006 (EUROPEAN AMDAR/BUFR)
+C              = 6  --> b004/xx007 (MDCRS-AWFA/BUFR)
+C              = 7  --> b004/xx009 (CANADIAN AMDAR/BUFR)
+C              = 8  --> b004/xx010 {TAMDAR/BUFR (from Panasonic or
+C                                   AirDAT)}
+C              = 9  --> b004/xx011 (KOREAN AMDAR/BUFR)
+C              = 10 --> b004/xx103 (CATCH-ALL AMDAR/BUFR)
+C  --------------------------------------------------------------
 
+         FLVL_save_8 = TAB_8(9,N) ! temporarily save "FLVL" value for
+                                  ! this rpt, will be needed just below
          DO I=1,NFILES
             IF(N.GE.IPTR(1,I) .AND. N.LE.IPTR(2,I)) THEN
                TAB_8(9,N) = I
@@ -571,6 +639,60 @@ C  -----------------------------------------------------
             ENDIF
          ENDDO
 
+C  Find the height and store back in what was "MINU" slot
+C  ------------------------------------------------------
+
+         IF(IBFMS(TAB_8(8,N)).EQ.0) THEN              ! data not missing
+            TAB_8(6,N) = TAB_8(8,N) ! PSAL - Height for AMDAR format
+         ELSE  IF(IBFMS(FLVL_save_8).EQ.0) THEN        ! data not missing
+            TAB_8(6,N) = FLVL_save_8! FLVL - Height for AIREP/PIREP fmt
+         ELSE IF(IBFMS(TAB_8(12,N)).EQ.0) THEN        ! data not missing
+            TAB_8(6,N) = TAB_8(12,N)! IALT - Height for MDCRS fmt
+         ELSE  IF(IBFMS(TAB_8(10,N)).EQ.0) THEN       ! data not missing
+            TAB_8(6,N) = TAB_8(10,N)! HEIT - 1st choice height for
+                                    !        EUROPEAN & CANADIAN AMDAR
+                                    !        (currently missing)
+         ELSE  IF(IBFMS(TAB_8(13,N)).EQ.0 .and. tab_8(9,n).ne.8) THEN
+                                                      ! data not missing
+                                                      ! & not TAMDAR
+                                                      ! (from Panasonic
+                                                      ! or AirDAT)
+            tab_8(6,n) = tab_8(13,n)! FLVLST - Height for KOREAN &
+                                    !          Catch-all AMDAR (BUFR)
+         ELSE
+            TAB_8(6,N) = TAB_8(11,N)! HMSL - TAMDAR (from Panasonic or
+                                    !        AirDAT)
+                                    !         -- or --
+                                    !        2nd choice height for
+                                    !        EUROPEAN & CANADIAN AMDAR
+                                    !        (available) -- or --
+                                    !        default if all are missing
+         ENDIF
+
+C  Check for missing report identifier.  If missing then use ACID
+C   (unless file #10, Catch-all AMDAR/BUFR in b004/xx103, which is
+C    known to contain some re-encoded AIREPS with missing ACRN when
+C    bulletin header is "IUAS02 NZKL" - want to set these report ids to
+C    "missing-" so they will be tossed later in dup-check vs. true
+C    AIREPs that they duplicate)
+C  --------------------------------------------------------------------
+         tab1_i_8 = tab_8(1,N)
+         tab2_i_8 = tab2_8(2,N)
+         if(icbfms(ctab1_i,8).eq.1) then  ! missing identifier
+cpppppppppp
+ccc        print *,'missing id = ',ctab1_i,'; file # ',tab_8(9,n)
+cpppppppppp
+           if(tab_8(9,n).ne.10) then
+              tab_8(1,N) = tab2_8(2,N)
+           else
+              tab_8(1,N) = i_missing
+           endif
+cpppppppppp
+ccc        tab1_i_8 = tab_8(1,N)
+ccc        print *,'new id = ',ctab1_i,'; file # ',tab_8(9,n)
+cpppppppppp
+         endif
+
 C  Store Carswell/Tinker/AFWA ind. back in what was "ICLI"/"BORG" slot
 C   (from here on these will simply be referrred to as AFWA)
 C  -------------------------------------------------------------------
@@ -578,26 +700,16 @@ C  -------------------------------------------------------------------
          TAB7_8 = TAB_8(7,N)
          TAB_8(7,N) = 0.
 
-C  Check for missing report identifier.  If missing then use ACID
-C  --------------------------------------------------------------
-         tab1_i_8 = tab_8(1,N)
-         tab2_i_8 = tab2_8(2,N)
-         if(icbfms(ctab1_i,8).eq.1) then  ! missing identifier
-ccc        print *,'missing id = ',ctab1_i
-           tab_8(1,N) = tab2_8(2,N)
-ccc        tab1_i_8 = tab_8(1,N)
-ccc        print *,'new id = ',ctab1_i
-         endif
-
-C  If obs time of report (based on first report in memory) is earlier
-C   than January 01, 2010, or if report is AIREP or PIREP at any time,
-C   then discriminate on AFWA header
-C  --------------------------------------------------------------------
+C  If report is AIREP or PIREP -or- obs time of report (based on first
+C   report in memory) is earlier than January 01, 2010 -or- script
+C   environment variable KEEP_NEARDUP_ACFT is imported as "NO" (default
+C   for anything other than "YES"), then discriminate on AFWA header
+C  -------------------------------------------------------------------
 
 C        print *,'jnddata=',int(tab_8(15,n)),int(tab2_8(1,n)),
 C    .            int(tab_8(4,n))
-         if(jnddata.lt.jndcntrl
-     .      .or.tab_8(9,n).eq.1.or.tab_8(9,n).eq.2) then
+         if(tab_8(9,n).eq.1.or.tab_8(9,n).eq.2.or.jnddata.lt.jndcntrl
+     .   .or.KEEP_NEARDUP_ACFT.eq.'NO') then
            IF(CTAB7.EQ.'KAWN'.OR.CTAB7(1:4).EQ.'PHWR') THEN
              TAB_8(7,N) = 1.  ! Carswell/Tinker/AFWA indicator
            ENDIF
@@ -645,14 +757,16 @@ ccc  .   'in record (J) ',J
 cpppppppppp
          dexy = dexyn
 
-C  If obs time of reports (based on first report in memory) is earlier
-C   than January 01, 2010, or if one of the pair being checked contains
-C   an AIREP or PIREP report, use the looser tolerances
-C  --------------------------------------------------------------------
+C  If one of the pair of reports being checked is an AIREP or PIREP
+C   -or- the obs time of the reports (based on first report in memory)
+C   is earlier than January 01, 2010 -or- script environment variable
+C   KEEP_NEARDUP_ACFT is imported as "NO" (default for anything other
+C   than "YES"), then use the looser tolerances
+C  -------------------------------------------------------------------
 
-         if(jnddata.lt.jndcntrl
-     .      .or.tab_8(9,i).eq.1.or.tab_8(9,j).eq.1
-     .      .or.tab_8(9,i).eq.2.or.tab_8(9,j).eq.2) then
+         if(tab_8(9,i).eq.1.or.tab_8(9,j).eq.1 .or.
+     .      tab_8(9,i).eq.2.or.tab_8(9,j).eq.2 .or.
+     .      jnddata.lt.jndcntrl .or. KEEP_NEARDUP_ACFT.eq.'NO') then
            dexy = dexyoa
          endif
 cpppppppppp
@@ -687,9 +801,9 @@ cpppppppppp
             drhr = drhrn
             delv = delvn
             dell = dexyn
-            if(jnddata.lt.jndcntrl
-     .         .or.tab_8(9,i).eq.1.or.tab_8(9,j).eq.1
-     .         .or.tab_8(9,i).eq.2.or.tab_8(9,j).eq.2) then
+            if(tab_8(9,i).eq.1.or.tab_8(9,j).eq.1 .or.
+     .         tab_8(9,i).eq.2.or.tab_8(9,j).eq.2 .or.
+     .         jnddata.lt.jndcntrl .or. KEEP_NEARDUP_ACFT.eq.'NO') then
               DRHR = DRHRO
               DELV = DELVO
               dell = max(dexyo,dexyoa*max(tab_8(7,i),tab_8(7,j)))
@@ -719,37 +833,74 @@ ccc  .          '; ALT: ',I6,'; RCPT YYYYMMDDHHMM: ',I4,4I2.2,
 ccc  .          '; file #',I2,'; AFWA:',I2,'}')
 cpppppppppp
 
-C .. if duplicate check is satisfied and report "I" is either from
-C    AFWA or it is from a less-preferred file-type than
-C    report "J" (e.g., "I" is an AIREP or PIREP and "J" is an AMDAR -or-
-C    "I" is a PIREP and "J" is an AIREP -or- "I" is TAC format AMDAR and
-C    "J" is BUFR format AMDAR), set its duplicate flag to 1
-C    in order to throw it out thus retaining report "J" at this point
-C    (regardless of whether or not it is from AFWA)
-               IF(TAB_8(7,I).EQ.1) then
-                 JDUP(I) = 1
+C .. when reports "I" and "J" satisfy the duplicate check, the default
+C    is to set report "J"'s duplicate flag to 1 in order to throw it
+C    out (thus retaining report "I") - however this is overridden in
+C    the following cases {whereby report "I"'s duplicate flag is set to
+C    1 in order to throw it out (thus instead retaining report "J"
+C    regardless of whether or not it is from AFWA)}:
+
+               if(ibfms(tab_8(6,j)).eq.0.and.ibfms(tab_8(6,i)).eq.1)then
+
+C    .. case 1: report "I" has a missing height while report "J" has a
+C               non-missing height
+C       --------------------------------------------------------------
+                  JDUP(I) = 1
+cpppppppppp
+ccc               print *, 'I tossed ==> missing height'
+cpppppppppp
+
+               else IF(ctab1_i.eq.'missing-') then
+
+C    .. case 2: report "I" has a missing report identifier (and case 1
+C               not satisfied)
+C       --------------------------------------------------------------
+                  jdup(i) = 1
+cpppppppppp
+ccc               print *, 'I tossed ==> missing report id'
+cpppppppppp
+
+               else IF(TAB_8(7,I).EQ.1.and.ctab1_j.ne.'missing-') then
+
+C    .. case 2: report "I" is from AFWA and report "J" has a
+C               non-missing report identifier (and cases 1 and 2 not
+C               satisfied)
+C       ------------------------------------------------------------
+                  JDUP(I) = 1
 cpppppppppp
 ccc               print *, 'I tossed ==> AFWA'
 cpppppppppp
-               else if((tab_8(9,i).le.2.and.tab_8(9,j).ge.3) .or.
-     .                 (tab_8(9,i).eq.2.and.tab_8(9,j).eq.1) .or.
-     .                 (tab_8(9,i).eq.3.and.tab_8(9,j).eq.9) .or.
-     .                 (tab_8(9,i).eq.3.and.tab_8(9,j).eq.5)) then
+               else if(ctab1_j.ne.'missing-' .and.
+     .                 ((tab_8(9,i).le.2.and.tab_8(9,j).ge.3)  .or.
+     .                  (tab_8(9,i).eq.2.and.tab_8(9,j).eq.1)  .or.
+     .                  (tab_8(9,i).eq.3.and.tab_8(9,j).eq.10) .or.
+     .                  (tab_8(9,i).eq.3.and.tab_8(9,j).eq.5)  .or.
+     .                  (tab_8(9,i).eq.8.and.tab_8(9,j).ge.4.and.
+     .                                          tab_8(9,j).ne.8))) then
+
+C    .. case 3: report "I" is from a less-preferred file-type than
+C               report "J" {e.g., "I" is an AIREP or PIREP and "J" is
+C               an AMDAR or TAMDAR (Panasonic or AirDAT) -or- "I" is a
+C               PIREP and "J" is an AIREP -or- "I" is TAC format AMDAR
+C               and "J" is BUFR AMDAR -or- "I" is a TAMDAR (Panasonic
+C               or AirDAT) and "J" is a BUFR AMDAR} and report "J" has
+C               a non-missing report identifier (and cases 1, 2 and 3
+C               not satisfied)
+C       --------------------------------------------------------------
+                  jdup(i) = 1
 cpppppppppp
 ccc               print *, 'I tossed ==> from less-preferred file-type',
 ccc  .             ' than J',tab_8(9,i)
 cpppppppppp
-                 jdup(i) = 1
 
                end if
 
-C .. at this point, if duplicate check is satisfied and report "I"'s
-C    duplicate flag is not set (meaning it is not from
-C    AFWA -or- it is not from a less-preferred type), set report "J"'s
-C    duplicate flag to 1 in order to throw it out (regardless of
-C    whether or not it is from AFWA) thus retaining report "I"
+C    .. at this point, if report "I"'s duplicate flag is not set in one
+C       of the above cases, set report "J"'s duplicate flag to 1 in
+C       order to throw it out thus retaining report "I"
+C       ---------------------------------------------------------------
                IF(JDUP(I).EQ.0) then
-                 JDUP(J) = 1
+                  JDUP(J) = 1
 cpppppppppp
 ccc               print *, 'J tossed'
 cpppppppppp

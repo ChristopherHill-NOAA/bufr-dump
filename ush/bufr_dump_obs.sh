@@ -5,21 +5,21 @@
 #               
 # Script name:   bufr_dump_obs.sh   Driver for the obs. data dump util
 #
-# Author:        D.A. Keyser        Org: NP22           Date: 2013-12-02
+# Author:        D.A. Keyser        Org: NP22           Date: 2016-04-22
 #
 # Abstract: This script is a driver for the all-purpose BUFR observation
 #   database tank dump utility, dumpjb.  It's main purpose is to output BUFR
-#   data dumps to the appropriate /com directory and path file naming structure
-#   used by the operational NCEP networks.  The dumping of any number of BUFR
-#   data types can thus be accomplished for all NCEP networks via a single line
-#   in the analyses scripts which executes this driver script.  A secondary
-#   purpose (if so requested) is to: 1) run the prepssmi program which will
-#   read SSM/I data from one of three possible just-generated BUFR dump sources
-#   [FNOC "operational" products, NCEP Neural Net-3 products, or brightness
-#   temperatures (the latter will be used to generate products in-line in
-#   prepssmi)], reprocess the data (most likely generating superobs), and
-#   output the reprocessed data into a BUFR file ("spssmi"); 2) run a series of
-#   three programs (dcodcloc, dataqc, datasort) which will read ERS
+#   data dumps to the appropriate $COMROOT directory and path file naming
+#   structure used by the operational NCEP networks.  The dumping of any number
+#   of BUFR data types can thus be accomplished for all NCEP networks via a
+#   single line in the analyses scripts which executes this driver script.  A
+#   secondary purpose (if so requested) is to: 1) run the prepssmi program
+#   which will read SSM/I data from one of three possible just-generated BUFR
+#   dump sources [FNOC "operational" products, NCEP Neural Net-3 products, or
+#   brightness temperatures (the latter will be used to generate products in-
+#   line in prepssmi)], reprocess the data (most likely generating superobs),
+#   and output the reprocessed data into a BUFR file ("spssmi"); 2) run a
+#   series of three programs (dcodcloc, dataqc, datasort) which will read ERS
 #   scatterometer data from the just-generated ERS BUFR dump ("erswnd"), do
 #   some special reprocessing of these data, and output the reprocessed data
 #   into a BUFR file ("erscat"); 3) run the dcodquikscat program which will
@@ -37,9 +37,9 @@
 #   ("wndsat"), do some special reprocessing of these data (including possibly
 #   generating superobs), and output the reprocessed data into a BUFR file
 #   ("wdsatr").  All output SSM/I, ERS, Quikscat, ASCAT, TRMM TMI and WindSat
-#   files are written to the same /com directory and path file naming structure
-#   as the original BUFR data dump files; also all five are then ready to be
-#   input to subsequent programs (the first four and the sixth to
+#   files are written to the same $COMROOT directory and path file naming
+#   structure as the original BUFR data dump files; also all five are then
+#   ready to be input to subsequent programs (the first four and the sixth to
 #   PREPOBS_PREPDATA and the fifth one to GLOBAL_SSI).  Upon completion of the
 #   dumping of requested data types, and the completion of the prepssmi, ERS,
 #   Quikscat, ASCAT, TRMM TMI and/or WindSat reprocessing programs (if
@@ -50,8 +50,8 @@
 #
 #   It should be noted that this script can output data dumps to any file path
 #   location specified by the imported variable "$COMSP".  It is not tied to
-#   the /com structure, and is thus suitable for non-operational "over-the-
-#   counter" type runs.
+#   the production $COMROOT (e.g., /com or /com2) structure, and is thus
+#   suitable for non-operational "over-the-counter" type runs.
 #
 # Script history log:
 # 1996-09-27  D.A. Keyser -- Original version for implementation
@@ -164,6 +164,18 @@
 #    /nwprod/obsproc_NETWORK.vX.Y.Z where NETWORK is, e.g., global, nam, rap,
 #    rtma, urma, and x.y.z is version number being used, usually the latest) -
 #    these replace /nw${envir}.
+# 2016-04-22  D.A. Keyser -- Use NCO-established variables to point to root
+#    directories for main software components and input/output directories in
+#    order to run on WCOSS Phase 1 or Phase 2 (here, $COMROOT which replaces
+#    hardwire to "/com"). Use NCO-established variables (presumably obtained
+#    from modules) to point to prod utilities:
+#      - $GRBINDEX from module grib_util (default or specified version) which
+#        replaces executable grbindex in non-versioned, horizontal structure
+#        utility directory path defined by imported variable $EXGRBIX.
+#    No longer references unused utility scripts getges.sh or setup.sh. Replaced
+#    path to prepobs_prepssmi NESDIS land/sea tag (mask) file from non-
+#    versioned, horizontal structure utility directory $utilparm to versioned,
+#    vertical structure fixed file directory $FIXbufr.
 #
 #
 # Usage: bufr_dump_obs.sh  yyyymmddhh hh<.hh> ntype dgrp1 dgrp2 ... dgrpN
@@ -195,6 +207,9 @@
 #
 #     These must ALWAYS be exported from the parent script --
 #
+#     COMROOT       Root to input/output "com" directory (in production,
+#                   normally either "/com" for WCOSS  Phase 1 or "/com2" for
+#                   WCOSS Phase 2)
 #     DUMP_NUMBER - string indicating the number associated with this
 #                   particular run of this script (needed when this script is
 #                   run in simultaneous background jobs)
@@ -216,7 +231,7 @@
 #                         RUN)
 #     COMSP       - string indicating the final directory/filename path to
 #                   output data destination
-#                   (e.g., "/com/nam/prod/ndas.20000102/ndas.t12z.")
+#                   (e.g., "$COMROOT/nam/prod/ndas.20160428/ndas.t12z.")
 #                   {NOTE: If the imported variable "SENDCOM" (see below)
 #                          is "NO", then COMSP is hardwired to the string
 #                          "$DATA/"}
@@ -237,7 +252,7 @@
 #
 #     These will be set to their default value in this script if not exported
 #      from the parent script --
-#
+# 
 #     JOB_NUMBER  - string indicating the number associated with this
 #                   particular dump job (needed when the overall network dump
 #                   is split into more than one dump job)
@@ -288,8 +303,8 @@
 #     SENDCOM     - string: if = 'NO' will redefine "COMSP" variable to be
 #                   "$DATA/", regardless of its imported value - this has
 #                   the effect of preventing any files from going to an
-#                   operational /com directory path, and instead sending
-#                   them to the "DATA" directory
+#                   operational $COMROOT (e.g., /com or /com2) directory path,
+#                   and instead sending them to the "DATA" directory
 #                   Default is "YES"
 #     pgmout      - string indicating path for standard output file (output
 #                   always contatenated onto this file)
@@ -353,15 +368,11 @@
 #     PARMPREP    - string indicating directory path for prepobs_prepssmi
 #                   data cards
 #                   Default is "$HOMEobsproc_network/parm"
-#     utilparm    - string indicating directory path for prepobs_prepssmi
+#     FIXbufr     - string indicating directory path for prepobs_prepssmi
 #                   NESDIS land/sea tag (mask) fixed file (only needed if file
 #                   input to prepobs_prepssmi contains brightness temperatures
-#                   and products are being caluclated in-line)
-#                   Default is "/nw${envir}/util/parm"
-#     EXGRBIX     - string indicating directory path for grib file
-#                   processing executables
-#                   Default is "/nw${envir}/util/exec"
-#                   NOTE: Also applies for prepersd=YES (see below)
+#                   and products are being calculated in-line)
+#                   Default is "$HOMEobsproc_dump/fix"
 #     USHPMI      - string indicating directory path for prepobs_prepssmi
 #                   ush script prepobs_prepssmi.sh
 #                   Default is "$HOMEobsproc_dump/ush"
@@ -405,17 +416,13 @@
 #     LANDC       - string indicating NESDIS land/sea tag (mask) fixed file
 #                   path for prepobs_prepssmi program (only needed if file
 #                   input to prepobs_prepssmi contains brightness temperatures
-#                   and products are being caluclated in-line)
-#                   Default is "$utilparm/nesdis.lstags"
+#                   and products are being calculated in-line)
+#                   Default is "$FIXbufr/nesdis.lstags.prepssmi"
 #
 #     These apply ONLY for imported shell variable "prepersd" set to YES
 #      and will be set to their default value in this script if not exported
 #      from the parent script --
 #
-#     EXGRBIX     - string indicating directory path for grib file
-#                   processing executables
-#                   Default is "/nw${envir}/util/exec"
-#                   NOTE: Also applies for prepssmi=YES (see above)
 #     EXECWAVE    - string indicating directory path for ERS scatterometer
 #                   data reprocessing executables (wave_dcodcloc,wave_dataqc,
 #                   wave_datasort)
@@ -560,12 +567,12 @@
 #
 #
 #   Modules and files referenced:
-#     scripts    :  /nwprod/util/ush/setup.sh
-#                   $DUMP
+#     scripts    :  $DUMP
 #                   $USHPMI/prepobs_prepssmi.sh
-#                   /nwprod/util/ush/getges.sh
+###############     /nwprod/util/ush/getges.sh (no longer referenced)
 #     executables:  $PMIX
-#                   $EXGRBIX/grbindex
+#                   $GRBINDEX (presumably from default or specified version of
+#                              module grib_util)
 #                   $DCLX
 #                   $DQCX
 #                   $DSRX
@@ -586,7 +593,7 @@
 #                   $DTMT ($DTMX)
 #                   $LANDC_DWS ($DWSX)
 #                   $DWST ($DWSX)
-#     utility parm: $LANDC ($PMIX)
+#                   $LANDC ($PMIX)
 #
 # Remarks:
 #
@@ -774,7 +781,6 @@ set -aux
 
 mkdir -p $DATA/job${DUMP_NUMBER}
 cd $DATA/job${DUMP_NUMBER}
-ksh /nwprod/util/ush/setup.sh
 
 #############################################################################
 #############################################################################
@@ -1586,8 +1592,7 @@ do
          EXECPREP=${EXECPREP:-$HOMEobsproc_dump/exec}
          PARMPREP=${PARMPREP:-$HOMEobsproc_network/parm}
          FIXPREP=${FIXPREP:-$HOMEobsproc_dump/fix}
-         utilparm=${utilparm:-/nw${envir}/util/parm}
-         EXGRBIX=${EXGRBIX:-/nw${envir}/util/exec}
+         FIXbufr=${FIXbufr:-$HOMEobsproc_dump/fix}
          USHPMI=${USHPMI:-$HOMEobsproc_dump/ush}
 
          PMIT=${PMIT:-$FIXPREP/prepobs_prepssmi.bufrtable}
@@ -1596,7 +1601,7 @@ do
          [ -s $PMIC ]  ||  break 2
          pmic=$PMIC
 
-         LANDC=${LANDC:-$utilparm/nesdis.lstags}
+         LANDC=${LANDC:-$FIXbufr/nesdis.lstags.prepssmi}
 
          set +x
          echo
@@ -1604,11 +1609,9 @@ do
          echo
          echo "PARMPREP = " $PARMPREP
          echo
-         echo "utilparm = " $utilparm
+         echo "FIXbufr  = " $FIXbufr
          echo
          echo "FIXPREP = " $FIXPREP
-         echo
-         echo "EXGRBIX = " $EXGRBIX
          echo
          echo "PREPSSMI_PROD_TYPE = " $PREPSSMI_PROD_TYPE
          echo
@@ -1944,7 +1947,6 @@ echo "*******************************************************************\
             ersOU=${COMSP}erscat.${tmmark}.bufr_d
 
 #============================================
-            EXGRBIX=${EXGRBIX:-/nw${envir}/util/exec}
             EXECWAVE=${EXECWAVE:-$HOMEobsproc_dump/exec}
             FIXWAVE=${FIXWAVE:-$HOMEobsproc_dump/fix}
 
@@ -1954,8 +1956,6 @@ echo "*******************************************************************\
             DSRX=${DSRX:-$EXECWAVE/wave_datasort}
 
             set +x
-            echo
-            echo "EXGRBIX  = " $EXGRBIX
             echo
             echo "EXECWAVE = " $EXECWAVE
             echo
@@ -2000,7 +2000,7 @@ echo "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
             err2=99
             if [ "$err1" -eq '0' ];then
                rm errfile
-               $EXGRBIX/grbindex pgrb pgrb.index 2>errfile
+               $GRBINDEX pgrb pgrb.index 2>errfile
                err2=$?
                [ "$err2" -ne '0' ] && cat errfile
                rm errfile
@@ -2025,8 +2025,22 @@ echo "                 Get sst grib file valid at center dump time"
 echo "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
                echo
                set -x
-               /nwprod/util/ush/getges.sh -t sstgrb -v $cendat sstgrb
-               err3=$?
+# DAK: 4/25/16: The below path to getges.sh will no longer be valid at some
+#      point soon with the conversion of utility scripts to versioned vertical
+#      structure and the migration to Phase 2 on WCOSS.  The path will likely
+#      be obtained from the default or specified version of module prod_util.
+#      Will comment out and print a diagnostic.  (This logic is no longer
+#      executed in production since there are no ERS data sources.)
+######         /nwprod/util/ush/getges.sh -t sstgrb -v $cendat sstgrb
+######         err3=$?
+               set +x
+               echo
+               echo "===> Cannot obtain sst grib file valid at center dump \
+time due to conversion of utility scripts to versioned vertical structure"
+               echo "     and the migration to Phase 2 on WCOSS."
+               echo
+               set -x
+               err3=99
                set +x
                echo
 echo "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
@@ -2035,7 +2049,7 @@ echo "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
                err4=99
                if [ "$err3" -eq '0' ];then
                   rm errfile
-                  $EXGRBIX/grbindex sstgrb sstgrb.index 2> errfile
+                  $GRBINDEX sstgrb sstgrb.index 2> errfile
                   err4=$?
                   [ "$err4" -ne '0' ] && cat errfile
                   rm errfile
@@ -2188,7 +2202,7 @@ WAVE_DATASORT  all completed normally"
 msg2="ERS scatterometer data reprocessed successfully into NCEP BUFR file"
                         else
                            msg2="**NO ERS SCATTEROMETER DATA reprocessed \
-into NCEP BUFR file; copy to /com failed --> non-fatal"
+into NCEP BUFR file; copy to $COMROOT failed --> non-fatal"
                         fi
                      fi
                      rm outout
@@ -2387,7 +2401,7 @@ file generated from input qkscat dump"
                errcpy=$?
                msg2=NO
                [ "$errcpy" -ne '0' ] && msg2="**NO QUIKSCAT SCATTEROMETER \
-DATA reprocessed into NCEP BUFR file (qkswnd); copy to /com failed --> \
+DATA reprocessed into NCEP BUFR file (qkswnd); copy to $COMROOT failed --> \
 non-fatal"
             fi
             rm qkscat_bufr qkswnd_bufr outout
@@ -2584,8 +2598,7 @@ file generated from input ascatt dump"
                errcpy=$?
                msg2=NO
                [ "$errcpy" -ne '0' ] && msg2="**NO ASCAT SCATTEROMETER DATA \
-reprocessed into NCEP BUFR file (ascatw); copy to /com failed --> \
-non-fatal"
+reprocessed into NCEP BUFR file (ascatw); copy to $COMROOT failed --> non-fatal"
             fi
             rm ascatt_bufr ascatw_bufr outout
 
@@ -2767,7 +2780,7 @@ generated from input trmm dump"
                errcpy=$?
                msg2=NO
                [ "$errcpy" -ne '0' ] && msg2="**NO TRMM TMI DATA reprocessed \
-into NCEP BUFR file (sptrmm); copy to /com failed --> non-fatal"
+into NCEP BUFR file (sptrmm); copy to $COMROOT failed --> non-fatal"
             fi
             rm trmm_bufr sptrmm_bufr outout
 
@@ -2954,7 +2967,7 @@ generated from input wndsat dump"
                errcpy=$?
                msg2=NO
                [ "$errcpy" -ne '0' ] && msg2="**NO WINDSAT SCATTEROMETER \
-DATA reprocessed into NCEP BUFR file (wdsatr); copy to /com failed --> \
+DATA reprocessed into NCEP BUFR file (wdsatr); copy to $COMROOT failed --> \
 non-fatal"
             fi
             rm wndsat_bufr wdsatr_bufr outout

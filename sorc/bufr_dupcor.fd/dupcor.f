@@ -1,26 +1,26 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: BUFR_DUPCOR
-C   PRGMMR: MELCHIOR         ORG: NP22        DATE: 2015-07-28
+C   PRGMMR: MELCHIOR/KEYSER  ORG: NP22        DATE: 2016-08-09
 C
 C ABSTRACT: PROCESSES NON PROFILE DATABASE REPORTS WITH CORRECTION
 C   CHOOSING, DUPLICATE CHECKING (DEPENDING UPON TYPE) AND
 C   (OPTIONAL) TRIMMING TO EXACT TIME WINDOW (MONTH DOWN TO MINUTE).
 C   WHEN DUPLICATE CHECKING IS PERFORMED (CURRENTLY FOR ALL TYPES
-C   EXCEPT FOR THOSE AIRCRAFT TYPES THAT LATER GO INTO BUFR_DUPAIR) THE
-C   ALGORITHM SORTS THE REPORTS IN ASCENDING ORDER OF LAT, LON, OBS TIME
-C   (MONTH DOWN TO MINUTE), CORRECTION INDICATOR, REPORT ID (FOR SOME
-C   TYPES) AND RECEIPT TIME (YEAR DOWN TO MINUTE).  IN THE DUPLICATE
-C   CHECKING, THE REPORT USUALLY SELECTED IS THE BULLETIN LAST RECEIVED
-C   OR CORRECTED.  FOR TYPES BEING DUPLICATE-CHECKED, REPORTS ARE
-C   CHECKED FOR LAT, LON AND OBS TIME (MONTH DOWN TO MINUTE) ALL INSIDE
-C   THE TOLERANCE LIMITS.  THE FILE PATH/NAMES OF THE INPUT AND OUTPUT
-C   FILES, (OPTIONALLY) THE TIME WINDOW TO TRIM TO AND (OPTIONALLY)
-C   DEFAULT OVERRIDE DUP-CHECKING TOLERANCE LIMITS ARE READ FROM
-C   STANDARD INPUT AT THE START OF THIS PROGRAM.  IF THE TIME WINDOW
-C   RECORD IS MISSING, THEN NO TIME WINDOW TRIMMING IS PERFORMED.  ALL
-C   FILE CONNECTIONS (EXCEPT STANDARD INPUT WHICH IS PRE-CONNECTED) ARE
-C   MADE THROUGH THE FORTRAN OPEN STATEMENT.
+C   EXCEPT FOR THOSE AIRCRAFT TYPES THAT ARE LATER DUPLICATE CHECKED IN
+C   PROGRAM BUFR_DUPAIR) THE ALGORITHM SORTS THE REPORTS IN ASCENDING
+C   ORDER OF LAT, LON, OBS TIME (MONTH DOWN TO MINUTE), CORRECTION
+C   INDICATOR, REPORT ID (FOR SOME TYPES) AND RECEIPT TIME (YEAR DOWN
+C   TO MINUTE).  IN THE DUPLICATE CHECKING, THE REPORT USUALLY SELECTED
+C   IS THE BULLETIN LAST RECEIVED OR CORRECTED.  FOR TYPES BEING
+C   DUPLICATE-CHECKED, REPORTS ARE CHECKED FOR LAT, LON AND OBS TIME
+C   (MONTH DOWN TO MINUTE) ALL INSIDE THE TOLERANCE LIMITS.  THE FILE
+C   PATH/NAMES OF THE INPUT AND OUTPUT FILES, (OPTIONALLY) THE TIME
+C   WINDOW TO TRIM TO AND (OPTIONALLY) DEFAULT OVERRIDE DUP-CHECKING
+C   TOLERANCE LIMITS ARE READ FROM STANDARD INPUT AT THE START OF THIS
+C   PROGRAM.  IF THE TIME WINDOW RECORD IS MISSING, THEN NO TIME WINDOW
+C   TRIMMING IS PERFORMED.  ALL FILE CONNECTIONS (EXCEPT STANDARD INPUT
+C   WHICH IS PRE-CONNECTED) ARE MADE THROUGH THE FORTRAN OPEN STATEMENT.
 C
 C PROGRAM HISTORY LOG:
 C 1996-09-06  J. WOOLLEN  ORIGINAL VERSION FOR IMPLEMENTATION
@@ -166,11 +166,11 @@ C 2013-02-07  J. Whiting  Port to WCOSS - Updated DUPES variable
 C       assignment statement w/ 8-btye integer intrinsic functions 
 C       (KIDNNT) so as to properly handle large (global missing) values
 C       declared BMISS, GETBMISS and CORN_8 as 8-byte reals.
-C 2015-06-16  S. Melchior -
+C 2015-06-15  S. Melchior -
 C      - No longer tosses duplicates for MDCRS types (004.004 or
 C        004.007) which will later be part of the "aircar" dump.
 C        Duplicate checking/tossing is now done in downstream "dupair"
-C        code where height and obs time down to the minute are
+C        code where height and obs time down to the second are
 C        considered.  Prevents near-duplcate MDCRS reports from being
 C        tossed as before.
 C      - No longer tosses duplicates for Canadian AMDARs (004.009)
@@ -200,6 +200,56 @@ C 2015-07-28  S. Melchior Added ability to process (i.e., time-trim if
 C     requested) new AIRCFT types containing Korean AMDAR (from BUFR)
 C     in NC004011 and catch-all AMDAR (from BUFR) in NC004103 if they
 C     are present.
+C 2016-04-18  D. Keyser
+C         - For AIRCAR types with obs date prior to January 1, 2010,
+C           added logic to check if operator descriptors are used to
+C           increase the scale factor for "CLAT" from the standard
+C           value of 2 to something larger.  If so, will later round
+C           CLAT (and CLON by assumption) values read in for each
+C           subset to their scale factor 2 values.  This is done since
+C           duplicate-check logic in this case expects CLAT and CLON to
+C           have scale factor of 2.
+C         - Failback on 2015-06-15 change 1 for now.  Will treat MDCRS
+C           types (004.004 or 004.007) the same as before.  Will not
+C           remove logic added in 2015-06-15, 2015-06-16 and 2015-07-28
+C           changes above, but rather change date check such that logic
+C           operates as though obs date is prior to January 1, 2010
+C           regardless of obs date (done by setting control date to
+C           1/1/3000 rather than 1/1/2010).  (This also invokes change
+C           just above since V7 AIRCAR reports use operator descriptors
+C           to change scale factor for CLAT and CLON from 2 to 5.)
+C           Necessary because testing showed that near-dups here degrade
+C           the GFS forcast at 5 days.  This needs to be examined
+C           carefully.  GSI may need to be updated to include thinning
+C           of aircraft reports.  More to come on this...
+C         - For aircraft types only: add diagnostic print for pairs of
+C           reports read into duplicate check and diagnostic print for
+C           pairs in cases when duplicate check is satisfied (normally
+C           commented out).  Pull out aircraft registration number
+C           (ACRN) to use in this duplicate print.  Other diagnostic
+C           print (also normally commented out) added.
+C 2016-08-09  S. Melchior/D. Keyser
+C         - Added ability to process TAMDAR BUFR data from both AirDAT
+C           (historical reruns) and from Panasonic (current). These are
+C           part of the "aircft" dump file and are treated like all
+C           other types in this dump.
+C         - Instead of using the bogus control date of 1/1/3000 to
+C           "fool" the code into treating MDCRS types (004.004 or
+C           004.007) the same as before 2015-06-15 change 1 (see
+C           2016-04-18 change 2), will revert back to original/actual
+C           date of 1/1/2010 to define the point when this code will no
+C           longer toss duplicates for MDCRS types (004.004 or 004.007)
+C           {and will check scale factor for CLAT/CLON (see 2016-04-18
+C           change 1)}, but force this change to NOT occur after this
+C           date IF the new script environment variable
+C           KEEP_NEARDUP_ACFT is imported as "NO" (default for anything
+C           other than "YES").
+C           BENEFIT: Allows different networks to invoke or not invoke
+C                    this change for MDCRS reports after 1/1/2010, and
+C                    allows for future changes in setting of
+C                    KEEP_NEARDUP_ACFT without any need to change this
+C                    source code.  Also removes clumsy temporary date
+C                    setting (1/1/3000) to retain old logic.
 C     
 C USAGE:
 C   INPUT FILES:
@@ -227,9 +277,9 @@ C     SYSTEM     - GETENV   SYSTEM
 C     LIBRARY:
 C       W3NCO    - W3TAGB   W3TAGE  ERREXIT W3FS26  IW3JDN
 C       W3EMC    - ORDERS
-C       BUFRLIB  - DATELEN  OPENBF  COPYMG  UFBTAB  OPENMB  COPYSB
-C                  READMG   IREADMG CLOSMG  CLOSBF  MESGBC  MAXOUT
-C                  IBFMS    COPYBF  UFBINT  GETBMISS
+C       BUFRLIB  - DATELEN  OPENBF  COPYMG  UFBTAB   OPENMB  COPYSB
+C                  READMG   IREADMG CLOSMG  CLOSBF   MESGBC  MAXOUT
+C                  IBFMS    COPYBF  UFBINT  GETBMISS NEMSPECS
 C
 C   EXIT STATES:
 C     COND =   0 - SUCCESSFUL RUN
@@ -249,6 +299,7 @@ C$$$
       REAL(8),ALLOCATABLE :: TAB_8(:,:)
       REAL(8),ALLOCATABLE :: RAB_8(:,:)
       REAL(8),ALLOCATABLE :: THRPT_8(:)
+      REAL(8),ALLOCATABLE :: ACRN_8(:)
       REAL(8),ALLOCATABLE :: DOYR_8(:,:)
       INTEGER,ALLOCATABLE :: IWORK(:)
       INTEGER,ALLOCATABLE :: IORD(:)
@@ -258,19 +309,21 @@ C$$$
 
       CHARACTER*500 FILI,FILO
       CHARACTER*80  TSTR,TSTRH,RSTR
-      CHARACTER*8   SUBSET,CAB8_IREC,CAB8_JREC
+      CHARACTER*8   SUBSET,CAB8_IREC,CAB8_JREC,CACRN8_IREC,CACRN8_JREC
       CHARACTER*6   LATLON_TYPE
-      CHARACTER*3   DUMMY_MSGS
+      CHARACTER*3   DUMMY_MSGS,KEEP_NEARDUP_ACFT
       CHARACTER*2   CITIMESm1
 
       DIMENSION     NDUP(0:5)
 
       REAL(8)       ADATE,BDATE,CDATE,DDATE,RDATE,UFBTAB_8
       REAL(8)       TAB8_IREC_8,TAB8_JREC_8,rdate_8(3)
+      REAL(8)       ACRN_IREC_8,ACRN_JREC_8
 
       LOGICAL       DUPES,AIRCFT,METAR
 
       EQUIVALENCE   (TAB8_IREC_8,CAB8_IREC),(TAB8_JREC_8,CAB8_JREC)
+      EQUIVALENCE   (ACRN_IREC_8,CACRN8_IREC),(ACRN_JREC_8,CACRN8_JREC)
 
       DATA TSTR  /'CLAT  CLON  MNTH DAYS HOUR MINU CORN RPID '/
       DATA TSTRH /'CLATH CLONH MNTH DAYS HOUR MINU CORN RPID '/
@@ -286,10 +339,10 @@ C$$$
  
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_DUPCOR',2015,0209,0054,'NP22') 
+      CALL W3TAGB('BUFR_DUPCOR',2016,0222,0054,'NP22') 
 
       print *
-      print * ,'---> Welcome to BUFR_DUPCOR - Version 07-28-2015'
+      print * ,'---> Welcome to BUFR_DUPCOR - Version 08-09-2016'
       print *
 
       CALL DATELEN(10)
@@ -329,6 +382,8 @@ C  ------------------------------------------------------------------
       READ(5,'(Q,A)',END=900,ERR=900) NBYTES_FILI,FILI(1:NBYTES_FILI)
       READ(5,'(Q,A)',END=900,ERR=900) NBYTES_FILO,FILO(1:NBYTES_FILO)
 
+      KEEP_NEARDUP_ACFT = 'NO'
+
 cppppp
 ccc   print *, 'file fili is ',nbytes_fili,' bytes long'
 ccc   print *, 'file filo is ',nbytes_filo,' bytes long'
@@ -364,6 +419,7 @@ C  ------------------------------------------------------------------
 
       CALL OPENBF(LUBFI,'IN',LUBFI)
       aircft = .false.
+      iflg_acars_latlon_sf = 0
       if(ireadmg(lubfi,subset,idate).ne.0) then
          print *, '===> BUFR_DUPCOR - NO DATA IN INPUT FILE'
          print *, '===> THIS PROGRAM IS DONE - STOP'
@@ -379,33 +435,85 @@ C  ------------------------------------------------------------------
       else
          READ(SUBSET,'(2X,2I3)') MTP,MST
 
-C  For all types of aircraft rpts with obs time after January 01, 2010:
+C  For all types of aircraft rpts with obs time after January 01, 2010
+C  -AND- when script environment variable KEEP_NEARDUP_ACFT is imported
+C  as "YES":
 C    AIRCFT types NC004001, NC004002, NC004003, NC004006, NC004009,
-C    NC004011 and NC004103 as well as AIRCAR types NC004004 and NC004007
-C    are NOT duplicate checked here (that will be done later in
-C    bufr_dupair), however, they will be time trimmed if that option is
-C    invoked.
-C  For all types of aircraft rpts with obs time before January 01, 2010:
-C    AIRCFT types NC004001, NC004002, NC004003, NC004006 and NC004009
-C    are NOT duplicate checked here (that will be done later in
-C    bufr_dupair), however, they will be time trimmed if that option is
-C    invoked.
+C    NC004010, NC004011 and NC004103 as well as AIRCAR types NC004004
+C    and NC004007 are NOT duplicate checked here (that will be done
+C    later in bufr_dupair), however, they will be time trimmed if that
+C    option is invoked.  Logical AIRCFT is TRUE for all of the above
+C    types. {Note that TAMDAR from MADIS are dupl. checked here while
+C    TAMDAR from Panasonic or AirDAT are not dupl. checked here).
+C  For all types of aircraft rpts with obs time before January 01, 2010
+C  -OR- when script environment variable KEEP_NEARDUP_ACFT is imported
+C  as "NO" (default for anything other than "YES"):
+C    AIRCFT types NC004001, NC004002, NC004003, NC004006, NC004009 and
+C     NC004010 are NOT duplicate checked here (that will be done later
+C     in bufr_dupair), however, they will be time trimmed if that option
+C     is invoked.  (AIRCFT types NC004011 and NC004103 were not present
+C     then, but if they had been present then they too would not have
+C     been duplicate checked here, note that TAMDAR from MADIS are dupl.
+C     checked here while TAMDAR from Panasonic or AirDAT are not dupl.
+C     checked here.)
+C     Logical AIRCFT remains TRUE for all of the above types.
 C    AIRCAR types NC004004 and NC004007 ARE duplicate checked here (they
-C    are not considered by bufr_dupair), and they are time trimmed if
-C    that option is invoked.
+C     are not considered by bufr_dupair), and they are time trimmed if
+C     that option is invoked. Logical AIRCFT is now FALSE for these two
+C     types.
+C      Check to see if these AIRCAR types use operator descriptors to
+C      increase the scale factor for "CLAT" from the standard value of 2
+C      to something larger.  If so (e.g., NC004004 after move to version
+C      7 BUFR), will later round CLAT (and CLON by assumption) values
+C      read in for each subset to their scale factor 2 values prior to
+C      calling ORDERS and then duplicate-checking.  This is done so that
+C      dup-check of version 7 BUFR rpts (with scale factor 5 in lat/lon,
+C      although only storing to .001 precision) will toss ~same number
+C      of duplicates as before when scale factor was 2.  (Otherwise many
+C      more near-duplicates would be retained.)  This is needed for
+C      cases when KEEP_NEARDUP_ACFT = NO (or anything other then "YES")
+C      because this can only occur for version 7 BUFR (which did not
+C      appear until the fall of 2016).
 C  ---------------------------------------------------------------------
 
          AIRCFT = MTP.EQ.4.AND.(MST.LE.4.OR.MST.EQ.6.or.mst.eq.7.or.
-     .                          mst.eq.9.or.mst.eq.11.or.mst.eq.103)
+     .                          mst.eq.9.or.mst.eq.10.or.mst.eq.11.or.
+     .                          mst.eq.103)
          if(aircft) then
+            CALL GETENV('KEEP_NEARDUP_ACFT',KEEP_NEARDUP_ACFT)
+            IF(KEEP_NEARDUP_ACFT.NE.'YES') KEEP_NEARDUP_ACFT = 'NO'
             if(ireadsb(lubfi).eq.0) then
                call ufbint(lubfi,rdate_8,3,1,nlv,'YEAR MNTH DAYS')
                jndcntrl = iw3jdn(2010,1,1)
                jnddata =
      .          iw3jdn(int(rdate_8(1)),int(rdate_8(2)),int(rdate_8(3)))
-               if(jnddata.lt.jndcntrl)
-     .          aircft = mtp.eq.4.and.(mst.le.3.or.mst.eq.6.OR.mst.eq.9)
+               if(jnddata.lt.jndcntrl.or.KEEP_NEARDUP_ACFT.eq.'NO') then
+                  aircft = mtp.eq.4.and.(mst.le.3.or.mst.eq.6.OR.mst.eq.
+     .             9.or.mst.eq.10.or.mst.eq.11.or.mst.eq.103)
+                  if(.not.aircft) then
+                     call NEMSPECS(lubfi,'CLAT',1,NSCL,NREF,NBTS,IRET)
+                     if(iret.eq.0) then
+cpppppppppp
+                        print *
+                        print *, '---> For CLAT, NSCL = ',NSCL
+                        print *
+cpppppppppp
+                        iflg_acars_latlon_sf = NSCL
+                     else
+                        print *
+                        print *,'##WARNING: NSCL for CLAT could not be',
+     .                          ' returned by BUFRLIB routine',
+     .                          'NEMSPECS, NSCL remains 2.'
+                        print *
+                     endif
+                  endif
+               endif
             endif
+cpppppppppp
+            print *
+            print *, '---> KEEP_NEARDUP_ACFT = ',KEEP_NEARDUP_ACFT
+            print *
+cpppppppppp
          endif
       ENDIF
 
@@ -469,6 +577,7 @@ C  ---------------------------------------------------------
       ALLOCATE(TAB_8(MXTS,MXTB),STAT=I);IF(I.NE.0) GOTO 901
       ALLOCATE(RAB_8(MXTS,MXTB),STAT=I);IF(I.NE.0) GOTO 901
       ALLOCATE(THRPT_8(MXTB),STAT=I);   IF(I.NE.0) GOTO 901
+      ALLOCATE(ACRN_8(MXTB),STAT=I);    IF(I.NE.0) GOTO 901
       ALLOCATE(DOYR_8(2,MXTB)  ,STAT=I);IF(I.NE.0) GOTO 901
       ALLOCATE(IWORK(MXTB)     ,STAT=I);IF(I.NE.0) GOTO 901
       ALLOCATE(IORD(MXTB)      ,STAT=I);IF(I.NE.0) GOTO 901
@@ -476,6 +585,7 @@ C  ---------------------------------------------------------
 
       TAB_8  = BMISS
       THRPT_8 = BMISS
+      ACRN_8 = BMISS
       RAB_8  = BMISS
       DOYR_8 = BMISS
       JDUP   = 0
@@ -488,7 +598,8 @@ C   RECEIPT TIME COORDINATES
 C  ------------------------------------------------------------
 
 C  CHECK TABLE A ENTRY SINCE HI-RES ALTIMETER DATA AND AIRCRAFT TYPES
-C   E-ADAS, CANADIAN AMDAR AND TAMDAR ALL HAVE HIGH ACCURACY LAT/LON
+C   E-ADAS, CANADIAN AMDAR AND TAMDAR (all types) ALL HAVE HIGH
+C   ACCURACY LAT/LON
 C  ------------------------------------------------------------------
  
       LATLON_TYPE='NONE  '
@@ -572,6 +683,10 @@ cpppppppppp
             EXIT
          ENDIF
       ENDDO
+cpppppppppp
+ccc   print *, 'iflg_acars_latlon_sf,SCALE = ',
+ccc  $ iflg_acars_latlon_sf,SCALE
+cpppppppppp
       METAR = .FALSE.
       IF(SUBSET.EQ.'NC000007')  THEN
 
@@ -592,6 +707,40 @@ C  process so set it missing for all other type of reports
 C ---------------------------------------------------------------------
 
          TAB_8(8,:) = BMISS
+         IF(SUBSET(1:5).EQ.'NC004') THEN
+cpppppppppp
+
+C For aircraft reports (any type), pull out tail number ("ACRN") for
+C  possible use in diagnostic print
+C ------------------------------------------------------------------
+
+ccc         OPEN(LUBFI,FILE=FILI(1:NBYTES_FILI),FORM='UNFORMATTED')
+ccc         CALL UFBTAB(LUBFI,ACRN_8,1,MXTB,NTAB,'ACRN')
+cpppppppppp
+
+            if(.not.aircft) then
+
+C For reports from AIRCAR aircraft types NC004004 and NC004007 which are
+C  duplicate checked here {since either obs time is before January 01,
+C  2010 or KEEP_NEARDUP_ACFT = NO (or anything other than "YES")}, if
+C  scale factor on CLAT (and assumed also CLON) is > 2, round CLAT and
+C  CLON values read in for each subset to their scale factor 2 values
+C  prior to calling ORDERS and then duplicate-checking.  The reasoning
+C  for this was explained earlier.
+C ----------------------------------------------------------------------
+
+               if(iflg_acars_latlon_sf.gt.2) then
+                  do i = 1,ntab
+                     tab_8(1,i) = kidnnt(tab_8(1,i)*100)/100._8 ! add "_8"
+                     tab_8(2,i) = kidnnt(tab_8(2,i)*100)/100._8 ! add "_8"
+cpppppppppp
+ccc   if(i.eq.1)
+ccc  . print *, 'tab_8(1,1),tab_8(2,1): ',tab_8(1,i),tab_8(2,i)
+cpppppppppp
+                  enddo
+               endif
+            endif
+         ENDIF
       ENDIF
       OPEN(LUBFI,FILE=FILI(1:NBYTES_FILI),FORM='UNFORMATTED')
       CALL UFBTAB(LUBFI,RAB_8,MXTS,MXTB,NTAB,RSTR)
@@ -669,16 +818,53 @@ C    % - correction takes into account type of hourly report for METARs
 C  GO THROUGH THE REPORTS IN ORDER, MARKING DUPLICATES AND CORRECTIONS
 C  -------------------------------------------------------------------
  
+cpppppppppppppppppppppppppppppppppp
+ccc   IF(SUBSET.EQ.'NC004004') THEN
+ccc   DO K=1,NTAB
+ccc      I = IORD(K)
+ccc      print'("I =",I9,", LAT = ",F10.6,", LON = ",F11.6,", MON = ",
+ccc  $    F9.6,", DAY = ",F9.6,", HOUR = ",F9.6,", MIN = ",F9.6)',
+ccc  $ I,TAB_8(1,I),TAB_8(2,I),TAB_8(3,I),TAB_8(4,I),TAB_8(5,I),
+ccc  $ TAB_8(6,I)
+ccc   END DO
+ccc   ENDIF
+cpppppppppppppppppppppppppppppppppp
+
       DO K=1,NTAB-1
          IREC = IORD(K)
          JREC = IORD(K+1)
-         TAB8_IREC_8 = TAB_8(8,IREC)
-         TAB8_JREC_8 = TAB_8(8,JREC)
+cpppppppppp
+ccc      IF(SUBSET(1:5).EQ.'NC004') THEN
+ccc         ACRN_IREC_8 = ACRN_8(IREC)
+ccc         ACRN_JREC_8 = ACRN_8(JREC)
+ccc      ELSE
+cpppppppppp
+            TAB8_IREC_8 = TAB_8(8,IREC)
+            TAB8_JREC_8 = TAB_8(8,JREC)
+cpppppppppp
+ccc      ENDIF
+cpppppppppp
 
 c Need to use the KIDNNT() intrinsic function here, with 8byte integer
 c output, in order to deal w/ the case when potentially large (ie,
 c greater than 10e7) "missing" values are encountered.
 
+cpppppppppp
+c  if this is uncommented, must uncomment references to ACRN above!
+ccc      IF(SUBSET(1:5).EQ.'NC004') THEN
+ccc      print 1789, irec,CACRN8_IREC,(tab_8(ii,irec),ii=1,2),
+ccc  .    (nint(tab_8(ii,irec)),ii=4,6),(nint(rab_8(ii,irec)),ii=1,5)
+c1789    format('----------'/'1st of 2  --> IREC: ',I6,
+ccc  .    ';{ ID: ',A8,'; LAT: ',F6.2,'; LON: ',F7.2,
+ccc  .    '; RPRT DD HH MM ',3I2.2,'; RCPT YYYYMMDDHHMM: ',I4,4I2.2,
+ccc  .    '}')
+ccc      print 1790, jrec,CACRN8_JREC,(tab_8(ii,jrec),ii=1,2),
+ccc  .    (nint(tab_8(ii,jrec)),ii=4,6),(nint(rab_8(ii,jrec)),ii=1,5)
+c1790    format('2nd of 2  --> JREC: ',I6,';{ ID: ',A8,'; LAT: ',
+ccc  .    F6.2,'; LON: ',F7.2,'; RPRT DD HH MM ',3I2.2,
+ccc  .    '; RCPT YYYYMMDDHHMM: ',I4,4I2.2,'}')
+ccc      ENDIF
+cpppppppppp
          DUPES = KIDNNT(DABS(TAB_8(1,IREC)-TAB_8(1,JREC))*SCALE) 
      .      .LE.NINT(DEXY*SCALE)
      .     .AND. KIDNNT(DABS(TAB_8(2,IREC)-TAB_8(2,JREC))*SCALE) 
@@ -693,7 +879,25 @@ c greater than 10e7) "missing" values are encountered.
      .      .LE.NINT(DMIN*100.)
      .     .AND.
      .      CAB8_IREC.EQ.CAB8_JREC
-         IF(DUPES) JDUP(IREC) = 2
+         IF(DUPES) then
+            JDUP(IREC) = 2
+cpppppppppp
+c  if this is uncommented, must uncomment references to ACRN above!
+ccc         IF(SUBSET(1:5).EQ.'NC004') THEN
+ccc         print 1799, irec,CACRN8_IREC,(tab_8(ii,irec),ii=1,2),
+ccc  .       (nint(tab_8(ii,irec)),ii=4,6),(nint(rab_8(ii,irec)),ii=1,5)
+c1799       format('===> DUPL. FOUND:'/'TOSSED:   --> IREC: ',I6,
+ccc  .       ';{ ID: ',A8,'; LAT: ',F6.2,'; LON: ',F7.2,
+ccc  .       '; RPRT DD HH MM ',3I2.2,'; RCPT YYYYMMDDHHMM: ',I4,4I2.2,
+ccc  .       '}')
+ccc         print 1800, jrec,CACRN8_JREC,(tab_8(ii,jrec),ii=1,2),
+ccc  .       (nint(tab_8(ii,jrec)),ii=4,6),(nint(rab_8(ii,jrec)),ii=1,5)
+c1800       format('KEPT:     --> JREC: ',I6,';{ ID: ',A8,'; LAT: ',
+ccc  .       F6.2,'; LON: ',F7.2,'; RPRT DD HH MM ',3I2.2,
+ccc  .       '; RCPT YYYYMMDDHHMM: ',I4,4I2.2,'}')
+ccc         ENDIF
+cpppppppppp
+         endif
       ENDDO
       endif ! .not.aircft
  

@@ -9,9 +9,9 @@ C   TO EXACT TIME WINDOW (DAY DOWN TO SECOND) AND CORRECTING OF
 C   LONGITUDE TO BUFR STANDARD (I.E., CHANGE 0 --> 360 E TO
 C   -180 --> +180, E+,W-) (IF NECESSARY).  AN UPDATED REPORT ID
 C   (MNEMONIC "RPID") IS ALSO GENERATED FOR DERIVED WINDS FROM GOES,
-C   METEOSAT, INSAT, KALPANA, GMS, MTSAT, AQUA/TERRA (POES), NOAA/METOP
-C   (POES), NPP (GOES) AND NESDIS RETRIEVALS AND PROCESSED RADIANCES
-C   FROM GOES. OTHER REPORT TYPES (WHICH GET ONLY DUP CHECKING,
+C   METEOSAT, INSAT, KALPANA, GMS, MTSAT, HIMAWARI, AQUA/TERRA (POES),
+C   NOAA/METOP (POES), NPP (GOES) AND NESDIS RETRIEVALS AND PROCESSED
+C   RADIANCES FROM GOES. OTHER RPT TYPES (WHICH GET ONLY DUP CHECKING,
 C   OPTIONAL GEOGRAPHICAL FILTERING, OPTIONAL TIME WINDOW TRIMMING AND
 C   POSSIBLE LONGITUDE CORRECTION) INCLUDE NESDIS RETRIEVALS AND
 C   PROCESSED RADIANCES FROM TOVS, RTOVS, ATOVS AND AVHRR (INCLUDING 1B
@@ -1514,7 +1514,7 @@ C ---- 50  51  52  53  54  55  56  57  58  59 sp(60-69) 70 sp(71-98) 99
 C ---- spare(100-149)
      $,   50* '?'
 
-C                    **  GMS/MTSAT **
+C                    **  GMS/MTSAT/HIMAWARI **
 C ---- 150 151 152 sp(153-170) 171 172 173 174 175 176 sp(177-198) 199
      $,'R','O','P', 18* '?',   'Q','R','O','P','Q','R', 22* '?',   'Q'
 
@@ -1697,7 +1697,7 @@ C                                        (Note: Sat. No. 253 gets 'C'
 C                                               if producer is NESDIS)
 C                       -----> MTSAT:    SAT. NO. 171,175       GET 'Q'
 C                                        SAT. NO. 172,176       GET 'R'
-C                                        SAT. NO. 173           GET 'O'
+C                       -----> HIMAWARI: SAT. NO. 173           GET 'O'
 C                                        SAT. NO. 174           GET 'P'
 C                                        SAT. NO. 199 (UNKNOWN) GET 'Q'
 C                       -----> KALPANA:  SAT. NO. 440           GET 'K'
@@ -1720,8 +1720,8 @@ C                               (PRODUCER), IF NON-MISSING; OTHERWISE
 C                               HARDWIRED TO '1' (NESDIS), '9' (NASA)
 C                       -----> WINDS PRODUCED BY FOREIGN PRODUCERS:
 C                                SAT. PRODUCER -- ESA           GET 'C'
-C                                              -- GMS/MTSAT     GET 'D'
-C                                              -- INSAT/KALPANA GET 'E'
+C                                              -- JMS           GET 'D'
+C                                              -- INDIA         GET 'E'
 C    REPROCESSED CHAR 3-7 ---> SEQUENTIAL SERIAL INDEX (00001 - 99999)
 C                              (UNIQUE FOR EACH NCEP BUFR CHAR 1/2/8
 C                               COMB.)
@@ -1748,7 +1748,8 @@ C                                     -- WATER VAPR SNDR, CHN 11 GET 'L'
 C                                        (GOES ONLY)
 C                                     -- IR (SW) IMGR CLD DRIFT  GET 'S'
 C                                        (GOES ONLY)
-C                               NEW FORMAT (GMS  - LOW-DENSITY)
+C                               NEW FORMAT (GMS/MTSAT/
+C                                                HIMAWARI - LOW-DENSITY)
 C                                     -- IR (LW) CLOUD DRIFT     GET 'C'
 C                                     -- WATER VAPOR             GET 'V'
 C                       -----> WINDS PRODUCED BY FOREIGN PRODUCERS:
