@@ -49,7 +49,7 @@ files:
    obsproc_dump/sorc/prepobs_prepssmi.fd/prepssmi.f
    obsproc_dump/sorc/wave_dcodquikscat.fd/dcodquikscat.f
    obsproc_dump/sorc/wave_dcodquikscat.fd/makefile
-   obsproc_dump/sorc/build.sh
+ M obsproc_dump/sorc/build.sh
    obsproc_dump/sorc/clean.sh
    obsproc_dump/sorc/install.sh
  M obsproc_dump/sorc/load_libs.rc
@@ -100,10 +100,21 @@ files:
       processed by BUFR_EDTBFR.
 
  Source code changes:
+   build.sh in sorc directory:
+    - Increased likelihood of consistent builds by purging currently loaded
+      environment modules and loading specific compiler module.  The
+      default ibmpe module is then loaded for codes that might need it.
+    - Switch from using setlibs.rc to load_libs.rc (which loads library
+      modules).
+    - If environment variable $clobber is exported to this script with value
+      "clobber_no", then the "make clobber" step is skipped. If $clobber not
+      imported, "make clobber" will proceed as before.
+      BENEFIT: This may be useful if one is debugging only one source code
+               within a program with multiple source codes.
    load_libs.rc sorc directory:
-    - Increment the bufrlib version from v10.2.5 to v11.0.1.
+    - Increment the bufrlib version from v10.2.5 to v11.1.0.
    setlibs.rc in sorc directory:
-    - Increment the bufrlib version from v10.2.5 to v11.0.1.
+    - Increment the bufrlib version from v10.2.5 to v11.1.0.
     - Point to /nwprod2 copy of all libs managed by NCO.
    bufr_dupair:
     - Added logic to duplicate check MDCRS reports (004.004 or 004.007) which
@@ -287,6 +298,15 @@ files:
                descriptors to increase precision of CLAT/CLON. Need this change
                to use proper lat/lon tolerances in the matching process.
     - Replaced explicit assignment of BMISS with GETBMISS function.
+    - Corrected a bug in code. If an sdmedit flag file entry has a report id of
+      "*       " and its lat/lon range and upper-air instrument type fields are
+      set to all dashes "-"  but its WMO bulletin header field is specified, all
+      reports read in with a matching "TYP" that had a missing WMO bulletin
+      header had ended up matching this entry and their quality markers were
+      updated based on those specified in this flag file entry (currently only
+      mesonet and TAMDAR aircraft reports have a missing WMO bulletin header).
+      These no longer match.
+
 
 
    <incomplete>
@@ -295,7 +315,7 @@ files:
  Libraries:
  ----------
       ...
-   bufr   11.0.1 (all) (previously 10.2.5)
+   bufr   11.1.0 (all) (previously 10.2.5)
       ...
 
 

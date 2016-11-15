@@ -1,7 +1,7 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: BUFR_EDTBFR
-C   PRGMMR: KEYSER           ORG: NP22        DATE: 2016-08-15
+C   PRGMMR: KEYSER           ORG: NP22        DATE: 2016-11-10
 C
 C ABSTRACT: APPLIES REAL-TIME INTERACTIVE QUALITY CONTROL FLAGS,
 C   GENERATED FROM EITHER A "REJECT" LIST MAINTAINED BY NCEP/NCO OR
@@ -218,6 +218,15 @@ C 2016-08-15  D. A. Keyser --  Added ability to apply QC flags to
 C     mesonet reports originally in the b255 tanks (that eventually go
 C     into the "msonet" dump). These are entered in the sdmedit flag
 C     text file with report type "MSO".
+C 2016-11-10  D. A. Keyser --  Corrected a bug in code. If an sdmedit
+C     flag file entry has a report id of "*       " and its lat/lon
+C     range and upper-air instrument type fields are set to all dashes
+C     "-"  but its WMO bulletin header field is specified, all reports
+C     read in with a matching "TYP" that had a missing WMO bulletin
+C     header had ended up matching this entry and their quality markers
+C     were updated based on those specified in this flag file entry
+C     (currently only mesonet and TAMDAR aircraft reports have a missing
+C     WMO bulletin header). These no longer match.
 C
 C USAGE
 C   INPUT FILES:
@@ -847,10 +856,10 @@ C$$$
 
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_EDTBFR',2016,0228,0067,'NP22')
+      CALL W3TAGB('BUFR_EDTBFR',2016,0315,0067,'NP22')
 
       print *
-      print * ,'---> Welcome to BUFR_EDTBFR - Version 08-15-2016'
+      print * ,'---> Welcome to BUFR_EDTBFR - Version 11-10-2016'
       print *
 
 C  ASSIGN DEFAULT VALUE FOR 'MISSING' TO LOCAL BMISS VARIABLE
@@ -1685,8 +1694,25 @@ C  --------------------------------------------------------------------
                BUHD_8 = TAB_8(8,N)
                BORG_8 = TAB_8(9,N)
 C  .. if either is missing, will not compare to sdmedit flag file entry
-               IF(IBFMS(BUHD_8).NE.0.OR.IBFMS(BORG_8).NE.0)
-     .          CARD(78:88) = '-----------'
+C     (i.e., will set CARD(78:88) to '-----------') --> UNLESS the
+C     sdmedit flag file entry has a report id of "*       " (full
+C     wildcard) -and- has a lat/lon boundary for considering reports
+C     consisting of all blanks or dashes -and- has an upper-air
+C     instrument type consisting of all blanks or dashes or is not an
+C     upper-air report) (in this case will set CARD(78:88) to
+C     'missing !!!', not allowing a match to ever occur)
+               IF(IBFMS(BUHD_8).NE.0.OR.IBFMS(BORG_8).NE.0) THEN
+                  CARD(78:88) = '-----------'
+                  IF(IMATCH_STNID(N,M).EQ.2) THEN
+                     IF((CARDS(ITYP,M)(91:102).EQ.'------------'   .OR.
+     .                   CARDS(ITYP,M)(91:102).EQ.'            ')  .AND.
+     .                 ((CARDS(ITYP,M)(105:107).EQ.'---'           .OR.
+     .                   CARDS(ITYP,M)(105:107).EQ.'   ').OR.
+     .                      CARDS(ITYP,M)(37:39).NE.'UPA')) THEN
+                        CARD(78:88) = 'missing !!!'
+                     ENDIF
+                  ENDIF
+               ENDIF
                BUHDOR = CBUHD(1:6)//' '//CBORG(1:4)
 
 C  Obtain the u-air instrument type for this rpt (only for UPA types)
