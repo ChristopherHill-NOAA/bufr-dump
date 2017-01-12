@@ -5,7 +5,7 @@
 #               
 # Script name:   bufr_dump_obs.sh   Driver for the obs. data dump util
 #
-# Author:        D.A. Keyser        Org: NP22           Date: 2016-04-22
+# Author:        D.A. Keyser        Org: NP22           Date: 2017-01-10
 #
 # Abstract: This script is a driver for the all-purpose BUFR observation
 #   database tank dump utility, dumpjb.  It's main purpose is to output BUFR
@@ -176,6 +176,22 @@
 #    path to prepobs_prepssmi NESDIS land/sea tag (mask) file from non-
 #    versioned, horizontal structure utility directory $utilparm to versioned,
 #    vertical structure fixed file directory $FIXbufr.
+# 2017-01-10  D.A. Keyser
+#    - Added ground-based GPS ("gpsipw") and MT-SAPHIR btemps ("saphir") to the
+#      list of dump types which are considered to be restricted when
+#      CHGRP_RSTPROD = YES.
+#      BENEFIT: For "gpsipw", allows temporary logic in obsproc_global.v2.3.0
+#               script exglobal_dump.sh.ecf to be removed in
+#               obsproc_global.v2.4.0; allows temporary logic in
+#               obsproc_nam.v2.2.0 script exnam_dump.sh.ecf to be removed in
+#               obsproc_nam.v2.3.0; allows temporary logic in obsproc_rap.v2.2.0
+#               script exrap_dump.sh.ecf to be removed in obsproc_rap.v2.3.0;
+#               and allows temporary logic in obsproc_cdas.v2.1.0 script
+#               excdas_dump.sh.ecf to be removed in obsproc_cdas.v2.2.0.
+#    - Corrected logic error which prevented the number of actual reports from
+#      being printed in a diagnostic joblog message when the number of reports
+#      exceeded the status file limit of 9999999 for dump group mnemonics with
+#      less than 6 characters.
 #
 #
 # Usage: bufr_dump_obs.sh  yyyymmddhh hh<.hh> ntype dgrp1 dgrp2 ... dgrpN
@@ -1511,7 +1527,7 @@ do
 
    if [ "$CHGRP_RSTPROD" = 'YES' ]; then
       if [ $n = adpsfc -o $n = aircar -o $n = aircft -o $n = msonet -o \
-           $n = sfcshp -o $n = lghtng ]; then
+           $n = sfcshp -o $n = lghtng -o $n = gpsipw -o $n = saphir ]; then
          chgrp rstprod ${COMSP}${n}.${tmmark}.bufr_d
          errch=$?
          if [ $errch -eq 0 ]; then
@@ -3081,7 +3097,9 @@ EOFblank
 #           and 66 in the temp1 file and set the dump count to 9999999
                cut -c1-64 temp1 > cutLv.allout.temp1
                echo "9999999 REPORTS" > cutRv.allout.temp1
-               dump_count=`cat temp1 | cut -f9 -d" "`
+# line below repl. w/ line 2 below; gets wrong field when dump grp mnem < 6 char
+#####          dump_count=`cat temp1 | cut -f9 -d" "`
+               dump_count=`cat temp1 | awk '{ printf $9 }'`
                dump_mtype=`cat temp1 | cut -c1-3`
                dump_stype=`cat temp1 | cut -c5-7`
                msg="***WARNING: DUMP COUNT FOR TYPE=\

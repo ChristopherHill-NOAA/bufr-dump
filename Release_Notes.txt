@@ -1,6 +1,6 @@
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-obsproc_dump release 3.3.0 --> released ??? ?, 2015
-                           --> implemented ??? ?, 2015
+obsproc_dump release 3.3.0 --> released Jan 12, 2017
+                           --> implemented ??? ??, 2017
 
 files:
    obsproc_dump/fix/bufr_bufrtab.sptrmm
@@ -55,7 +55,7 @@ files:
  M obsproc_dump/sorc/load_libs.rc
    obsproc_dump/sorc/README.build
  M obsproc_dump/sorc/setlibs.rc
-   obsproc_dump/ush/bufr_dump_obs.sh
+ M obsproc_dump/ush/bufr_dump_obs.sh
  M obsproc_dump/ush/check_tanks.sh
  M obsproc_dump/ush/dumpjb
 
@@ -79,6 +79,21 @@ files:
     - Replaced path to prepobs_prepssmi NESDIS land/sea tag (mask) file from
       non-versioned, horizontal structure utility directory $utilparm to
       versioned, vertical structure fixed file directory $FIXbufr.
+    - Added ground-based GPS ("gpsipw") and MT-SAPHIR btemps ("saphir") to the
+      list of dump types which are considered to be restricted when
+      CHGRP_RSTPROD = YES.
+      BENEFIT: For "gpsipw", allows temporary logic in obsproc_global.v2.3.0
+               script exglobal_dump.sh.ecf to be removed in
+               obsproc_global.v2.4.0; allows temporary logic in
+               obsproc_nam.v2.2.0 script exnam_dump.sh.ecf to be removed in
+               obsproc_nam.v2.3.0; allows temporary logic in obsproc_rap.v2.2.0
+               script exrap_dump.sh.ecf to be removed in obsproc_rap.v2.3.0;
+               and allows temporary logic in obsproc_cdas.v2.1.0 script
+               excdas_dump.sh.ecf to be removed in obsproc_cdas.v2.2.0.
+    - Corrected logic error which prevented the number of actual reports from
+      being printed in a diagnostic joblog message when the number of reports
+      exceeded the status file limit of 9999999 for dump group mnemonics with
+      less than 6 characters.
    check_tanks.sh:
     - Use NCO-established variables (presumably obtained from modules) to point
       to prod utilities:
@@ -130,7 +145,7 @@ files:
       AMDAR report against like-type when obs date is later than a specified
       control date (1/1/2010) and when new script environment variable
       KEEP_NEARDUP_ACFT is imported as "YES" (more about control date and
-      KEEP_NEARDUP_ACFTin BENEFIT below).
+      KEEP_NEARDUP_ACFT in BENEFIT below).
        - Tolerances remain as before (loosened) if 1 of 2 dups being checked is
          an AIREP or PIREP, or if obs date is prior to specified control date,
          or if KEEP_NEARDUP_ACFT is imported as "NO" (default for anything other
@@ -241,7 +256,7 @@ files:
                lat/lon precision.  (Otherwise many more near-duplicates would
                be retained.)  This is needed only for MDCRS reports after
                1/1/2010 when KEEP_NEARDUP_ACFT = NO since version 7 BUFR was
-               not used until the fall of 2016.
+               not used until the early 2017.
     - Added diagnostic print for debugging.  This is commented out.
    bufr_dupmrg:
     - Added diagnostic warning print statement if the number of levels added to
@@ -256,10 +271,6 @@ files:
       the sdmedit flag text file with new report type "MSO".
       BENEFIT: Allows for a more straightforward method of rejecting mesonet
                reports vs. the use of a reject-list file read by the GSI.
-############################################
- --------> Note for later reference: This adds about 22 sec to a NAM dump run
-           time.
-############################################
     - Increased the maximum number of ID matches that can be listed in stdout
       when a wildcard ID entry is specified from 3000 to 3500.
       BENEFIT: All Mexican MDCRS are now in the sdmedit file with a wildcard
@@ -294,7 +305,7 @@ files:
       for CLAT in first subset in each file read in).  In this case, use lat/lon
       matching tolerances designed for high-accuracy lat/lon (just as though
       reports used CLATH/CLONH instead of operator descriptors on CLAT/CLON.
-      BENEFIT: The V7 BUFR MDCRS in NC004004 (coming in fall 2016) use operator
+      BENEFIT: The V7 BUFR MDCRS in NC004004 (coming in early 2017) use operator
                descriptors to increase precision of CLAT/CLON. Need this change
                to use proper lat/lon tolerances in the matching process.
     - Replaced explicit assignment of BMISS with GETBMISS function.
@@ -308,19 +319,59 @@ files:
       These no longer match.
 
 
-
-   <incomplete>
+ Output changes:
+ ---------------
+  (For specific network changes see " Output changes" in Release Notes for that
+   network, if that network executes this version of obsproc_prep.)
 
 
  Libraries:
  ----------
-      ...
+   w3nco   2.0.6 (all)
+   w3emc   2.2.0 (bufr_dcodwindsat, bufr_dupair, bufr_dupcor, bufr_dupmar,
+                  bufr_dupmrg, bufr_duprad, bufr_dupsat, bufr_dupshp,
+                  bufr_dupsst, bufr_supertmi, prepobs_prepssmi,
+                  wave_dcodquikscat)
    bufr   11.1.0 (all) (previously 10.2.5)
-      ...
+   bacio   2.0.1 (bufr_supertmi, prepobs_prepssmi, wave_dcodquikscat)
+                  snow_sno96grb)
+   sp      2.0.2 (prepobs_prepssmi)
+
+   * all libs are WCOSS phase2 disk (/nwprod2/*) versions
 
 
-   <incomplete>
+ Build Instructions:
+ -------------------
+   - See sorc/README.build
 
+
+ Preimplementation Testing Requirements:
+ ---------------------------------------
+   There are no jobs in obsproc_dump.  All jobs executing this version of
+   obsproc_dump should be tested.
+
+
+ Dissemination:
+ --------------
+   See information about dissemination in the latest release notes for
+   obsproc_<NETWORK> packages which execute this version of obsproc_dump.
+
+
+ Special Instructions:
+ ---------------------
+   This is part of OBSPROC.v6.5.0.
+   This must be implemented simultaneously with the implementations of:
+      v2.2.0 of obsproc_cdas,
+      v2.3.0 of obsproc_dump_post,
+      v2.4.0 of obsproc_global,
+      v2.3.0 of obsproc_nam,
+      v3.8.0 of obsproc_prep,
+      v2.3.0 of obsproc_rap,
+      v2.2.0 of obsproc_rtma,
+      v2.2.0 of obsproc_urma.
+
+   Since there are no jobs in obsproc_dump, an obsproc_dump.ver file is not
+   needed.
 
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 obsproc_dump release 3.2.1 --> released May 1, 2015
