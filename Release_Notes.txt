@@ -362,6 +362,7 @@ files:
    This is part of OBSPROC.v6.5.0.
    This must be implemented simultaneously with the implementations of:
       v2.2.0 of obsproc_cdas,
+      v2.1.0 of obsproc_dump_monitor,
       v2.3.0 of obsproc_dump_post,
       v2.4.0 of obsproc_global,
       v2.3.0 of obsproc_nam,
