@@ -1,7 +1,7 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: WAVE_DCODQUIKSCAT
-C   PRGMMR: KEYSER           ORG: NP22        DATE: 2014-01-28
+C   PRGMMR: KEYSER           ORG: NP22        DATE: 2017-01-12
 C
 C ABSTRACT: REPROCESSES QUIKSCAT, ASCAT AND OSCAT (SCATTEROMETER) DATA.
 C   (NOTE: CURRENTLY, OSCAT DATA IS NOT REPROCESSED AND SO IS NOT READ
@@ -107,6 +107,9 @@ C            SATELLITE ID 3 (METOP-B OR 4 (METOP-A}, DEFAULT IS 99999,
 C            NO REPORTS SKIPPED; ONLY THE FIRST 100 REPORTS WITH AN
 C            UNRECOGNIZED SATELLITE ID ARE NOW PRINTED (TO REDUCE SIZE
 C            OF STDOUT IN SUCH CASES)
+C 2017-01-12 D. Stokes  -  Minor bug fix to preserve valid obs located
+C            just west of 180E.  Also, use 10E8_8 to represent missing
+C            bufr values to reduce risk of integer overflows on WCOSS.
 C
 C USAGE:
 C   INPUT FILES:
@@ -133,9 +136,9 @@ C   SUBPROGRAMS CALLED:
 C     LIBRARY
 C       W3NCO    - W3TAGB   W3TAGE   ERREXIT
 C       W3EMC    - W3FC05   W3FC06
-C       BUFRLIB  - DATELEN  DUMPBF   OPENBF   OPENMG   MINIMG  CLOSMG
-C                - UFBREP   UFBINT   WRITSB   UFBCNT   CLOSBF  IREADMG
-C                - UPFTBV   IBFMS    OPENMB
+C       BUFRLIB  - DATELEN  DUMPBF   OPENBF   OPENMG   MINIMG   CLOSMG
+C                - UFBREP   UFBINT   WRITSB   UFBCNT   CLOSBF   IREADMG
+C                - UPFTBV   IBFMS    OPENMB   SETBMISS GETBMISS 
 C
 C   EXIT STATES:
 C     COND =   0 - SUCCESSFUL RUN
@@ -333,7 +336,7 @@ C
 C          
 C ATTRIBUTES:
 C   LANGUAGE: FORTRAN 90
-C   MACHINE : NCEP WCOSS
+C   MACHINE : NCEP WCOSS (iDataPlex and Cray-XC40)
 C
 C$$$
 
@@ -386,6 +389,8 @@ C$$$
      $ RAINDT_8,BRTDAT_8(3,2),ANPODT_8(6),ADATA_8(17),WS_8(4),WD_8(4),
      $ RPID_8,SAIDDT_8,QUALDT_8
 
+      REAL(8) GETBMISS
+
       REAL XLOCDT(2),ADATA(17)
 
       REAL BLAT(360),BLON(720),SUMTIM(720,360),
@@ -400,16 +405,21 @@ C$$$
      $ IQCPOR,PORLIM,IQCEDG,IQCWVC,IEDLLM,IEDULM,LATS,LATN,LONW,LONE
 
       DATA LUNIN /11/,LUNOUT/52/,LUNTAB/20/,ifirst/0/
-      DATA BMISS/10E10/
 
       EQUIVALENCE  (SID,RPID_8)
 
-      CALL W3TAGB('WAVE_DCODQUIKSCAT',2014,0028,0083,'NP22')
+      CALL W3TAGB('WAVE_DCODQUIKSCAT',2017,0012,1200,'NP22')
 
       PRINT *, ' '
       PRINT *, '=====> WELCOME TO PROGRAM WAVE_DCODQUIKSCAT - ',
-     $ 'VERSION: 01/28/2014'
+     $ 'VERSION: 01/12/2017'
       PRINT *, ' '
+
+      CALL SETBMISS(10E8_8)
+      BMISS=GETBMISS()
+      print'(1X)'
+      print'(" BUFRLIB value for missing is: ",G0)', bmiss
+      print'(1X)'
 
       ITYPE  = 1
       IPRINT = 0
@@ -757,6 +767,7 @@ C  ------------------------------------------
             YY = XLOCDT(1) + 91.5
             XX = XLOCDT(2) + 181.5
             IHX = 2.*XX - 1.0
+            IF(IHX.EQ.721) IHX=1
             IHY = 2.*YY - 1.0
             SLA = XLOCDT(1) + 91.0
             SLO = XLOCDT(2) + 1.0

@@ -5,7 +5,7 @@
 #
 # Script name:   dumpjb      Dump script to get data from BUFR tanks
 #
-# RFC contact:  Keyser      Org: NP22        Date: 2016-08-15
+# RFC contact:  Stokes      Org: NP2         Date: 2017-02-06
 #
 # Abstract: The dumpjb script is an all-purpose dump utility for time
 #   windowing, geographical filtering, eliminating duplicates, and applying
@@ -23,8 +23,8 @@
 #   and form of the dumped datasets.  Each data group requested as a parameter,
 #   generates one or more process threads which each dump one data type.  The
 #   script is setup so all the process threads from all the data groups can be
-#   either: run in parallel under poe thus allowing threads to run across
-#   nodes; spun off into background shells to execute in parallel processors on
+#   either: run in parallel under mpmd thus allowing threads to run across
+#   cores; spun off into background shells to execute in parallel processors on
 #   the same node; or run serially.  Note that running under background shells
 #   will require greater memory as more shells are added (something to keep in
 #   mind if a job slows down due to page faults resulting from a lack of memory
@@ -300,6 +300,25 @@
 #     non-versioned, horizontal structure utility directory path.
 # 2016-08-15  D. Keyser  Added mesonet reports (in BUFR type 255) to types
 #     which will be processed by BUFR_EDTBFR.
+# 2017-02-06  D. Stokes  Updated to run on Cray-XC40 as well as IBM iDataPlex.
+#     - Determines current system (and phase if necessary) based on environment
+#       variable SITE and/or NCO utility getsystem.pl.
+#     - TMPDIR is no longer a required imported variable for a developer run if
+#       DATA_DUMPJB is not imported.  If TMPDIR is needed but not yet set, a 
+#       a suitable location will be assigned based on the system type and phase.
+#       Variable DTMPDIR can also be passed in if the developer wants to
+#       override the default location but has trouble running LSF jobs when 
+#       they have set TMPDIR. (currently an issue with bash on luna and surge)
+#     - Variable "MPMD" no longer points to an mpmd utility script.  Instead it
+#       is used in place of old variable "POE" to toggle mpmd processing.
+#     - MPMD=on is allowed for Cray-XC40 runs that utilize compute nodes, but
+#       will be changed to MPMD=off if dumpjb was called by a process already
+#       running under ALPS.
+#     - BACK=on is disabled for Cray-XC40 runs.
+#     - Module prod_envir is used to set DCOMROOT if not imported.
+#     - New variable DUMPJBprocdate can be set to an artificial time stamp to be
+#       stored as the "processing time" in the second dummy message of output
+#       dump files.  (Intended for use when validating of upgrades only!)
 #
 #
 # Usage: dumpjb  yyyymmddhh<.hh> hh<.hh> dgrp1 dgrp2 dgrp3 ... dgrpN
@@ -398,7 +417,8 @@
 #-----------------------------------------------------------------------
 #
 #   Modules and files referenced:
-################     scripts     : mpmd.sh (no longer referenced)
+#          modules: prod_util if $sys_tp (system type and phase) not imported
+#                   prod_envir if $DCOMROOT not imported
 #     fixed fields: bufr_dumplist
 #     executables : bufr_raddate bufr_dumpmd bufr_dupcor bufr_dupsat
 #                   bufr_dupsst  bufr_dupmrg bufr_edtbfr bufr_quipc
@@ -426,7 +446,9 @@
 #.............................................................................
 #   HOMEobsproc_dump - path to home directory, up to, but not containing,
 #                      "exec" subdirectory which contains dump executables
-#                              (default::/nwprod/obsproc_dump.$obsproc_dump_ver
+#                              (default::<root>/obsproc_dump.${obsproc_dump_ver}
+#                                 <root>=/gpfs/hps/nco/ops/nwprod  on luna/surge
+#                                 <root>=/nwprod2                  on tide/gyre
 #                                        ===> valid only if $obsproc_dump_ver
 #                                             defined; else no default)
 #.............................................................................
@@ -449,7 +471,9 @@
 #   HOMEobsproc_shared_bufr_dumplist - path to home directory, up to but not
 #                                      containing, "fix" subdirectory which
 #                                      contains bufr_dumplist fixed file
-#              (default::/nwprod/obsproc_dump.$obsproc_shared_bufr_dumplist_ver
+#           (defaults:: <root>/bufr_dumplist.${obsproc_shared_bufr_dumplist_ver}
+#                  <root>=/gpfs/hps/nco/ops/nwprod/obsproc_shared  on luna/surge
+#                  <root>=/nwprod2/obsproc_shared                  on tide/gyre
 #                        ===> valid only if $obsproc_shared_bufr_dumplist_ver
 #                             defined; else no default)
 #.............................................................................
@@ -465,29 +489,13 @@
 #                        ===> valid only if $DFIX defined; else no default)
 #==============================================================================
 #==============================================================================
-#   One of the two following script variables must be defined (imported) or
-#   this script will exit with return code 99.  Both variables may have an
-#   operational default defined in the script, subject to the conditions noted
-#   below.  If a user exports non-null values for any of these variables, the
-#   user value will override the default if a default is present.
+#   One of the three following script variables can be imported to control
+#   the location of the working directory.  In order of precedence:
 #
-#   TMPDIR      - root directory tree for the path to temporary work files
-#                 (e.g., /stmpd1/$USER)
-#           {default::$DATA  (see more on $DATA further below)
-#                        ===> valid only if $USER is "nwprod*" or "climprod*";
-#                             else (e.g., checkout) no default}
-#           ===> if $USER is defined but is something other than "nwprod*" or
-#                "climprod*" (e.g., checkout) and $TMPDIR is imported as a
-#                known main shared temporary directory root (e.g., "/stmp",
-#                "/stmpd1", "/stmpp1", "/ptmp", "/ptmpp1", "/ptmpd1"), then
-#                $TMPDIR is redefined to append $USER to its original imported
-#                value, e.g., TMPDIR=$TMPDIR/$USER (this is intended to reduce
-#                the metadata load in the main shared temporary directories.
-#           ===> not referenced if DATA_DUMPJB is imported
-#.............................................................................
 #   DATA_DUMPJB - directory path to working directories
 #           (default::$TMPDIR/dumpjb.`hostname -s`.`date -u +%Y%m%d%H%M%S`.$$
-#                        ===> valid only if $TMPDIR defined; else no default)
+#                        ===> valid only if $TMPDIR defined; else no default;
+#                             more info on TMPDIR available below)
 #      WARNING 1: This script removes all files in $DATA_DUMPJB prior to
 #                 writing into it - something to remember if you are exporting
 #                 DATA_DUMPJB to this script!!!
@@ -496,6 +504,30 @@
 #                      a) you exported DATA_DUMPJB to this script;
 #                      b) the return code from this script is 99; or
 #                      c) the imported script variable LOUD is set to 'on'
+#.............................................................................
+#   TMPDIR      - root directory tree for the path to temporary work files
+#                 (e.g., /stmpd1/$USER)
+#           {defaults:: ==> for $USER "nwprod*" or "climprod*" -> $DATA;
+#                           (see more on $DATA further below)
+#                       ==> for other users -> $DTMPDIR, if set (see below);
+#                           otherwise, some stmp variant based on system and 
+#                           phase (Cray-XC40 vs IBM-p1 vs IBM-p2). 
+#                           (exit with return code 99 if system unrecognized)}
+#           ===> if $USER is defined but is something other than "nwprod*" or
+#                "climprod*" (e.g., checkout) and $TMPDIR is pointing to a
+#                known main shared temporary directory root (e.g., "/stmp",
+#                "/stmpp1", "/ptmpp1", "/stmpd3", "/gpfs/hps/stmp", etc), then
+#                $TMPDIR is redefined to append $USER as a subdirectory,
+#                i.e., TMPDIR=$TMPDIR/$USER (this is intended to reduce
+#                the metadata load in the main shared temporary directories.
+#                 ===> not referenced if DATA_DUMPJB is imported
+#.............................................................................
+#   DTMPDIR     - an optional fallback for TMPDIR added due to recent problems
+#                 encountered on luna and surge where a user-defined TMPDIR
+#                 conflicts with LSF in the bash environment.  (While this ksh
+#                 script has no problem with TMPDIR, users may need to avoid
+#                 setting that variable in a parent bash environment).
+#                 ===> not referenced if DATA_DUMPJB or TMPDIR is imported
 #==============================================================================
 #==============================================================================
 #   The following script variables are user controllable with operational
@@ -661,7 +693,7 @@
 #               this use of ADD_<DGRP> doesn't seem to ever be plausible.
 #
 #   DCOMROOT - default root directory path to $TANK, $EPRM and $QPRM
-#                                                                (default:/dcom)
+#                                            (default: set by prod_envir module)
 #
 #   TANK   -  directory path to database          (default:${DCOMROOT}/us007003)
 #                        (NOTE: This can be overidden for any individual BUFR
@@ -691,10 +723,6 @@
 #                                         (default:${DCOMROOT}/us007003/sdmedit)
 #   QPRM   -  directory path/filename of QUIPS flag file
 #                                           (default:${DCOMROOT}/us007003/quips)
-#   MPMD   -  directory path/filename of mpmd utility script that
-#              executes poe           (default:< this script is not available >)
-#             [ currently, POE=on is not supported -- untested on WCOSS and
-#               MDMP is not defined]
 #   FORM   -  if != copy, the suffix qualifier for database dump files in
 #               $DATA {the database dump files for each data group will be
 #                      combined into a single file called $DATA/dgrp.$FORM }
@@ -723,11 +751,12 @@
 ##          "on" AT THE HIGHEST (JOB) SCRIPT LEVEL.
 ###############
 #   BACK   -  runs background shells to execute in parallel processors on
-#             the same node                                         (default:on)
-#   POE    -  run in parallel under poe thus allowing threads to run across
-#             nodes (MUST run under LoadLeveler)                   (default:off)
-#             [ currently, POE=on is not supported -- untested on WCOSS ]
-#     NOTE: Only one of BACK and POE can be switched on -- if both are
+#             the same node                           (default ibm:on, cray:off)
+#             [ BACK=on is not supported on WCOSS Cray-XC40 ]
+#   MPMD   -  run in parallel under poe or similar mpmd processing to allow 
+#             threads to run across cores. (MUST run under LSF)    (default:off)
+#             [ currently, MPMD=on is supported on WCOSS Cray-XC40 only ]
+#     NOTE: Only one of BACK and MPMD can be switched on -- if both are
 #           switched on, the script will abort
 #   DUMPMD -  if imported as "on" will ALWAYS execute DUMPMD via $DMDX
 #             if not imported will ALWAYS execute DUMPMD via $DMDX UNLESS:
@@ -776,6 +805,10 @@
 #   DUPC   -  turns off duplicate check                             (default:on)
 #   TIME_TRIM - turns off time window trimming in duplicate check code
 #                                                                   (default:on)
+#   DUMPJBprocdate - Intended for validation of software upgrades only!  Can be
+#                    be set to to an artificial YYYYMMDDHHMM value to override
+#                    the current wall clock time normally stored in the second 
+#                    dummy message of the output dump file.       (default:none)
 #  
 #   Geographical filtering of the data
 #   ----------------------------------
@@ -834,11 +867,38 @@
 #             LALO=0             bypasses geographical filtering       (default)
 #==============================================================================
 #==============================================================================
+#   The following script variables are technically user controllable but would
+#   more typically be set for you, eg: as a common environment variable; by 
+#   module or script; or computed on the fly based on requested resources
+#
+#   sys_tp - system type and phase (eg, Cray-XC40); determined by NCO utility
+#            script getsystem.pl if not imported.
+#     SITE - cluster name (eg, LUNA); common envir variable on luna/surge and
+#            added to envir by module EnvVars on tide/gyre.
+#  DUMPJBtpn   - Tasks per node for cfp on luna/surge.  If not imported, 
+#                computed on the fly based on number of tasks to run in 
+#                mpmd-mode and number of compute nodes.
+#  DUMPJBprocs - Max number of concurrent processes if using cfp on luna/surge.
+#                If not imported, computed on the fly based on $DUMPJBtpn and 
+#                number of compute nodes.
+#==============================================================================
+#==============================================================================
+#   The following variables are described for informational purposes but should
+#   not be set by the user.
+#
+#  LSB_HOSTS   - List of hostnames assigned by LSF.  Used to compute the number
+#                of compute nodes allocated for Cray-XC40 runs with MPMD=on.
+#  ALPS_APP_ID - If MPMD=on and we are running on Cray-XC40, this variable is
+#                checked to ensure that this instance of dumpjb is not already
+#                running under ALPS.  (If it is set, then MPMD is changed to
+#                "off" and a warning message is printed to standard output).
+#==============================================================================
+#==============================================================================
 #
 # Attributes:
 #
 #   Language: ksh script
-#   Machine:  WCOSS
+#   Machine:  WCOSS IBM iDataPlex and Cray-XC40
 ####
  
 set -a
@@ -865,6 +925,15 @@ echo "********************************************************************"
 RETC=0
 RETG=0
 
+# Initialize the Modules package in case we need to load an environmment module
+#  (update the following lines if this script moves away from ksh)
+if [ -f /usrx/local/Modules/default/init/ksh ]; then
+    . /usrx/local/Modules/default/init/ksh > /dev/null
+elif [ -f /opt/modules/default/init/ksh ]; then
+    . /opt/modules/default/init/ksh  > /dev/null
+fi
+[ -z "$sys_tp" ] && sys_tp=$(module load prod_util 2>/dev/null;getsystem.pl -tp)
+
 #  clear out any "current" logical unit number assignments since the
 #  programs in this script do not call prep_step (these may be present if
 #  the parent script has executed any programs)
@@ -889,7 +958,11 @@ if [[ -z "$DUEX" ]]; then
       [ $LOUD = on ] && set -x
       exit 99
     fi
-    HOMEobsproc_dump=/nwprod/obsproc_dump.${obsproc_dump_ver}
+    if [ "$sys_tp" = 'Cray-XC40' -o "$SITE" = SURGE -o "$SITE" = LUNA ]; then
+      HOMEobsproc_dump=${NWROOThps:-/gpfs/hps/nco/ops/nwprod}/obsproc_dump.${obsproc_dump_ver}
+    else
+      HOMEobsproc_dump=${NWROOTp2:-/nwprod2}/obsproc_dump.${obsproc_dump_ver}
+    fi
   fi
   DUEX=$HOMEobsproc_dump/exec
 fi
@@ -932,8 +1005,13 @@ HOMEobsproc_shared_bufr_dumplist, DFIX, or LIST must be defined."
         [ $LOUD = on ] && set -x
         exit 99
       fi
+      if [ "$sys_tp" = 'Cray-XC40' -o "$SITE" = SURGE -o "$SITE" = LUNA ]; then
+        dumplistroot=${NWROOThps:-/gpfs/hps/nco/ops/nwprod}/obsproc_shared
+      else
+        dumplistroot=${NWROOTp2:-/nwprod2}/obsproc_shared
+      fi
       HOMEobsproc_shared_bufr_dumplist=\
-/nwprod/obsproc_shared/bufr_dumplist.${obsproc_shared_bufr_dumplist_ver}
+$dumplistroot/bufr_dumplist.${obsproc_shared_bufr_dumplist_ver}
     fi
     DFIX=$HOMEobsproc_shared_bufr_dumplist/fix
   fi
@@ -947,13 +1025,10 @@ echo
 [ $LOUD = on ] && set -x
 
 [ -z "$LALO" ]   && LALO=0
-[ -z "$DCOMROOT" ] && DCOMROOT=/dcom
-[ -z "$TANK" ]   && TANK=${DCOMROOT}/us007003
-[ -z "$EPRM" ]   && EPRM=${DCOMROOT}/us007003/sdmedit
-[ -z "$QPRM" ]   && QPRM=${DCOMROOT}/us007003/quips
-###################[ -z "$MPMD" ]   && MPMD=< this script is not available >
-           # [ currently, POE=on is not supported -- untested on WCOSS and
-           #   MDMP is not defined]
+[ -z "$DCOMROOT" ] && DCOMROOT=$(module load prod_envir; echo $DCOMROOT)
+[ -z "$TANK" ]   && TANK=${DCOMROOT:?}/us007003
+[ -z "$EPRM" ]   && EPRM=${DCOMROOT:?}/us007003/sdmedit
+[ -z "$QPRM" ]   && QPRM=${DCOMROOT:?}/us007003/quips
 
 if [ -n "$DATA_DUMPJB" ]; then
   data_dumpjb_imported=YES
@@ -968,19 +1043,27 @@ else # put DATA_DUMPJB under $TMPDIR
 #  because it is never known what the user has set DATA to and this could
 #  quickly fill up a file system if it is not a temp system that is
 #  regularly cleaned out.
-   if [ -z "$TMPDIR" ]; then
+   if [ -z "${TMPDIR:=$DTMPDIR}" ]; then
+     # The above sets an unset TMPDIR to $DTMPDIR if available.
+     # If neither set, pick a location based on system/phase and $USER
+     case "$sys_tp" in
+       Cray-XC40) TMPDIR=/gpfs/hps/stmp/$USER;;
+          IBM-p1) TMPDIR=/stmpd1/$USER;;
+          IBM-p2) TMPDIR=/stmpd3/$USER;;
+        *) 
       set +x
-      echo
       echo "*******************************************************************"
       echo "***********************   DUMPJB FAILED!!   ***********************"
       echo "                                                                   "
-      echo "Please do one of the following:                                    " 
-      echo "     -- export DATA_DUMPJB to point to a specific directory for    " 
-      echo "        dumpjb to write its working files to, or;                  "
-      echo "     -- export TMPDIR which should point to your own scrub space   "
-      echo "        and a unique subdirectory will be created below.           "
+      echo "Could not recognize system and phase for suitable TMPDIR setting.  "
       echo "                                                                   "
-      echo "If you set both, DATA_DUMPJB takes precedence and that directory   "
+      echo "Please do one of the following:                                    "
+      echo "    -- export DATA_DUMPJB to point to a specific directory for     "
+      echo "       dumpjb to write its working files to, or;                   "
+      echo "    -- export TMPDIR (or DTMPDIR) which should point to your own   "
+      echo "       scrub space and a unique subdirectory will be created below."
+      echo "                                                                   "
+      echo "If you do both, DATA_DUMPJB takes precedence and that directory    "
       echo "will remain after dumpjb is done.                                  "
       echo "                                                                   "
       echo "WARNING: This script removes all files in the DATA_DUMPJB directory"
@@ -992,14 +1075,17 @@ else # put DATA_DUMPJB under $TMPDIR
       echo "*******************************************************************"
       echo 
       [ $LOUD = on ] && set -x
-      exit 99
+      exit 99;;
+     esac
+     set +x; echo "We set TMPDIR to $TMPDIR for you based on sys_typ=$sys_tp "
+     [ $LOUD = on ] && set -x
    fi
 #  If TMPDIR is set to a common root location (an old convention), set it
 #  instead to a subdirectory beneath that with name $USER if defined.
 #  This will help to minimize the number of subdirectories directly under 
 #  the root scrub dir.
     case ${TMPDIR%\/} in     # a trailing slash is ignored
-      /stmp | /stmp?? | /ptmp | /ptmp?? )
+      /stmp | /stmp?? | /ptmp | /ptmp?? | /gpfs/???/[sp]tmp )
           [ -n "$USER" ] && TMPDIR=${TMPDIR%\/}/$USER;;
     esac
   fi
@@ -1028,25 +1114,65 @@ if [ $err -ne 0 ]; then
    exit 99
 fi
 [ -z "$FORM" ] && FORM=ibm
-[ -z "$BACK" ] && BACK=on
-[ -z "$POE" ]  && POE=off
-if [ "$POE" = 'on' -a "$BACK" = 'on' ]; then
+if [ "$sys_tp" = 'Cray-XC40' -o "$SITE" = SURGE -o "$SITE" = LUNA ]; then
+   if [ "$BACK" = 'on' ]; then
+      set +x
+      echo
+      echo "===> W A R N I N G : Option to use background threads is disabled on Cray-XC40."
+      echo "     BACK=on will be changed to BACK=off."
+      echo
+      [ $LOUD = on ] && set -x
+   fi
+   BACK=off
+else  # for now, keep the default for IBM as it was
+   [ -z "$BACK" ] && BACK=on
+fi
+[ -z "$MPMD" ]  && MPMD=off
+if [ "$MPMD" = 'on' -a "$BACK" = 'on' ]; then
    set +x
    echo
-   echo "YOU have set both POE and BACK to on - choose one or the other!!"
-   echo "Recommend exporting BACK=on and POE=off to run this script faster"
+   echo "We have both MPMD and BACK set to on - choose one or the other."
+   echo "MPMD option currently only works on luna and surge."
+   echo "BACK option currently only works on tide and gyre."
    echo
    [ $LOUD = on ] && set -x
    exit 99
 fi
-if [ "$POE" = 'on' ]; then
-   set +x
-   echo
-   echo "YOU have set POE to on - this option is not currently supported!"
-   echo "Recommend exporting BACK=on and POE=off to run this script."
-   echo
-   [ $LOUD = on ] && set -x
-   exit 99
+if [ "$MPMD" = 'on' ]; then
+   if [ "$sys_tp" = 'Cray-XC40' -o "$SITE" = SURGE -o "$SITE" = LUNA ]; then
+      #  Get compute node count:  Subtract one from the total number of unique
+      #  hosts to account for the MAMU node that runs serial portion of job
+      typeset -i nodesall=$(echo -e "${LSB_HOSTS// /\\n}"|sort -u|wc -w)
+      typeset -i ncnodes=$(($nodesall-1)) # we want compute nodes only
+      if [ $ncnodes -lt 1 ]; then
+         set +x
+         echo
+         echo " ** Could not get positive compute node count for aprun!      **"
+         echo " ** Was job submitted to LSF queue with compute node access?  **"
+         echo
+         echo "ABNORMAL EXIT!!!!!!!!!!!"
+         echo
+         [ $LOUD = on ] && set -x
+         exit 99
+      fi
+      if [ -n "$ALPS_APP_ID" ]; then
+         set +x
+         echo
+         echo "** You requested MPMD=on but we are already runnng under ALPS **"
+         echo "**   Sorry... We must change to MPMD=off                      **"
+         echo
+         [ $LOUD = on ] && set -x
+         MPMD=off
+      fi
+   else
+      set +x
+      echo
+      echo "You have set MPMD to on - "
+      echo "  This option is currently only supported on Luna and Surge"
+      echo
+      [ $LOUD = on ] && set -x
+      exit 99
+   fi
 fi
 
 [ -z "$DUPC" ] && DUPC=on
@@ -1101,16 +1227,13 @@ LIST = $LIST
 TANK = $TANK
 EPRM = $EPRM
 QPRM = $QPRM
-###################MPMD = $MPMD
-           # [ currently, POE=on is not supported -- untested on WCOSS and
-           #   MDMP is not defined]
 DATA = $DATA
 TMPDIR = $TMPDIR
 DATA_DUMPJB = $DATA_DUMPJB
 FORM = $FORM
 LOUD = $LOUD
 BACK = $BACK
-POE  = $POE
+MPMD = $MPMD
 DUPC = $DUPC
 TIME_TRIM = $TIME_TRIM
 LALO = $LALO
@@ -1275,12 +1398,12 @@ eval DTIM_latest=\$DTIM_latest_${NAME}
 [ -n "$DTIM_latest" ]  &&  DTIM_latest_this_DGRP=yes
 
  
-#----------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 #                     loop over each subtype in NAMES
-#           (this loop will have parallel iterations if BACK=on
-#                                -- or --
-#  this loop will generate threads which will run later under poe if POE=on)
-#----------------------------------------------------------------------------
+#  If BACK=on, this loop will submit threads to background and continue.
+#  If MPMD=on, threads will be collected in a command file for mpmd processing.
+#  Otherwise, loop will process each subtype serially.
+#------------------------------------------------------------------------------
  
 typeset -Z2 pos
 pos=00
@@ -1589,11 +1712,12 @@ NODE=`expr $NODE + 1`
 #VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
 #VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
 
-#  run dump iterations: in parallel  shells  if POE is on
+#  run dump iterations: in parallel  shells  if MPMD is on
 #                       in background shells if BACK is on
 #  -------------------------------------------------------
  
 cat<<EOFthread>$thread
+#!/bin/ksh
 set -e
 [ $LOUD = on ] && set -x
  
@@ -1601,9 +1725,9 @@ cd $DIRD
 
 { echo
 echo "********************************************************************"
-if [ "$POE" = 'on' ]; then
-   echo "Script poe.$thread $NODE"
-   echo "This is task \`expr \$MP_CHILD + 1\`"
+if [ "$MPMD" = 'on' ]; then
+   echo "Script mpmd.$thread $NODE"
+   [ -n "$MP_CHILD" ] && echo "This is task \`expr \$MP_CHILD + 1\`"
    echo "A total of \`expr \$NODE + 1\` requested BUFR subtypes are available \
  for dumping"
 else
@@ -1613,7 +1737,7 @@ echo "Executing on node  \`hostname -s\`"
 echo "Starting time: \`date -u\`"
 echo "********************************************************************"
 echo
-[ "$POE" = 'on' -a "$LOUD" = 'on' ]  &&  env | grep MP_
+[ "$MPMD" = 'on' -a "$LOUD" = 'on' ]  &&  env | egrep "^MP_|^ALPS_"
 echo "--------------------------------------------------------------------"
 echo "DUMPING $mt.$st in data group $NAME for ${RDT1}-${RDT2}"
 if [ $DUPC = on ]; then
@@ -1639,8 +1763,9 @@ if [ \( $DUMPMD = on -o $DUMPMD = ON \) -o \( -s $FIL1 -a -s $FIL2 \) -o \
      $FORM = copy ]; then
    if [ $FORM = copy ]; then
       export DUMMY_MSGS=YES
+      DUMPJBprocdate=${DUMPJBprocdate:-$(date -u +%Y%m%d%H%M)}
       cat << eof_17 > fort.17
-`date -u +%Y%m%d%H%M`
+$DUMPJBprocdate
 eof_17
    fi
    cat<<eof|time $DMDX
@@ -1651,9 +1776,7 @@ $FIL2
 $DIRD/$FILO
 $RDT0
 eof
-      set +e
-   rm fort.17 2>/dev/null
-      set -e
+   rm -f fort.17
 echo "--------------------------------------------------------------------"
 else
    if [ -s $FIL1 ]; then
@@ -1728,8 +1851,8 @@ else
    cp \$input_file $DEST/$FILO
 fi
 echo "********************************************************************"
-if [ "$POE" = 'on' ]; then
-   echo "Script poe.$thread $NODE"
+if [ "$MPMD" = 'on' ]; then
+   echo "Script mpmd.$thread $NODE"
 else
    echo "Script $thread"
 fi
@@ -1746,18 +1869,17 @@ chmod +x $thread
 #AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
  
 
-if [ $POE = on ]; then
-   echo " ===> POE is set to ON"
-   echo "      Recommend exporting BACK=on & POE=off to run this script faster"
-   cat  $thread > $DATA_DUMPJB/poe.$thread
-   echo "$DATA_DUMPJB/poe.$thread $NODE" >> $DATA_DUMPJB/poe.cmd
-   chmod 755 $DATA_DUMPJB/poe.$thread
+if [ $MPMD = on ]; then
+   echo " ===> MPMD is set to ON"
+   cat  $thread > $DATA_DUMPJB/mpmd.$thread
+   echo "$DATA_DUMPJB/mpmd.$thread $NODE" >> $DATA_DUMPJB/mpmd.cmd
+   chmod 755 $DATA_DUMPJB/mpmd.$thread
 elif [ $BACK  = on ]; then
    echo " ===> Background Processing is set to ON"
    $thread &
 elif [ $BACK  != on ]; then
-   echo " ===> W A R N I N G :  POE and BACK are both OFF"
-   echo "      Recommend exporting BACK=on to run this script faster"
+   echo " ===> W A R N I N G :  MPMD and BACK are both OFF"
+   echo "      Will process each subtype serially"
    $thread 
 fi
 
@@ -1777,38 +1899,66 @@ if [ $BACK = on ]; then
 
    wait
 
-elif [ $POE = on ]; then
+elif [ $MPMD = on ]; then
 
-#  end of data group loops - invoke poe
-#  ------------------------------------
+#  end of data group loops - invoke mpmd processing
+#  ------------------------------------------------
 
 echo
 echo "--------------------------------------------------------------------"
-echo "Invoking Poe: `date -u`"
+echo "Invoking poe or poe-like mpmd processing: `date -u`"
 echo
-if [ -s $DATA_DUMPJB/poe.cmd ]; then
-   POE_OPTS="-ilevel 2 -labelio no -stdoutmode ordered"
-# Effective with transition to frost/snow, DO NOT execute a time command
-#  with poe command!!!
-#########TIMEIT=/usr/bin/timex
-#VVVVVVVVVVVVVVV
-##########   $MPMD $DATA_DUMPJB/poe.cmd 2>&1
-#             [ currently, POE=on is not supported -- untested on WCOSS and
-#               MDMP is not defined]
-
-#########/usr/bin/poe -pgmmodel mpmd -cmdfile $DATA_DUMPJB/poe.cmd \
-######### -ilevel 2 -labelio no -stdoutmode ordered 2>&1
-#AAAAAAAAAAAAAAA
-#########   errmpmd=$?
-   errmpmd=99
+if [ -s $DATA_DUMPJB/mpmd.cmd ]; then
+   if [ "$sys_tp" = 'Cray-XC40' -o "$SITE" = SURGE -o "$SITE" = LUNA ]; then
+      ntasks=$(wc -l $DATA_DUMPJB/mpmd.cmd | awk '{print $1}')
+      if [ $ntasks -gt 1 ]; then
+         which cfp
+         which_cfp_err=$?
+         if [ $which_cfp_err -ne 0 ]; then
+            set +x
+            echo -e "\n ** cfp command not found.  aprun will instead launch   **"
+            echo -e   " ** up to 24 background tasks on one node.  original    **"
+            echo -e   " ** threads will be grouped into 24 chunks if necessary **\n"
+            [ $LOUD = on ] && set -x
+            if [ $ntasks -gt 24 ]; then  # we need to combine
+               rm -f $DATA_DUMPJB/tmpCHUNK*
+               cp -p $DATA_DUMPJB/mpmd.cmd $DATA_DUMPJB/mpmd.cmd.orig
+               split --number l/24 -e $DATA_DUMPJB/mpmd.cmd $DATA_DUMPJB/tmpCHUNK
+               chmod +x $DATA_DUMPJB/tmpCHUNK*
+               ls -1 $DATA_DUMPJB/tmpCHUNK* > $DATA_DUMPJB/mpmd.cmd
+            fi
+            # append bg control operator (&) to end of each line
+            sed -i.no_bg 's/$/ \&/' $DATA_DUMPJB/mpmd.cmd
+            echo "wait" >> $DATA_DUMPJB/mpmd.cmd
+            aprun -n1 -N1 -d24 ksh $DATA_DUMPJB/mpmd.cmd
+         else
+            ## Determine tasks per node (DUMPJBtpn) and
+            ##    max number of concurrent procs (DUMPJBprocs) for cfp
+            # timing tests indicated cfp is sometimes faster with a free pe so
+            # the calculation below intentionally results in 1 extra pe per node
+            set -u
+            DUMPJBtpn=${DUMPJBtpn:-$((($ntasks+$ncnodes)/$ncnodes))}
+            [ $DUMPJBtpn -gt 24 ] && DUMPJBtpn=24      # now limit it to 24
+            DUMPJBprocs=${DUMPJBprocs:-$(($ncnodes*$DUMPJBtpn))}  # max concurrent processes
+            aprun -n${DUMPJBprocs} -N${DUMPJBtpn} -d1 cfp $DATA_DUMPJB/mpmd.cmd
+            set +u
+         fi
+      else
+         aprun -n1 -N1 ksh $DATA_DUMPJB/mpmd.cmd
+      fi
+      errmpmd=$?
+   else
+      echo "MPMD=on is not currently supported on WCOSS IBM iDataPlex"
+      errmpmd=99
+   fi
    [ $errmpmd -ne 0 ]  &&  exit 99
 else
    echo
-   echo "==> There are no tasks in POE Command File - POE not run"
+   echo "==> There are no tasks in MPMD Command File - MPMD not run"
    echo
 fi
 echo
-echo "Ending Poe  : `date -u`"
+echo "Ending mpmd processing  : `date -u`"
 echo "--------------------------------------------------------------------"
 echo
 echo
@@ -2111,12 +2261,12 @@ else
    cd $DEST
    ls > $DATA_DUMPJB/stdin_COMX
    DUMMY_MSGS=YES
+   DUMPJBprocdate=${DUMPJBprocdate:-$(date -u +%Y%m%d%H%M)}
    cat << eof_17 > fort.17
 $RDT0
-`date -u +%Y%m%d%H%M`
+$DUMPJBprocdate
 eof_17
    time $COMX < $DATA_DUMPJB/stdin_COMX
-#####   cp fort.50 $DATA/$NAME.$FORM
    mv fort.50 $DATA/$NAME.$FORM
    errcp=$?
    rm fort.50 fort.10 fort.15 fort.17 2> /dev/null

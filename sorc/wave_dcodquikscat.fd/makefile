@@ -48,7 +48,7 @@ LIBS = $(W3NCO_LIB4) $(W3EMC_LIB4) $(BUFR_LIB4) $(BACIO_LIB4)
 CMD = wave_dcodquikscat
 
 #DEBUG =                -g -traceback
-#DEBUG2 =        -ftrapuv  -check all  -fp-stack-check  -fstack-protector
+#DEBUG2 = -ftrapuv -check all -check nooutput_conversion -fp-stack-check -fstack-protector
 FFLAGS = -O2 -convert big_endian $(DEBUG) $(DEBUG2)
 
 

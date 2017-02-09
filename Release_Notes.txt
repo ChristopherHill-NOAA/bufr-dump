@@ -1,4 +1,168 @@
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+obsproc_dump release 4.0.0 --> released Feb 09, 2017
+                           --> implemented ??? ??, 2017
+
+files:
+   obsproc_dump/fix/bufr_bufrtab.sptrmm
+   obsproc_dump/fix/bufr_bufrtab.windsat
+   obsproc_dump/fix/nam_expdomain_guam_halfdeg_imask.gbl
+   obsproc_dump/fix/nam_expdomain_halfdeg_imask.gbl
+   obsproc_dump/fix/wave_bufrtab.ascat
+   obsproc_dump/fix/wave_bufrtab.erscat
+   obsproc_dump/fix/wave_bufrtab.quikscat
+   obsproc_dump/fix/wave_landchxh
+   obsproc_dump/sorc/bufr_chkbfr.fd/chkbfr.f
+   obsproc_dump/sorc/bufr_chkbfr.fd/makefile
+   obsproc_dump/sorc/bufr_combfr.fd/combfr.f
+   obsproc_dump/sorc/bufr_combfr.fd/makefile
+   obsproc_dump/sorc/bufr_dcodwindsat.fd/dcodwindsat.f
+   obsproc_dump/sorc/bufr_dcodwindsat.fd/makefile
+   obsproc_dump/sorc/bufr_dumpmd.fd/dumpmd.f
+   obsproc_dump/sorc/bufr_dumpmd.fd/makefile
+   obsproc_dump/sorc/bufr_dupair.fd/dupair.f
+   obsproc_dump/sorc/bufr_dupair.fd/makefile
+   obsproc_dump/sorc/bufr_dupcor.fd/dupcor.f
+   obsproc_dump/sorc/bufr_dupcor.fd/makefile
+   obsproc_dump/sorc/bufr_dupmar.fd/dupmar.f
+   obsproc_dump/sorc/bufr_dupmar.fd/makefile
+   obsproc_dump/sorc/bufr_dupmrg.fd/dupmrg.f
+   obsproc_dump/sorc/bufr_dupmrg.fd/makefile
+   obsproc_dump/sorc/bufr_duprad.fd/duprad.f
+   obsproc_dump/sorc/bufr_duprad.fd/makefile
+   obsproc_dump/sorc/bufr_dupsat.fd/dupsat.f
+   obsproc_dump/sorc/bufr_dupsat.fd/makefile
+   obsproc_dump/sorc/bufr_dupshp.fd/dupshp.f
+   obsproc_dump/sorc/bufr_dupshp.fd/makefile
+   obsproc_dump/sorc/bufr_dupsst.fd/dupsst.f
+   obsproc_dump/sorc/bufr_dupsst.fd/makefile
+   obsproc_dump/sorc/bufr_edtbfr.fd/edtbfr.f
+   obsproc_dump/sorc/bufr_edtbfr.fd/makefile
+   obsproc_dump/sorc/bufr_geofil.fd/geofil.f
+   obsproc_dump/sorc/bufr_geofil.fd/makefile
+   obsproc_dump/sorc/bufr_quipc.fd/makefile
+   obsproc_dump/sorc/bufr_quipc.fd/quipc.f
+   obsproc_dump/sorc/bufr_raddate.fd/makefile
+   obsproc_dump/sorc/bufr_raddate.fd/raddate.f
+   obsproc_dump/sorc/bufr_supertmi.fd/makefile
+   obsproc_dump/sorc/bufr_supertmi.fd/supertmi.f
+   obsproc_dump/sorc/prepobs_prepssmi.fd/makefile
+   obsproc_dump/sorc/prepobs_prepssmi.fd/prepssmi.f
+ M obsproc_dump/sorc/wave_dcodquikscat.fd/dcodquikscat.f
+ M obsproc_dump/sorc/wave_dcodquikscat.fd/makefile
+ M obsproc_dump/sorc/build.sh
+   obsproc_dump/sorc/clean.sh
+   obsproc_dump/sorc/install.sh
+ M obsproc_dump/sorc/load_libs.rc
+ M obsproc_dump/sorc/README.build
+ M obsproc_dump/sorc/setlibs.rc
+   obsproc_dump/ush/bufr_dump_obs.sh
+   obsproc_dump/ush/check_tanks.sh
+ M obsproc_dump/ush/dumpjb
+
+( M - modified)
+
+
+ USH script changes:
+   dumpjb:
+      - Updated to run on Cray-XC40 as well as IBM iDataPlex.
+      - BACK=on (used to run multiple threads concurrently in the background on
+        the current node) is disabled for Cray-XC40 runs.
+      - Variable "MPMD" no longer points to an mpmd utility script.  Instead it
+        is used in place of old variable "POE" to toggle mpmd processing.
+      - MPMD=on is allowed for Cray-XC40 runs, but will be changed to MPMD=off
+        if dumpjb was called by a process already running under ALPS (in which
+        case multiple dump "threads" will run serially).
+      - The MPMD=on option on Cray-XC40 will only work for LSF jobs that allocate
+        one or more compute nodes.
+      - MPMD=on is currently not allowd on IBM iDataPlex (tide/gyre).
+      - If there are multiple dump threads and MPMD=on for Cray-XC40 runs, the
+        command file processor utility (cfp) will be launched by aprun if cfp is
+        in the command path.  If cfp command cannot be found, aprun will launch
+        up to 24 processes in "background" mode on a single compute node.  If
+        there are more then 24 dump threads in this latter case, some will be 
+        combined to make 24 processess.
+      - TMPDIR is no longer required for developer runs if DATA_DUMPJB is not
+        imported.  Instead, a suitable setting for TMPDIR will be assigned based
+        on the system type and phase (eg, on IBM-p2 TMPDIR will default to 
+        /stmpd3/$USER if needed).  The developer also has the option to pass in
+        variable DTMPDIR (instead of TMPDIR) to override the default location.
+        (These changes were made to work around an issue some developers have
+        encountered running LSF jobs on luna and surge if they have TMPDIR set).
+      - Module prod_envir is used to set DCOMROOT if not imported.
+      - New variable DUMPJBprocdate can be set to an artificial time stamp to be
+        stored as the "processing time" in the second dummy message of output
+        dump files.  (Intended for use during upgrade validation only!)
+
+ Source code changes:
+   build.sh in sorc directory:
+    - Updated to build codes on Cray-XC40 or IBM iDataPlex.
+    - For Cray-XC40 builds, FC=ftn is passed to the make command to override the
+      the default setting in the makefiles.
+   load_libs.rc sorc directory:
+    - Updated to load library modules on Cray-XC40 or IBM iDataPlex.
+   setlibs.rc in sorc directory:
+    - Modified to handle library pathnames used on Cray-XC40 or IBM iDataPlex.
+   README.build in sorc directory:
+    - Listed load_libs.rc as the primary resource file for defining library 
+      envirornment variables.  Also removed instructions for compiling without
+      the build.sh script because it is no longer easy to build without it.
+   wave_dcodquikscat:
+    - Minor bug fix to preserve valid obs located just west of 180E.  
+    - Use 10E8_8 to represent missing bufr values to reduce risk of integer 
+      overflows on WCOSS.
+    - Makefile now excludes output_conversion from the DEBUG2 run time checks.
+
+
+ Output changes:
+ ---------------
+  (For specific network changes see " Output changes" in Release Notes for that
+   network, if that network executes this version of obsproc_prep.)
+
+
+ Libraries:
+ ----------
+   w3nco   2.0.6 (all)
+   w3emc   2.2.0 (bufr_dcodwindsat, bufr_dupair, bufr_dupcor, bufr_dupmar,
+                  bufr_dupmrg, bufr_duprad, bufr_dupsat, bufr_dupshp,
+                  bufr_dupsst, bufr_supertmi, prepobs_prepssmi,
+                  wave_dcodquikscat)
+   bufr   11.1.0 (all)
+   bacio   2.0.1 (bufr_supertmi, prepobs_prepssmi, wave_dcodquikscat)
+   sp      2.0.2 (prepobs_prepssmi)
+
+
+ Build Instructions:
+ -------------------
+   - See sorc/README.build.  
+   - The build and install steps are the same whether on the IBM or Cray.
+
+
+ Preimplementation Testing Requirements:
+ ---------------------------------------
+   There are no jobs in obsproc_dump.  All jobs executing this version of
+   obsproc_dump should be tested.
+
+
+ Dissemination:
+ --------------
+   See information about dissemination in the latest release notes for
+   obsproc_<NETWORK> packages which execute this version of obsproc_dump.
+
+
+ Special Instructions:
+ ---------------------
+   - This is all of OBSPROC.v8.0.0.
+   - Please build and install on the Cray-XC40 and IBM iDataPlex Phase 2.
+   - Please create new cray directory:
+       /gpfs/hps/nco/ops/nwprod/obsproc_shared
+     and copy ibm directory:
+       /nwprod2/obsproc_shared/bufr_dumplist.v1.3.0
+     (or a later version if available) to the above cray directory.
+     
+   Since there are no jobs in obsproc_dump, an obsproc_dump.ver file is not
+   needed.
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 obsproc_dump release 3.3.0 --> released Jan 12, 2017
                            --> implemented ??? ??, 2017
 
@@ -334,7 +498,6 @@ files:
                   wave_dcodquikscat)
    bufr   11.1.0 (all) (previously 10.2.5)
    bacio   2.0.1 (bufr_supertmi, prepobs_prepssmi, wave_dcodquikscat)
-                  snow_sno96grb)
    sp      2.0.2 (prepobs_prepssmi)
 
    * all libs are WCOSS phase2 disk (/nwprod2/*) versions
@@ -483,7 +646,6 @@ files:
                   wave_dcodquikscat)
    bufr   10.2.5 (all)
    bacio   2.0.1 (bufr_supertmi, prepobs_prepssmi, wave_dcodquikscat)
-                  snow_sno96grb)
    sp      2.0.2 (prepobs_prepssmi)
 
 
