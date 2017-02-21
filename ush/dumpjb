@@ -5,7 +5,7 @@
 #
 # Script name:   dumpjb      Dump script to get data from BUFR tanks
 #
-# RFC contact:  Stokes      Org: NP2         Date: 2017-02-06
+# RFC contact:  Stokes      Org: NP2         Date: 2017-02-20
 #
 # Abstract: The dumpjb script is an all-purpose dump utility for time
 #   windowing, geographical filtering, eliminating duplicates, and applying
@@ -300,7 +300,7 @@
 #     non-versioned, horizontal structure utility directory path.
 # 2016-08-15  D. Keyser  Added mesonet reports (in BUFR type 255) to types
 #     which will be processed by BUFR_EDTBFR.
-# 2017-02-06  D. Stokes  Updated to run on Cray-XC40 as well as IBM iDataPlex.
+# 2017-02-20  D. Stokes  Updated to run on Cray-XC40 as well as IBM iDataPlex.
 #     - Determines current system (and phase if necessary) based on environment
 #       variable SITE and/or NCO utility getsystem.pl.
 #     - TMPDIR is no longer a required imported variable for a developer run if
@@ -319,6 +319,10 @@
 #     - New variable DUMPJBprocdate can be set to an artificial time stamp to be
 #       stored as the "processing time" in the second dummy message of output
 #       dump files.  (Intended for use when validating of upgrades only!)
+#     - Modified dump thread script template to preserve intended DUPE2 settings
+#       when more than one message type is requested in a single dumpjb call.
+#     - Unset DUMMY_MSGS after COMX completes for current data group so that it
+#       is not defined prematurely when processing a subsequent data group.
 #
 #
 # Usage: dumpjb  yyyymmddhh<.hh> hh<.hh> dgrp1 dgrp2 dgrp3 ... dgrpN
@@ -916,7 +920,7 @@ echo
 echo "********************************************************************"
 echo "********************************************************************"
 echo "     STARTING EXECUTION OF THE UNIVERSAL DUMP SCRIPT - DUMPJB       "
-echo "                            08-15-2016                              "
+echo "                            02-20-2017                              "
 echo "             Start time: `date -u`                                  "
 echo "********************************************************************"
 echo "********************************************************************"
@@ -1727,9 +1731,9 @@ cd $DIRD
 echo "********************************************************************"
 if [ "$MPMD" = 'on' ]; then
    echo "Script mpmd.$thread $NODE"
-   [ -n "$MP_CHILD" ] && echo "This is task \`expr \$MP_CHILD + 1\`"
-   echo "A total of \`expr \$NODE + 1\` requested BUFR subtypes are available \
- for dumping"
+   [ -n "\$MP_CHILD" ] && echo "Running on mpi task \$MP_CHILD"
+   echo "Processing number $(($NODE+1)) out of \$((\$NODE+1)) requested BUFR\
+ subtypes available for dumping"
 else
    echo "Script $thread"
 fi
@@ -1820,9 +1824,9 @@ $DEST/$FILO
 eof
    ATG=\$?
    [ $LOUD = on ]  &&  echo "FINISHED `basename $DUPE1`, R.C. = \$ATG"
+   DUPE2_prev=$DUPE2
    if [ $DUPE1 = $MARX -a -s $DIRD/$FILO.fort.60 ]; then
-      DUPE2_prev=\$DUPE2
-      DUPE2=\$CORX
+      DUPE2=$CORX
       if [ \$DUPE2_prev = NONE ]; then
         echo 
      echo "--------------------------------------------------------------------"
@@ -1832,6 +1836,8 @@ eof
      echo "--------------------------------------------------------------------"
         echo 
       fi
+   else
+      DUPE2=\$DUPE2_prev
    fi
    echo "--------------------------------------------------------------------"
    if [ \$DUPE2 != NONE ]; then
@@ -1844,7 +1850,7 @@ $DEST/$FILO
 \$line3
 eof
       ATG=\$?
-      [ $LOUD = on ]  &&  echo "FINISHED `basename $DUPE2`, R.C. = \$ATG"
+      [ $LOUD = on ]  &&  echo "FINISHED `basename \$DUPE2`, R.C. = \$ATG"
    echo "--------------------------------------------------------------------"
    fi
 else
@@ -2270,6 +2276,7 @@ eof_17
    mv fort.50 $DATA/$NAME.$FORM
    errcp=$?
    rm fort.50 fort.10 fort.15 fort.17 2> /dev/null
+   unset DUMMY_MSGS
    echo "--------------------------------------------------------------------"
    echo
 fi
