@@ -1937,6 +1937,7 @@ if [ -s $DATA_DUMPJB/mpmd.cmd ]; then
             sed -i.no_bg 's/$/ \&/' $DATA_DUMPJB/mpmd.cmd
             echo "wait" >> $DATA_DUMPJB/mpmd.cmd
             aprun -n1 -N1 -d24 ksh $DATA_DUMPJB/mpmd.cmd
+            errmpmd=$?
          else
             ## Determine tasks per node (DUMPJBtpn) and
             ##    max number of concurrent procs (DUMPJBprocs) for cfp
@@ -1947,12 +1948,13 @@ if [ -s $DATA_DUMPJB/mpmd.cmd ]; then
             [ $DUMPJBtpn -gt 24 ] && DUMPJBtpn=24      # now limit it to 24
             DUMPJBprocs=${DUMPJBprocs:-$(($ncnodes*$DUMPJBtpn))}  # max concurrent processes
             aprun -n${DUMPJBprocs} -N${DUMPJBtpn} -d1 cfp $DATA_DUMPJB/mpmd.cmd
+            errmpmd=$?
             set +u
          fi
       else
          aprun -n1 -N1 ksh $DATA_DUMPJB/mpmd.cmd
+         errmpmd=$?
       fi
-      errmpmd=$?
    else
       echo "MPMD=on is not currently supported on WCOSS IBM iDataPlex"
       errmpmd=99

@@ -1,5 +1,6 @@
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-obsproc_dump release 4.0.0 --> released Feb 09, 2017, updated Feb 20, 2017
+obsproc_dump release 4.0.0 --> released Feb 09, 2017, updated Feb 20, 2017,
+                                updated Feb 22, 2017
                            --> implemented ??? ??, 2017
 
 files:
@@ -11,6 +12,7 @@ files:
    obsproc_dump/fix/wave_bufrtab.erscat
    obsproc_dump/fix/wave_bufrtab.quikscat
    obsproc_dump/fix/wave_landchxh
+ A obsproc_dump/modulefiles/dumpjb/4.0.0
    obsproc_dump/sorc/bufr_chkbfr.fd/chkbfr.f
    obsproc_dump/sorc/bufr_chkbfr.fd/makefile
    obsproc_dump/sorc/bufr_combfr.fd/combfr.f
@@ -117,11 +119,15 @@ files:
       overflows on WCOSS.
     - Makefile now excludes output_conversion from the DEBUG2 run time checks.
 
+ Module changes:
+   4.0.0 in new directory modulefiles/dumpjb:
+    - New. Can be loaded to set environment variables for dumpjb.
+
 
  Output changes:
  ---------------
   (For specific network changes see " Output changes" in Release Notes for that
-   network, if that network executes this version of obsproc_prep.)
+   network, if that network executes this version of obsproc_dump.)
 
 
  Libraries:
@@ -163,6 +169,10 @@ files:
      and copy ibm directory:
        /nwprod2/obsproc_shared/bufr_dumplist.v1.3.0
      (or a later version if available) to the above cray directory.
+   - Please copy modulefiles/dumpjb/4.0.0 from this release to:
+       /gpfs/hps/nco/ops/nwprod/modulefiles/dumpjb/4.0.0 
+     and:
+       /nwprod2/modulefiles/dumpjb/4.0.0 
      
    Since there are no jobs in obsproc_dump, an obsproc_dump.ver file is not
    needed.
@@ -171,7 +181,6 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 obsproc_dump release 3.3.0 --> released Jan 12, 2017
                            --> implemented ??? ??, 2017
 
-files:
 Files added, modified or deleted since last release:
  M obsproc_dump/sorc/bufr_dupair.fd/dupair.f
  M obsproc_dump/sorc/bufr_dupcor.fd/dupcor.f
@@ -447,7 +456,7 @@ Files added, modified or deleted since last release:
  Output changes:
  ---------------
   (For specific network changes see " Output changes" in Release Notes for that
-   network, if that network executes this version of obsproc_prep.)
+   network, if that network executes this version of obsproc_dump.)
 
 
  Libraries:
