@@ -416,7 +416,7 @@
 #     {NOTE1: A particular BUFR type/subtype in the resultant list to be dumped
 #             can be skipped over via variable "SKIP_<TTTSSS>" (see below)}
 #     {NOTE2: One or more BUFR types/subtypes not in the resultant list to be
-#             dumped can be added via variable "ADD_<DGRP<" (see below)}
+#             dumped can be added via variable "ADD_<DGRP>" (see below)}
 #
 #-----------------------------------------------------------------------
 #
@@ -675,8 +675,8 @@
 #
 #               Here, BUFR message type 002, subtype 195 (which currently is
 #               not defined in $LIST but might be defined for a test BUFR tank)
-#               will be included in the "005" dump along with all of the
-#               subtypes defined for type 005 in $LIST.  (Since all operational
+#               will be included in the "002" dump along with all of the
+#               subtypes defined for type 002 in $LIST.  (Since all operational
 #               subtypes are defined in $LIST, this would only be plausible
 #               when pointing to a test BUFR tank.)
 #
