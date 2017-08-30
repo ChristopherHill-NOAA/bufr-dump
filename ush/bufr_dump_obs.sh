@@ -243,8 +243,7 @@
 #                   points to proper data card file for programs executed here
 #                   and to echo in dump status file
 #                   NOTE: NET is changed to gdas in the parent Job script for
-#                         the gdas1 RUN (was gfs - NET remains gfs for gfs
-#                         RUN)
+#                         the gdas RUN (was gfs - NET remains gfs for gfs RUN)
 #     COMSP       - string indicating the final directory/filename path to
 #                   output data destination
 #                   (e.g., "$COMROOT/nam/prod/ndas.20160428/ndas.t12z.")
@@ -420,7 +419,7 @@
 #                   Default is "GOODBERLET"
 #     PMIX        - string indicating executable path for prepobs_prepssmi
 #                   program
-#                   Default is "$EXECPREP/prepobs_prepssmi
+#                   Default is "$EXECPREP/prepobs_prepssmi"
 #     PMIC        - string indicating data card path for prepobs_prepssmi
 #                   program
 #                   Default is "$PARMPREP/prepobs_prepssmi.${NET}.parm"

@@ -1,7 +1,6 @@
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-obsproc_dump release 4.0.0 --> released Feb 09, 2017, updated Feb 20, 2017,
-                                updated Feb 22, 2017
-                           --> implemented ??? ??, 2017
+obsproc_dump release X.Y.Z --> released ??? ??, ????
+                           --> implemented ??? ??, ????
 
 files:
    obsproc_dump/fix/bufr_bufrtab.sptrmm
@@ -12,7 +11,7 @@ files:
    obsproc_dump/fix/wave_bufrtab.erscat
    obsproc_dump/fix/wave_bufrtab.quikscat
    obsproc_dump/fix/wave_landchxh
- A obsproc_dump/modulefiles/dumpjb/4.0.0
+ M obsproc_dump/modulefiles/dumpjb/X.Y.Z  (was 4.0.0)       <--- Remember to change modulefile version for next release
    obsproc_dump/sorc/bufr_chkbfr.fd/chkbfr.f
    obsproc_dump/sorc/bufr_chkbfr.fd/makefile
    obsproc_dump/sorc/bufr_combfr.fd/combfr.f
@@ -49,16 +48,84 @@ files:
    obsproc_dump/sorc/bufr_supertmi.fd/supertmi.f
    obsproc_dump/sorc/prepobs_prepssmi.fd/makefile
    obsproc_dump/sorc/prepobs_prepssmi.fd/prepssmi.f
+   obsproc_dump/sorc/wave_dcodquikscat.fd/dcodquikscat.f
+   obsproc_dump/sorc/wave_dcodquikscat.fd/makefile
+   obsproc_dump/sorc/build.sh
+   obsproc_dump/sorc/clean.sh
+   obsproc_dump/sorc/install.sh
+   obsproc_dump/sorc/load_libs.rc
+   obsproc_dump/sorc/README.build
+   obsproc_dump/sorc/setlibs.rc
+ M obsproc_dump/ush/bufr_dump_obs.sh
+   obsproc_dump/ush/check_tanks.sh
+ M obsproc_dump/ush/dumpjb
+
+( A - added,  M - modified, D - deleted)
+
+
+ USH script changes:
+   dumpjb:
+    - MPMD=on enabled for runs on IBM, however it is still off by default.
+      The cfp module should be loaded in advance if MPMD=on.
+    - Modified TMPDIR patterns to recognize new Cray-XC40 filesystems
+      (/gpfs/hps2 and /gpfs/hps3 in addition to /gpfs/hps).
+    - The default TMPDIR location for developer runs on Cray-XC40 is now on the
+      /gpfs/hps3 filesystem rather than /gpfs/hps.
+   bufr_dump_obs.sh:
+    - Minor changes to docblock comments.
+
+ Module changes:
+   Updated to X.Y.Z                                     <- update X.Y.Z when version decided
+
+
+ Output changes:
+ ---------------
+  (For specific network changes see " Output changes" in Release Notes for that
+   network, if that network executes this version of obsproc_prep.)
+
+
+ Libraries:
+ ----------
+   w3nco   2.0.6 (all)
+   w3emc   2.2.0 (bufr_dcodwindsat, bufr_dupair, bufr_dupcor, bufr_dupmar,
+                  bufr_dupmrg, bufr_duprad, bufr_dupsat, bufr_dupshp,
+                  bufr_dupsst, bufr_supertmi, prepobs_prepssmi,
+                  wave_dcodquikscat)
+   bufr   11.1.0 (all)
+   bacio   2.0.1 (bufr_supertmi, prepobs_prepssmi, wave_dcodquikscat)
+   sp      2.0.2 (prepobs_prepssmi)
+
+
+ Build Instructions:
+ -------------------
+   - See sorc/README.build
+
+
+ Preimplementation Testing Requirements:
+ ---------------------------------------
+   There are no jobs in obsproc_dump.  All jobs executing this version of
+   obsproc_dump should be tested.
+
+
+ Dissemination:
+ --------------
+   See information about dissemination in the latest release notes for
+   obsproc_<NETWORK> packages which execute this version of obsproc_dump.
+
+      
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+obsproc_dump release 4.0.0 --> released Feb 09, 2017, updated Feb 20, 2017,
+                                updated Feb 22, 2017
+                           --> implemented May 22, 2017
+
+Files added, modified or deleted since last release:
+ A obsproc_dump/modulefiles/dumpjb/4.0.0
  M obsproc_dump/sorc/wave_dcodquikscat.fd/dcodquikscat.f
  M obsproc_dump/sorc/wave_dcodquikscat.fd/makefile
  M obsproc_dump/sorc/build.sh
-   obsproc_dump/sorc/clean.sh
-   obsproc_dump/sorc/install.sh
  M obsproc_dump/sorc/load_libs.rc
  M obsproc_dump/sorc/README.build
  M obsproc_dump/sorc/setlibs.rc
-   obsproc_dump/ush/bufr_dump_obs.sh
-   obsproc_dump/ush/check_tanks.sh
  M obsproc_dump/ush/dumpjb
 
 ( A - added,  M - modified, D - deleted)
@@ -179,7 +246,7 @@ files:
 
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 obsproc_dump release 3.3.0 --> released Jan 12, 2017
-                           --> implemented ??? ??, 2017
+                           --> implemented Feb 21, 2017
 
 Files added, modified or deleted since last release:
  M obsproc_dump/sorc/bufr_dupair.fd/dupair.f

@@ -5,7 +5,7 @@
 #
 # Script name:   dumpjb      Dump script to get data from BUFR tanks
 #
-# RFC contact:  Stokes      Org: NP2         Date: 2017-02-20
+# RFC contact:  Stokes      Org: NP2         Date: 2017-08-30
 #
 # Abstract: The dumpjb script is an all-purpose dump utility for time
 #   windowing, geographical filtering, eliminating duplicates, and applying
@@ -323,6 +323,11 @@
 #       when more than one message type is requested in a single dumpjb call.
 #     - Unset DUMMY_MSGS after COMX completes for current data group so that it
 #       is not defined prematurely when processing a subsequent data group.
+# 2017-08-30  D. Stokes  Enabled MPMD option for IBM iDataPlex (requires cfp).
+#       Also modified TMPDIR patterns to recognize new Cray-XC40 filesystems
+#       (/gpfs/hps2 and /gpfs/hps3 in addition to /gpfs/hps).  The default
+#       TMPDIR location for developer runs on Cray-XC40 is now on the /gpfs/hps3
+#       filesystem rather than /gpfs/hps.
 #
 #
 # Usage: dumpjb  yyyymmddhh<.hh> hh<.hh> dgrp1 dgrp2 dgrp3 ... dgrpN
@@ -759,7 +764,6 @@
 #             [ BACK=on is not supported on WCOSS Cray-XC40 ]
 #   MPMD   -  run in parallel under poe or similar mpmd processing to allow 
 #             threads to run across cores. (MUST run under LSF)    (default:off)
-#             [ currently, MPMD=on is supported on WCOSS Cray-XC40 only ]
 #     NOTE: Only one of BACK and MPMD can be switched on -- if both are
 #           switched on, the script will abort
 #   DUMPMD -  if imported as "on" will ALWAYS execute DUMPMD via $DMDX
@@ -896,6 +900,10 @@
 #                checked to ensure that this instance of dumpjb is not already
 #                running under ALPS.  (If it is set, then MPMD is changed to
 #                "off" and a warning message is printed to standard output).
+#  MP_CHILD    - If MPMD=on and NOT running on Cray-XC40, this variable is
+#                checked to ensure that this instance of dumpjb is not already
+#                running under IBM PE.  (If it is set, then MPMD is changed to
+#                "off" and a warning message is printed to standard output).
 #==============================================================================
 #==============================================================================
 #
@@ -920,7 +928,7 @@ echo
 echo "********************************************************************"
 echo "********************************************************************"
 echo "     STARTING EXECUTION OF THE UNIVERSAL DUMP SCRIPT - DUMPJB       "
-echo "                            02-20-2017                              "
+echo "                            08-30-2017                              "
 echo "             Start time: `date -u`                                  "
 echo "********************************************************************"
 echo "********************************************************************"
@@ -1051,7 +1059,7 @@ else # put DATA_DUMPJB under $TMPDIR
      # The above sets an unset TMPDIR to $DTMPDIR if available.
      # If neither set, pick a location based on system/phase and $USER
      case "$sys_tp" in
-       Cray-XC40) TMPDIR=/gpfs/hps/stmp/$USER;;
+       Cray-XC40) TMPDIR=/gpfs/hps3/stmp/$USER;;
           IBM-p1) TMPDIR=/stmpd1/$USER;;
           IBM-p2) TMPDIR=/stmpd3/$USER;;
         *) 
@@ -1089,7 +1097,7 @@ else # put DATA_DUMPJB under $TMPDIR
 #  This will help to minimize the number of subdirectories directly under 
 #  the root scrub dir.
     case ${TMPDIR%\/} in     # a trailing slash is ignored
-      /stmp | /stmp?? | /ptmp | /ptmp?? | /gpfs/???/[sp]tmp )
+      /stmp | /stmp?? | /ptmp | /ptmp?? | /gpfs/???/[sp]tmp | /gpfs/????/[sp]tmp )
           [ -n "$USER" ] && TMPDIR=${TMPDIR%\/}/$USER;;
     esac
   fi
@@ -1118,6 +1126,17 @@ if [ $err -ne 0 ]; then
    exit 99
 fi
 [ -z "$FORM" ] && FORM=ibm
+[ -z "$MPMD" ] && MPMD=off
+
+if [ "$MPMD" = 'on' -a -z "$LSB_HOSTS" ]; then
+   set +x
+   echo
+   echo "YOU have set MPMD to on but are not running under LSF!!"
+   echo "You must run under LSF to use MPMD option.  Exiting.."
+   echo
+   [ $LOUD = on ] && set -x
+   exit 99
+fi
 if [ "$sys_tp" = 'Cray-XC40' -o "$SITE" = SURGE -o "$SITE" = LUNA ]; then
    if [ "$BACK" = 'on' ]; then
       set +x
@@ -1131,13 +1150,14 @@ if [ "$sys_tp" = 'Cray-XC40' -o "$SITE" = SURGE -o "$SITE" = LUNA ]; then
 else  # for now, keep the default for IBM as it was
    [ -z "$BACK" ] && BACK=on
 fi
-[ -z "$MPMD" ]  && MPMD=off
 if [ "$MPMD" = 'on' -a "$BACK" = 'on' ]; then
    set +x
    echo
-   echo "We have both MPMD and BACK set to on - choose one or the other."
-   echo "MPMD option currently only works on luna and surge."
-   echo "BACK option currently only works on tide and gyre."
+   echo "Both MPMD and BACK are on - choose one or the other but note that:"
+   echo "  1) BACK is deprecated"
+   echo "  2) The cfp module should be loaded in advance for MPMD."
+   echo
+   echo "ABNORMAL EXIT!!!!!!!!!!!"
    echo
    [ $LOUD = on ] && set -x
    exit 99
@@ -1168,14 +1188,15 @@ if [ "$MPMD" = 'on' ]; then
          [ $LOUD = on ] && set -x
          MPMD=off
       fi
-   else
-      set +x
-      echo
-      echo "You have set MPMD to on - "
-      echo "  This option is currently only supported on Luna and Surge"
-      echo
-      [ $LOUD = on ] && set -x
-      exit 99
+   else   # IBM iDataPlex (presumably)
+      if [ "$MPMD" = 'on' -a -n "$MP_CHILD" ]; then
+         set +x
+         echo
+         echo "You requested MPMD=on but we are already runnng under an MPI process"
+         echo "  Sorry... We must change to MPMD=off"
+         [ $LOUD = on ] && set -x
+         MPMD=off
+      fi
    fi
 fi
 
@@ -1915,11 +1936,11 @@ echo "--------------------------------------------------------------------"
 echo "Invoking poe or poe-like mpmd processing: `date -u`"
 echo
 if [ -s $DATA_DUMPJB/mpmd.cmd ]; then
+   which cfp
+   which_cfp_err=$?
+   ntasks=$(wc -l $DATA_DUMPJB/mpmd.cmd | awk '{print $1}')
    if [ "$sys_tp" = 'Cray-XC40' -o "$SITE" = SURGE -o "$SITE" = LUNA ]; then
-      ntasks=$(wc -l $DATA_DUMPJB/mpmd.cmd | awk '{print $1}')
       if [ $ntasks -gt 1 ]; then
-         which cfp
-         which_cfp_err=$?
          if [ $which_cfp_err -ne 0 ]; then
             set +x
             echo -e "\n ** cfp command not found.  aprun will instead launch   **"
@@ -1956,8 +1977,22 @@ if [ -s $DATA_DUMPJB/mpmd.cmd ]; then
          errmpmd=$?
       fi
    else
-      echo "MPMD=on is not currently supported on WCOSS IBM iDataPlex"
-      errmpmd=99
+      if [ $ntasks -gt 1 ]; then
+         if [ $which_cfp_err -eq 0 ]; then
+            export MP_CSS_INTERRUPT=yes
+            mpirun.lsf cfp $DATA_DUMPJB/mpmd.cmd 2>&1
+            errmpmd=$?
+         else
+            set +x
+            echo -e "\n ** cfp command not found.  exit 99   **\n"
+            set -x
+            exit 99
+         fi
+      else # no need for overhead of mpirun.lsf and cfp if only one thread
+         chmod +x $DATA_DUMPJB/mpmd.cmd
+         $DATA_DUMPJB/mpmd.cmd 2>&1
+         errmpmd=$?
+      fi
    fi
    [ $errmpmd -ne 0 ]  &&  exit 99
 else
