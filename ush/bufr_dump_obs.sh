@@ -192,7 +192,26 @@
 #      being printed in a diagnostic joblog message when the number of reports
 #      exceeded the status file limit of 9999999 for dump group mnemonics with
 #      less than 6 characters.
-#
+# 2017-11-06 JWhiting 
+#    - Fixed bug exposed when fractional center date/time values are provided
+#      in positional parameter $1 (cendat); various logic tries to parse the
+#      value to pick off the whole number hour value, but this fails when
+#      fractional values are sent; added new variable icendat variable which
+#      uses ${variable%pattern} shell syntax to truncate decimal content.
+#    - added rtma_ru_dump job names to tests of tank pattern matching logic; 
+#      NOTE: these patterns fail to function on implementation parallel jobs in
+#      which the job name is prefixed w/ "p_"; this is not a fatal failure, but
+#      causes the correction of dumpjb return codes to be disabled for those
+#      runs.
+#    - set default value for imported shell variable prepssmi to NO
+#      NOTE: Logic in this script references prepobs_prepssmi.sh script which
+#       was never ported to the current WCOSS systems.  The imported shell
+#       variable prepssmi is always set to NO in all production runs, but if it
+#       were ever to be set to YES, this script would fail.
+#    - set default value for imported shell variable prepersd to NO
+#      Note: ERS scatterometer wind reprocessing executables (dcodcloc, dataqc,
+#       datasort) have not been ported to current WCOSS systems and would fail
+#       if invoked.
 #
 # Usage: bufr_dump_obs.sh  yyyymmddhh hh<.hh> ntype dgrp1 dgrp2 ... dgrpN
 #
@@ -809,10 +828,16 @@ timwin=$2
 ntype=$3
 job=${job:-j????}
 cycle=${cycle:-t??z}
+
 set +x
 echo
 echo "job   = " $job
-echo "cycle = " $cycle
+echo "cycle  = " $cycle
+echo
+echo "cendat = " $cendat
+echo "icendat= " ${cendat%.*}  # keep integer portion only (decimal removed)
+echo "timwin = " $timwin
+echo "ntype  = " $ntype
 echo
 set -x
 #============================================
@@ -859,7 +884,8 @@ fi
 
 errt=0
 typeset -Z2 chr
-chr=`expr $cendat % 100`
+icendat=${cendat%.*}         # truncate any fractional hour from center date
+chr=`expr $icendat % 100`
 
 # Note: The following subtypes are EXPECTED to OFTEN be missing regardless
 #       of the center dump time or the data dump network - if only these types
@@ -942,9 +968,9 @@ cat <<\EOFp1gfs >> pattern
 999.999
 EOFp1gfs
 
-elif [[ $job = rtma_dump*_?? ]];then
+elif [[ $job = rtma_dump*_?? || $job = rtma_ru_dump* ]];then
 # The pattern is expanded to include automated tide gauge reports for JOB
-#  rtma_dump at all center times
+#  rtma_dump or rtma_ru_dump at all center times
 cat <<\EOFp1rtma >> pattern
 001.005
 EOFp1rtma
@@ -1219,10 +1245,11 @@ do
          errn=5
 
       elif [[ ( $job = rtma_dump*_?? || $job = rap_dump*_?? || \
+                $job = rtma_ru_dump* || \
                 $job = ruc2a_dump*_?? ) && $n = wndsat ]];then
-# Note: For Jobs rtma_dump, rap_dump or ruc2a_dump at all center dump times,
-#       WNDSAT (all subtypes) is expected to ALWAYS be missing - the return
-#       code of "22" is reduced to "5" here
+# Note: For Jobs rtma_dump, rtma_ru_dump, rap_dump or ruc2a_dump at all center 
+#       dump times, WNDSAT (all subtypes) is expected to ALWAYS be missing - the 
+#       return code of "22" is reduced to "5" here
          errn=5
 
       elif [[ $job = nam_dump*_?? && $n = airsev ]];then
@@ -1475,8 +1502,8 @@ pgmout_this=$DATA/job${DUMP_NUMBER}/allout
 SENDCOM=${SENDCOM:-YES}
 [ "$SENDCOM" = 'NO' ]  &&  COMSP=$DATA/
 pgmout=${pgmout:-$DATA/allout}
-prepssmi=${prepssmi:-YES}
-prepersd=${prepersd:-YES}
+prepssmi=${prepssmi:-NO}
+prepersd=${prepersd:-NO}
 prepqksd=${prepqksd:-YES}
 prepascd=${prepascd:-YES}
 preptrmm=${preptrmm:-YES}
@@ -1745,6 +1772,9 @@ do
          PMIC_save=$PMIC
          PMIC=$pmic
 
+# !!! the prepobs_prepssmi.sh script was never transitioned to vert structure !!!
+# !!! it doesn't exist and won't be found on /nwprod*/ !!!
+# !!! This logic needs to be reviewed and corrected. !!!
          time -p $USHPMI/prepobs_prepssmi.sh $cendat
          errsmi=$?
 
@@ -1965,6 +1995,9 @@ echo "*******************************************************************\
             EXECWAVE=${EXECWAVE:-$HOMEobsproc_dump/exec}
             FIXWAVE=${FIXWAVE:-$HOMEobsproc_dump/fix}
 
+# !!! These scatterometer wind reprocessing executables were never transitioned !!!
+# !!! to vertical structure;  they do not exist and won't be found on /nwprod*/ !!!
+# !!! This block of logic needs to be reviewed and corrected. !!!
             DCLX=${DCLX:-$EXECWAVE/wave_dcodcloc}
             DQCX=${DQCX:-$EXECWAVE/wave_dataqc}
             DSRT=${DSRT:-$FIXWAVE/wave_bufrtab.erscat}
