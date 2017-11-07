@@ -192,17 +192,17 @@
 #      being printed in a diagnostic joblog message when the number of reports
 #      exceeded the status file limit of 9999999 for dump group mnemonics with
 #      less than 6 characters.
-# 2017-11-06 JWhiting 
+# 2017-11-07 JWhiting 
 #    - Fixed bug exposed when fractional center date/time values are provided
 #      in positional parameter $1 (cendat); various logic tries to parse the
 #      value to pick off the whole number hour value, but this fails when
 #      fractional values are sent; added new variable icendat variable which
 #      uses ${variable%pattern} shell syntax to truncate decimal content.
-#    - added rtma_ru_dump job names to tests of tank pattern matching logic; 
-#      NOTE: these patterns fail to function on implementation parallel jobs in
-#      which the job name is prefixed w/ "p_"; this is not a fatal failure, but
-#      causes the correction of dumpjb return codes to be disabled for those
-#      runs.
+#    - added rtma_ru_dump to tests on job name (for tank pattern matching logic
+#      when resetting dumpjb return codes, and in checking for run name for
+#      status report output); also added leading wildcard ("*") to job name
+#      tests to account for implementation parallel runs which include a
+#      leading "p" in the job names.
 #    - set default value for imported shell variable prepssmi to NO
 #      NOTE: Logic in this script references prepobs_prepssmi.sh script which
 #       was never ported to the current WCOSS systems.  The imported shell
@@ -913,7 +913,7 @@ cat <<\EOFp > pattern
 255.027
 EOFp
 
-if [[ $job = nam_dump*_?? ]];then
+if [[ $job = *nam_dump*_?? ]];then
 # The pattern is expanded to include pibals, GMS IR, WV (old SATOB only) and
 #  MODIS (Aqua/Terra) IR, WV satwnds for Job nam_dump (or nam_dump2) at all
 #  center dump times
@@ -961,21 +961,21 @@ cat <<\EOFp1p2p4 >> pattern
 EOFp1p2p4
    fi
 
-elif [[ $job = gfs_dump*_?? ]];then
+elif [[ $job = *gfs_dump*_?? ]];then
 # The pattern is expanded to include -nothing right now- for JOB gfs_dump (or
 #  gfs_dump2) at all center times
 cat <<\EOFp1gfs >> pattern
 999.999
 EOFp1gfs
 
-elif [[ $job = rtma_dump*_?? || $job = rtma_ru_dump* ]];then
+elif [[ $job = *rtma_dump*_?? || $job = *rtma_ru_dump* ]];then
 # The pattern is expanded to include automated tide gauge reports for JOB
 #  rtma_dump or rtma_ru_dump at all center times
 cat <<\EOFp1rtma >> pattern
 001.005
 EOFp1rtma
 
-elif [[ $job = ndas_dump*_tm??_?? ]];then
+elif [[ $job = *ndas_dump*_tm??_?? ]];then
 # The pattern is expanded to include pibals for Job ndas_dump (or ndas_dump2)
 #  at all center dump times
 cat <<\EOFp1p1 >> pattern
@@ -988,7 +988,7 @@ cat <<\EOFp1p3 >> pattern
 005.065
 EOFp1p3
    fi
-   if [[ $job = ndas_dump*_tm03_?? ]];then
+   if [[ $job = *ndas_dump*_tm03_?? ]];then
 # The pattern is expanded to include MODIS (Aqua/Terra) IR and WV satwnds for
 #  Job ndas_dump_tm03 (or ndas_dump2_tm03) at all center dump times
 cat <<\EOFp1p4 >> pattern
@@ -1005,7 +1005,7 @@ EOFp1p5
       fi
    fi
 
-elif [[ $job = rap_dump*_?? || $job = ruc2a_dump*_?? ]];then
+elif [[ $job = *rap_dump*_?? || $job = *ruc2a_dump*_?? ]];then
 # The pattern is expanded to include ship raobs for Jobs rap_dump or ruc2a_dump
 #  at all center dump times
 # The pattern is also expanded to include pibals for Jobs rap_dump or
@@ -1106,13 +1106,13 @@ cat <<\EOFp5p2p4 >> pattern
 EOFp5p2p4
    fi
 
-elif [[ $job = sruc_dump*_???? ]];then
+elif [[ $job = *sruc_dump*_???? ]];then
 # The pattern is expanded to include automated tide gauge reports for Job
 #  sruc_dump (both T+0:05 and T+0:22) at all center dump times
 cat <<\EOFp3p3 >> pattern
 001.005
 EOFp3p3
-   if [[ $job = sruc_dump*_??05 ]];then
+   if [[ $job = *sruc_dump*_??05 ]];then
 # The pattern is expanded to include -nothing right now- for Job sruc_dump at
 #  T+0:05 (only) at all center dump times
 cat <<\EOFp3p4 >> pattern
@@ -1128,7 +1128,7 @@ cat <<\EOFp5 >> pattern
 005.012
 EOFp5
 
-elif [[ $job = nam_dump*_18 ]];then
+elif [[ $job = *nam_dump*_18 ]];then
 # The pattern is expanded to include -nothing right now- for Job nam_dump (or
 #  nam_dump2) at center dump time 18Z
 cat <<\EOFp6 >> pattern
@@ -1206,22 +1206,22 @@ do
 ######     "$chr" != '22' ]  &&  errn=5
 
 ######elif [[ $job = ruc2a_dump*_?? && ( $n = airsev || $n = qkscat ) ]];then
-      if [[ ( $job = rap_dump*_?? || $job = ruc2a_dump*_?? ) && \
+      if [[ ( $job = *rap_dump*_?? || $job = *ruc2a_dump*_?? ) && \
             ( $n = airsev || $n = qkscat ) ]];then
 # Note: For Jobs rap_dump or ruc2a_dump at all center dump times, AIRSEV (all
 #       subtypes) and QKSCAT (all subtypes) are expected to OFTEN be missing -
 #       the return code of "22" is reduced to "5" here
          errn=5
 
-      elif [[ ( $job = rap_dump*_?? || $job = ruc2a_dump*_?? ) && \
+      elif [[ ( $job = *rap_dump*_?? || $job = *ruc2a_dump*_?? ) && \
               ( $n = ssmip || $n = ssmipn || $n = ssmit || $n = radwnd ) ]];then
 # Note: For Jobs rap_dump or ruc2a_dump and SSMIP, SSMIPN, SSMIT, or RADWND at
 #       all center dump times except 00 and 12Z; all subtypes are expected to
 #       OFTEN be missing - the return code of "22" is reduced to "5" here
          [ "$chr" != '00' -a "$chr" != '12' ]  &&  errn=5
 
-      elif [[ ( $job = rap_dump*_?? || $job = ruc2a_dump*_?? || \
-                $job = ndas_dump*_tm??_?? ) && $n = adpupa ]];then
+      elif [[ ( $job = *rap_dump*_?? || $job = *ruc2a_dump*_?? || \
+                $job = *ndas_dump*_tm??_?? ) && $n = adpupa ]];then
 # Note: For Jobs rap_dump, ruc2a_dump or ndas_dump (or ndas_dump2) and ADPUPA
 #       at center dump times 02-05Z, 08-11Z, 14-17Z, or 20-23Z; all subtypes
 #       are expected to OFTEN be missing - the return code of "22" is reduced
@@ -1231,48 +1231,48 @@ do
            "$chr" != '12' -a "$chr" != '13' -a \
            "$chr" != '18' -a "$chr" != '19' ]  &&  errn=5
 
-      elif [[ $job = sruc_dump*_??05 && $n = proflr ]];then
+      elif [[ $job = *sruc_dump*_??05 && $n = proflr ]];then
 # Note: For Job sruc_dump at T+0:05 (only) at all center dump times, PROFLR
 #       (all subtypes) is expected to ALWAYS be missing - the return code of
 #       "22" is reduced to "5" here
 #  Note: This is no longer dumped, but we'll keep the check in here for now
          errn=5
 
-      elif [[ $job = gfs_dump*_?? && $n = sfcbog ]];then
+      elif [[ $job = *gfs_dump*_?? && $n = sfcbog ]];then
 # Note: For Job gfs_dump (or gfs_dump2) at all center dump times, SFCBOG (all
 #       subtypes) is expected to ALWAYS be missing - the return code of "22" is
 #       reduced to "5" here
          errn=5
 
-      elif [[ ( $job = rtma_dump*_?? || $job = rap_dump*_?? || \
-                $job = rtma_ru_dump* || \
-                $job = ruc2a_dump*_?? ) && $n = wndsat ]];then
+      elif [[ ( $job = *rtma_dump*_?? || $job = *rap_dump*_?? || \
+                $job = *rtma_ru_dump* || \
+                $job = *ruc2a_dump*_?? ) && $n = wndsat ]];then
 # Note: For Jobs rtma_dump, rtma_ru_dump, rap_dump or ruc2a_dump at all center 
 #       dump times, WNDSAT (all subtypes) is expected to ALWAYS be missing - the 
 #       return code of "22" is reduced to "5" here
          errn=5
 
-      elif [[ $job = nam_dump*_?? && $n = airsev ]];then
+      elif [[ $job = *nam_dump*_?? && $n = airsev ]];then
 # Note: For Job nam_dump (or nam_dump2) at center dump times 06 or 18Z, AIRSEV
 #       (all subtypes) is expected to OFTEN be missing - the return code of
 #       "22" is reduced to "5" here
          [ "$chr" != '00' -a "$chr" != '12' ] && errn=5
 
-      elif [[ $job = nam_dump*_06 && ( $n = 1bmsu || $n = 1bhrs2 ) ]];then
+      elif [[ $job = *nam_dump*_06 && ( $n = 1bmsu || $n = 1bhrs2 ) ]];then
 # Note: For Job nam_dump (or nam_dump2) at all center times except 12Z, MSU and
 #       HIRS2 1B data are expected to OFTEN be missing - the return code of
 #       "22" is reduced to "5" here
 #  Note: This is no longer dumped, but we'll keep the check in here for now
          [ "$chr" != '12' ] && errn=5
 
-      elif [[ ( $job = rap_dump*_?? || $job = ruc2a_dump*_?? ) && \
+      elif [[ ( $job = *rap_dump*_?? || $job = *ruc2a_dump*_?? ) && \
               ( $n = 1bhrs4 || $n = 1bmhs ) ]];then
 # Note: For Jobs rap_dump or ruc2a_dump at center times 03, 04 or 05Z, 1BHRS4
 #       and 1BMHS data are expected to OFTEN be missing - the return code of
 #       "22" is reduced to "5" here
          [ "$chr" = '03' -o "$chr" = '04' -o "$chr" = '05' ] && errn=5
 
-      elif [[ ( $job = rap_dump*_?? || $job = ruc2a_dump*_?? ) && \
+      elif [[ ( $job = *rap_dump*_?? || $job = *ruc2a_dump*_?? ) && \
               $n = 1bhrs3 ]];then
 # Note: For Jobs rap_dump or ruc2a_dump at center times 04, 05, 08, 10, 11, 13,
 #       17, 18 or 21Z, 1BHRS3 data are expected to OFTEN be missing - the
@@ -1281,7 +1281,7 @@ do
            "$chr" = '10' -o "$chr" = '11' -o "$chr" = '13' -o \
            "$chr" = '17' -o "$chr" = '18' -o "$chr" = '21' ] && errn=5
 
-      elif [[ ( $job = rap_dump*_?? || $job = ruc2a_dump*_?? ) && \
+      elif [[ ( $job = *rap_dump*_?? || $job = *ruc2a_dump*_?? ) && \
               $n = 1bamub ]];then
 # Note: For Jobs rap_dump or ruc2a_dump at center times 08 or 13Z, 1BAMUB data
 #       are expected to OFTEN be missing - the return code of "22" is reduced
@@ -1298,8 +1298,8 @@ do
          if [ "$chr" != '00' -a "$chr" != '12' ];then
             [ "$n" = 'sfcbog' ]  &&  errn=5
          fi
-         if [[ $job = ndas_dump*_tm03_12 || $job = ndas_dump*_tm06_12 || \
-               $job = ndas_dump*_tm12_18 || $job = nam_dump*_06 ]];then
+         if [[ $job = *ndas_dump*_tm03_12 || $job = *ndas_dump*_tm06_12 || \
+               $job = *ndas_dump*_tm12_18 || $job = *nam_dump*_06 ]];then
             if [ $n = osbuv8 ];then
 # Note: For Jobs tm03 or tm06 ndas_dump (or ndas_dump2) at 12Z cycle time or
 #       tm12 ndas_dump (or ndas_dump2) at 18Z cycle time or nam_dump (or
@@ -2117,7 +2117,7 @@ cat << EOFdat2 > datefile
 EOFdat2
 
                typeset -Z2 dumhr
-               dumhr=`expr $cendat % 100`
+               dumhr=`expr $icendat % 100`
                echo $dumhr > coloc.parm
 
                cat datefile
@@ -3200,16 +3200,18 @@ WALLCLOK=`date -u`
 
 if [ "$job" = 'j????' ];then
    run="???"
-elif [[ $job = ndas_dump*_tm??_?? ]];then
+elif [[ $job = *ndas_dump*_tm??_?? ]];then
    run=ndas
-elif [[ $job = rap_dump*_pcyc_?? ]];then
+elif [[ $job = *rap_dump*_pcyc_?? ]];then
    run=rap_p
-elif [[ $job = rap_dump*_erly_?? ]];then
+elif [[ $job = *rap_dump*_erly_?? ]];then
    run=rap_e
-elif [[ $job = rap_dump*_ehrrr_?? ]];then
+elif [[ $job = *rap_dump*_ehrrr_?? ]];then
    run=rap_eh
-elif [[ $job = ruc2a_dump*_?? ]];then
+elif [[ $job = *ruc2a_dump*_?? ]];then
    run=ruc2a
+elif [[ $job = *rtma_ru_dump* ]];then
+   run=rtma_ru
 else
    run=$NET
 fi
