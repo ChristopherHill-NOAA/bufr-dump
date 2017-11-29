@@ -192,17 +192,16 @@
 #      being printed in a diagnostic joblog message when the number of reports
 #      exceeded the status file limit of 9999999 for dump group mnemonics with
 #      less than 6 characters.
-# 2017-11-07 JWhiting 
+# 2017-11-14 JWhiting 
 #    - Fixed bug exposed when fractional center date/time values are provided
 #      in positional parameter $1 (cendat); various logic tries to parse the
 #      value to pick off the whole number hour value, but this fails when
 #      fractional values are sent; added new variable icendat variable which
 #      uses ${variable%pattern} shell syntax to truncate decimal content.
-#    - added rtma_ru_dump to tests on job name (for tank pattern matching logic
-#      when resetting dumpjb return codes, and in checking for run name for
-#      status report output); also added leading wildcard ("*") to job name
-#      tests to account for implementation parallel runs which include a
-#      leading "p" in the job names.
+#    - added rtma_ru_dump to tests on job name to set run name for status report
+#      output); also added leading wildcard ("*") to all job name tests to
+#      account for implementation parallel runs which include a leading "p" in
+#      the job names.
 #    - set default value for imported shell variable prepssmi to NO
 #      NOTE: Logic in this script references prepobs_prepssmi.sh script which
 #       was never ported to the current WCOSS systems.  The imported shell
@@ -829,15 +828,16 @@ ntype=$3
 job=${job:-j????}
 cycle=${cycle:-t??z}
 
+icendat=${cendat%.*}         # truncate any fractional hour from center date
+
 set +x
+echo
+echo "cendat = " $cendat
+echo "icendat= " $icendat
+echo "timwin = " $timwin
 echo
 echo "job   = " $job
 echo "cycle  = " $cycle
-echo
-echo "cendat = " $cendat
-echo "icendat= " ${cendat%.*}  # keep integer portion only (decimal removed)
-echo "timwin = " $timwin
-echo "ntype  = " $ntype
 echo
 set -x
 #============================================
@@ -884,8 +884,7 @@ fi
 
 errt=0
 typeset -Z2 chr
-icendat=${cendat%.*}         # truncate any fractional hour from center date
-chr=`expr $icendat % 100`
+chr=`expr $icendat % 100`     # use center date w/ fractional hours removed
 
 # Note: The following subtypes are EXPECTED to OFTEN be missing regardless
 #       of the center dump time or the data dump network - if only these types
@@ -968,9 +967,9 @@ cat <<\EOFp1gfs >> pattern
 999.999
 EOFp1gfs
 
-elif [[ $job = *rtma_dump*_?? || $job = *rtma_ru_dump* ]];then
+elif [[ $job = *rtma_dump*_?? ]];then
 # The pattern is expanded to include automated tide gauge reports for JOB
-#  rtma_dump or rtma_ru_dump at all center times
+#  rtma_dump at all center times
 cat <<\EOFp1rtma >> pattern
 001.005
 EOFp1rtma
@@ -1245,11 +1244,10 @@ do
          errn=5
 
       elif [[ ( $job = *rtma_dump*_?? || $job = *rap_dump*_?? || \
-                $job = *rtma_ru_dump* || \
                 $job = *ruc2a_dump*_?? ) && $n = wndsat ]];then
-# Note: For Jobs rtma_dump, rtma_ru_dump, rap_dump or ruc2a_dump at all center 
-#       dump times, WNDSAT (all subtypes) is expected to ALWAYS be missing - the 
-#       return code of "22" is reduced to "5" here
+# Note: For Jobs rtma_dump, rap_dump or ruc2a_dump at all center dump times, 
+#    WNDSAT (all subtypes) is expected to ALWAYS be missing - the return 
+#    code of "22" is reduced to "5" here
          errn=5
 
       elif [[ $job = *nam_dump*_?? && $n = airsev ]];then
