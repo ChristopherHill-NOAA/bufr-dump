@@ -72,7 +72,24 @@ files:
     - The default TMPDIR location for developer runs on Cray-XC40 is now on the
       /gpfs/hps3 filesystem rather than /gpfs/hps.
    bufr_dump_obs.sh:
-    - Minor changes to docblock comments.
+    - Fixed bug exposed when fractional center date/time values are provided
+      in positional parameter $1 (cendat); various logic tries to parse the
+      value to pick off the whole number hour value, but this fails when
+      fractional values are sent; added new variable icendat variable which
+      uses ${variable%pattern} shell syntax to truncate decimal content.
+    - added rtma_ru_dump to tests on job name to set run name for status report
+      output); also added leading wildcard ("*") to all job name tests to
+      account for implementation parallel runs which include a leading "p" in
+      the job names.
+    - set default value for imported shell variable prepssmi to NO
+      NOTE: Logic in this script references prepobs_prepssmi.sh script which
+       was never ported to the current WCOSS systems.  The imported shell
+       variable prepssmi is always set to NO in all production runs, but if it
+       were ever to be set to YES, this script would fail.
+    - set default value for imported shell variable prepersd to NO
+      Note: ERS scatterometer wind reprocessing executables (dcodcloc, dataqc,
+       datasort) have not been ported to current WCOSS systems and would fail
+       if invoked.
 
  Module changes:
    Updated to X.Y.Z                                     <- update X.Y.Z when version decided
