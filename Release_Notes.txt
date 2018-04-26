@@ -1,5 +1,174 @@
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-obsproc_dump release X.Y.Z --> released ??? ??, ????
+obsproc_dump release U.V.W --> released ??? ??, ????                         <- update U.V.W when version decided
+                           --> implemented ??? ?, 20??
+
+files:
+   obsproc_dump/fix/bufr_bufrtab.sptrmm
+   obsproc_dump/fix/bufr_bufrtab.windsat
+   obsproc_dump/fix/nam_expdomain_guam_halfdeg_imask.gbl
+   obsproc_dump/fix/nam_expdomain_halfdeg_imask.gbl
+   obsproc_dump/fix/wave_bufrtab.ascat
+   obsproc_dump/fix/wave_bufrtab.erscat
+   obsproc_dump/fix/wave_bufrtab.quikscat
+   obsproc_dump/fix/wave_landchxh
+ D obsproc_dump/modulefiles/dumpjb/X.Y.Z                                     <- update X.Y.Z when version decided
+ A obsproc_dump/modulefiles/dumpjb/U.V.W                                     <- update U.V.W when version decided
+   obsproc_dump/sorc/bufr_chkbfr.fd/chkbfr.f
+   obsproc_dump/sorc/bufr_chkbfr.fd/makefile
+   obsproc_dump/sorc/bufr_combfr.fd/combfr.f
+   obsproc_dump/sorc/bufr_combfr.fd/makefile
+   obsproc_dump/sorc/bufr_dcodwindsat.fd/dcodwindsat.f
+   obsproc_dump/sorc/bufr_dcodwindsat.fd/makefile
+   obsproc_dump/sorc/bufr_dumpmd.fd/dumpmd.f
+   obsproc_dump/sorc/bufr_dumpmd.fd/makefile
+   obsproc_dump/sorc/bufr_dupair.fd/dupair.f
+   obsproc_dump/sorc/bufr_dupair.fd/makefile
+   obsproc_dump/sorc/bufr_dupcor.fd/dupcor.f
+   obsproc_dump/sorc/bufr_dupcor.fd/makefile
+   obsproc_dump/sorc/bufr_dupmar.fd/dupmar.f
+   obsproc_dump/sorc/bufr_dupmar.fd/makefile
+   obsproc_dump/sorc/bufr_dupmrg.fd/dupmrg.f
+   obsproc_dump/sorc/bufr_dupmrg.fd/makefile
+   obsproc_dump/sorc/bufr_duprad.fd/duprad.f
+   obsproc_dump/sorc/bufr_duprad.fd/makefile
+   obsproc_dump/sorc/bufr_dupsat.fd/dupsat.f
+   obsproc_dump/sorc/bufr_dupsat.fd/makefile
+   obsproc_dump/sorc/bufr_dupshp.fd/dupshp.f
+   obsproc_dump/sorc/bufr_dupshp.fd/makefile
+   obsproc_dump/sorc/bufr_dupsst.fd/dupsst.f
+   obsproc_dump/sorc/bufr_dupsst.fd/makefile
+ M obsproc_dump/sorc/bufr_dupupr.fd/dupupr.f
+ M obsproc_dump/sorc/bufr_dupupr.fd/makefile
+ M obsproc_dump/sorc/bufr_edtbfr.fd/edtbfr.f
+ M obsproc_dump/sorc/bufr_edtbfr.fd/makefile
+   obsproc_dump/sorc/bufr_geofil.fd/geofil.f
+   obsproc_dump/sorc/bufr_geofil.fd/makefile
+   obsproc_dump/sorc/bufr_quipc.fd/makefile
+   obsproc_dump/sorc/bufr_quipc.fd/quipc.f
+   obsproc_dump/sorc/bufr_raddate.fd/makefile
+   obsproc_dump/sorc/bufr_raddate.fd/raddate.f
+   obsproc_dump/sorc/bufr_supertmi.fd/makefile
+   obsproc_dump/sorc/bufr_supertmi.fd/supertmi.f
+   obsproc_dump/sorc/prepobs_prepssmi.fd/makefile
+   obsproc_dump/sorc/prepobs_prepssmi.fd/prepssmi.f
+   obsproc_dump/sorc/wave_dcodquikscat.fd/dcodquikscat.f
+   obsproc_dump/sorc/wave_dcodquikscat.fd/makefile
+   obsproc_dump/sorc/build.sh
+   obsproc_dump/sorc/clean.sh
+   obsproc_dump/sorc/install.sh
+ M obsproc_dump/sorc/load_libs.rc
+   obsproc_dump/sorc/README.build
+ M obsproc_dump/sorc/setlibs.rc
+   obsproc_dump/ush/bufr_dump_obs.sh
+   obsproc_dump/ush/check_tanks.sh
+ M obsproc_dump/ush/dumpjb
+( A - added,  M - modified, D - deleted)
+
+
+ USH script changes:
+   dumpjb:
+    - New BUFR-feed land RAOBS (b002/xx101) are dup-checked by new dup-check
+      code BUFR_DUPUPR.
+
+ Source code changes:
+   load_libs.rc and setlibs.rc sorc directory:
+    - Increment the bufrlib version from v11.1.0 to v11.2.0.
+      BENEFIT: BUFRLIB version v11.2.0 is needed to properly process new BUFR-
+               feed land RAOBS from tank b002/xx101.
+   bufr_dupupr (dupupr.f and makefile):
+    - New.  Dup-checks and time-trims BUFR-feed high-vertical resolution upper-
+      air profile reports based on their WMO block number (currently handles
+      only fixed land RAOBS from block 72 in tank b002/xx101).  This will be
+      expanded to include additional block numbers and other b002/xx1?? tanks.
+      BENEFIT: Main part of processing needed to generate new "uprair" dump
+               files which will eventually be read directly by the GSI.
+    NOTE: This code is a work in progress, expect more changes before it is in a
+          final form.
+   bufr_edtbfr (edtbfr.f and makefile):
+    - Recognizes new GOES-16 derived motion wind types in message type 005 (IR/
+      long-wave in subtype 030, WV imager/deep-layer in subtype 031, visible in
+      subtype 032, WV imager/cloud-top in subtype 034 and IR/short-wave in
+      subtype 039).
+    - Modified to handle BUFR-feed high-vertical resolution upper-air reports in
+      tanks b002/xx101-xx105.
+       - Output message length increased from 10K (default) to 200K via call to
+         BUFRLIB subroutine MAXOUT.
+       - Maximum number of data values in an uncompressed BUFR subset (MAXSS)
+         increased from 80K (default) to 300K via use of BUFRLIB function
+         ISETPRM (note: must link to dynamic allocation version of BUFRLIB).
+       - Increased arrays holding level data from 255 to 9000 (to account for
+         high vertical resolution in many reports now in these tanks).
+       - Reads mnemonic "VSIGX" from these tanks rather than "VSIG" which is
+         only in TAC-feed tanks, and then translates its value into "VSIG"
+         value associated with "SURF", "MAND", "SIGT" and "SIGW" levels (for
+         editing Q.M. of levels by their vertical significance qualifier).
+       - Increased amount of temporary diagnostic print.
+    - Use dynamic allocation version of BUFRLIB to override default array sizes
+      (makefile change).  (See change to use ISETPRM above.)
+    NOTE: This code is a work in progress, expect more changes before it is in a
+          final form.
+
+ Module changes:
+ ---------------
+   U.V.W replaces X.Y.Z (via git mv) in directory modulefiles/dumpjb:        <- update U.V.W. and X.Y.Z when versions decided
+    - Accounts for new version number here.
+      (Note: This can be loaded to set environment variables for dumpjb.)
+
+
+ Output changes:
+ ---------------
+  (For specific network changes see " Output changes" in Release Notes for that
+   network, if that network executes this version of obsproc_prep.)
+
+
+ Libraries:
+ ----------
+   w3nco   2.0.6 (all)
+   w3emc   2.2.0 (bufr_dcodwindsat, bufr_dupair, bufr_dupcor, bufr_dupmar,
+                  bufr_dupmrg, bufr_duprad, bufr_dupsat, bufr_dupshp,
+                  bufr_dupsst, bufr_dupupr, bufr_supertmi, prepobs_prepssmi,
+                  wave_dcodquikscat)
+   bufr   11.2.0 (all) (previously 11.1.0)
+   bacio   2.0.1 (bufr_supertmi, prepobs_prepssmi, wave_dcodquikscat)
+   sp      2.0.2 (prepobs_prepssmi)
+
+
+ Build Instructions:
+ -------------------
+   - See sorc/README.build.
+   - The build and install steps are the same whether on the IBM or Cray.
+
+
+Preimplementation Testing Requirements:
+ ---------------------------------------
+   There are no jobs in obsproc_dump.  All jobs executing this version of
+   obsproc_dump should be tested.
+
+
+ Dissemination:
+ --------------
+   See information about dissemination in the latest release notes for
+   obsproc_<NETWORK> packages which execute this version of obsproc_dump.
+
+
+ Special Instructions:
+ ---------------------
+   This is part of OBSPROC.vD.E.F.                                           <- update D.E.F when version decided
+   - Please build and install on the Cray-XC40 and IBM iDataPlex Phase 2.
+   This must be implemented simultaneously with the implementation of:
+      vG.H.I of obsproc_shared/bufr_dumplist.                                <- update G.H.I when version decided
+   - Please copy modulefiles/dumpjb/U.V.W from this release to:              <- update U.V.W when version decided
+       /gpfs/hps/nco/ops/nwprod/modulefiles/dumpjb/U.V.W                     <- update U.V.W when version decided
+     and to:
+       /nwprod2/modulefiles/dumpjb/U.V.W                                     <- update U.V.W when version decided
+
+   Since there are no jobs in obsproc_dump, an obsproc_dump.ver file is not
+   needed.
+
+                                                                        ====> Note: Depending upon timing, this may be merged with release X.Y.Z below.
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+obsproc_dump release X.Y.Z --> released ??? ??, ????                         <- update X.Y.X when version decided
                            --> implemented ??? ??, ????
 
 files:
@@ -11,7 +180,8 @@ files:
    obsproc_dump/fix/wave_bufrtab.erscat
    obsproc_dump/fix/wave_bufrtab.quikscat
    obsproc_dump/fix/wave_landchxh
- M obsproc_dump/modulefiles/dumpjb/X.Y.Z  (was 4.0.0)       <--- Remember to change modulefile version for next release
+ D obsproc_dump/modulefiles/dumpjb/4.0.0
+ A obsproc_dump/modulefiles/dumpjb/X.Y.Z                                     <- update X.Y.Z when version decided
    obsproc_dump/sorc/bufr_chkbfr.fd/chkbfr.f
    obsproc_dump/sorc/bufr_chkbfr.fd/makefile
    obsproc_dump/sorc/bufr_combfr.fd/combfr.f
@@ -59,7 +229,6 @@ files:
  M obsproc_dump/ush/bufr_dump_obs.sh
    obsproc_dump/ush/check_tanks.sh
  M obsproc_dump/ush/dumpjb
-
 ( A - added,  M - modified, D - deleted)
 
 
@@ -92,7 +261,10 @@ files:
        if invoked.
 
  Module changes:
-   Updated to X.Y.Z                                     <- update X.Y.Z when version decided
+ ---------------
+   X.Y.Z replaces 4.0.0 (via git mv) in directory modulefiles/dumpjb:        <- update X.Y.Z when version decided
+    - Accounts for new version number here.
+      (Note: This can be loaded to set environment variables for dumpjb.)
 
 
  Output changes:
@@ -129,13 +301,30 @@ files:
    See information about dissemination in the latest release notes for
    obsproc_<NETWORK> packages which execute this version of obsproc_dump.
 
+
+ Special Instructions:
+ ---------------------
+   This is part of OBSPROC.vA.B.C.                                           <- update A.B.C when version decided
+   - Please build and install on the Cray-XC40 and IBM iDataPlex Phase 2.
+   This must be implemented simultaneously with the implementations of:
+      ???????????????????????????????????????
+      ???????????????????????????????????????
+      ???????????????????????????????????????
+      ???????????????????????????????????????
+   - Please copy modulefiles/dumpjb/X.Y.Z from this release to:              <- update X.Y.X when version decided
+       /gpfs/hps/nco/ops/nwprod/modulefiles/dumpjb/X.Y.Z                     <- update X.Y.X when version decided
+     and to:
+       /nwprod2/modulefiles/dumpjb/X.Y.Z                                     <- update X.Y.X when version decided
+
+   Since there are no jobs in obsproc_dump, an obsproc_dump.ver file is not
+   needed.
       
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-obsproc_dump release 4.0.0 --> released Feb 09, 2017, updated Feb 20, 2017,
+obsproc_dump release 4.0.0 --> released Feb 9, 2017, updated Feb 20, 2017,
                                 updated Feb 22, 2017
-                           --> implemented May 22, 2017
+                           --> implemented Jul 19, 2017
 
-Files added, modified or deleted since last release:
+files added, modified or deleted since last release:
  A obsproc_dump/modulefiles/dumpjb/4.0.0
  M obsproc_dump/sorc/wave_dcodquikscat.fd/dcodquikscat.f
  M obsproc_dump/sorc/wave_dcodquikscat.fd/makefile
@@ -144,7 +333,6 @@ Files added, modified or deleted since last release:
  M obsproc_dump/sorc/README.build
  M obsproc_dump/sorc/setlibs.rc
  M obsproc_dump/ush/dumpjb
-
 ( A - added,  M - modified, D - deleted)
 
 
@@ -195,7 +383,7 @@ Files added, modified or deleted since last release:
     - Modified to handle library pathnames used on Cray-XC40 or IBM iDataPlex.
    README.build in sorc directory:
     - Listed load_libs.rc as the primary resource file for defining library 
-      envirornment variables.  Also removed instructions for compiling without
+      environment variables.  Also removed instructions for compiling without
       the build.sh script because it is no longer easy to build without it.
    wave_dcodquikscat:
     - Minor bug fix to preserve valid obs located just west of 180E.  
@@ -204,6 +392,7 @@ Files added, modified or deleted since last release:
     - Makefile now excludes output_conversion from the DEBUG2 run time checks.
 
  Module changes:
+ ---------------
    4.0.0 in new directory modulefiles/dumpjb:
     - New. Can be loaded to set environment variables for dumpjb.
 
@@ -255,7 +444,7 @@ Files added, modified or deleted since last release:
      (or a later version if available) to the above cray directory.
    - Please copy modulefiles/dumpjb/4.0.0 from this release to:
        /gpfs/hps/nco/ops/nwprod/modulefiles/dumpjb/4.0.0 
-     and:
+     and to:
        /nwprod2/modulefiles/dumpjb/4.0.0 
      
    Since there are no jobs in obsproc_dump, an obsproc_dump.ver file is not
@@ -265,7 +454,7 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 obsproc_dump release 3.3.0 --> released Jan 12, 2017
                            --> implemented Feb 21, 2017
 
-Files added, modified or deleted since last release:
+files added, modified or deleted since last release:
  M obsproc_dump/sorc/bufr_dupair.fd/dupair.f
  M obsproc_dump/sorc/bufr_dupcor.fd/dupcor.f
  M obsproc_dump/sorc/bufr_dupmrg.fd/dupmrg.f
@@ -595,7 +784,7 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 obsproc_dump release 3.2.1 --> released May 1, 2015
                            --> implemented Aug 10, 2015
 
-Files added, modified or deleted since last release:
+files added, modified or deleted since last release:
  M obsproc_dump/sorc/bufr_dupair.fd/dupair.f
  M obsproc_dump/sorc/bufr_dupmar.fd/dupmar.f
  M obsproc_dump/sorc/bufr_dupmrg.fd/dupmrg.f
@@ -701,7 +890,7 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 obsproc_dump release 3.2.0 --> released Aug 6, 2014, updated Sep 14, 2014
                            --> implemented Nov 4, 2014
 
-Files added, modified or deleted since last release:
+files added, modified or deleted since last release:
  M obsproc_dump/sorc/load_libs.rc
  M obsproc_dump/sorc/setlibs.rc
  M obsproc_dump/ush/bufr_dump_obs.sh
@@ -812,7 +1001,7 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 obsproc_dump release 3.1.0 --> released May 5, 2014
                            --> implemented Jun 24, 2014
 
-Files added, modified or deleted since last release:
+files added, modified or deleted since last release:
  M obsproc_dump/sorc/bufr_edtbfr.fd/edtbfr.f
  M obsproc_dump/sorc/load_libs.rc
  M obsproc_dump/sorc/setlibs.rc
@@ -906,7 +1095,7 @@ obsproc_dump release 3.0.0 --> released Feb 8, 2014
 
 Initial population of vertical structure.
 
-Files:
+files:
  M obsproc_dump/fix/bufr_bufrtab.sptrmm
  M obsproc_dump/fix/bufr_bufrtab.windsat
  M obsproc_dump/fix/nam_expdomain_guam_halfdeg_imask.gbl
@@ -962,7 +1151,6 @@ Files:
  M obsproc_dump/ush/bufr_dump_obs.sh
  M obsproc_dump/ush/check_tanks.sh
  M obsproc_dump/ush/dumpjb
-
 ( A - added,  M - modified, D - deleted)
 
 

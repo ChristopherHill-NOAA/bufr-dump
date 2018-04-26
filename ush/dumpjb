@@ -5,7 +5,7 @@
 #
 # Script name:   dumpjb      Dump script to get data from BUFR tanks
 #
-# RFC contact:  Stokes      Org: NP2         Date: 2017-08-30
+# RFC contact:  Keyser      Org: NP22        Date: 2018-02-23
 #
 # Abstract: The dumpjb script is an all-purpose dump utility for time
 #   windowing, geographical filtering, eliminating duplicates, and applying
@@ -304,10 +304,10 @@
 #     - Determines current system (and phase if necessary) based on environment
 #       variable SITE and/or NCO utility getsystem.pl.
 #     - TMPDIR is no longer a required imported variable for a developer run if
-#       DATA_DUMPJB is not imported.  If TMPDIR is needed but not yet set, a 
+#       DATA_DUMPJB is not imported.  If TMPDIR is needed but not yet set, a
 #       a suitable location will be assigned based on the system type and phase.
 #       Variable DTMPDIR can also be passed in if the developer wants to
-#       override the default location but has trouble running LSF jobs when 
+#       override the default location but has trouble running LSF jobs when
 #       they have set TMPDIR. (currently an issue with bash on luna and surge)
 #     - Variable "MPMD" no longer points to an mpmd utility script.  Instead it
 #       is used in place of old variable "POE" to toggle mpmd processing.
@@ -328,6 +328,8 @@
 #       (/gpfs/hps2 and /gpfs/hps3 in addition to /gpfs/hps).  The default
 #       TMPDIR location for developer runs on Cray-XC40 is now on the /gpfs/hps3
 #       filesystem rather than /gpfs/hps.
+# 2018-02-23  D. Keyser  New BUFR-feed land RAOBS (002.101) are dup-checked by
+#      new dup-check code BUFR_DUPUPR.
 #
 #
 # Usage: dumpjb  yyyymmddhh<.hh> hh<.hh> dgrp1 dgrp2 dgrp3 ... dgrpN
@@ -432,7 +434,7 @@
 #     executables : bufr_raddate bufr_dumpmd bufr_dupcor bufr_dupsat
 #                   bufr_dupsst  bufr_dupmrg bufr_edtbfr bufr_quipc
 #                   bufr_chkbfr  bufr_combfr bufr_dupair bufr_dupshp
-#                   bufr_dupmar  bufr_geofil bufr_duprad
+#                   bufr_dupmar  bufr_geofil bufr_duprad bufr_dupupr
 #
 # Remarks:
 #
@@ -549,6 +551,7 @@
 #   DMDX   -  path to DUMPMD executable             (default:$DUEX/bufr_dumpmd)
 #   GEOX   -  path to GEOFIL executable             (default:$DUEX/bufr_geofil)
 #   CORX   -  path to DUPCOR executable             (default:$DUEX/bufr_dupcor)
+#   UPRX   -  path to DUPUPR executable             (default:$DUEX/bufr_dupupr)
 #   SATX   -  path to DUPSAT executable             (default:$DUEX/bufr_dupsat)
 #   SSTX   -  path to DUPSST executable             (default:$DUEX/bufr_dupsst)
 #   MRGX   -  path to DUPMRG executable             (default:$DUEX/bufr_dupmrg)
@@ -928,7 +931,7 @@ echo
 echo "********************************************************************"
 echo "********************************************************************"
 echo "     STARTING EXECUTION OF THE UNIVERSAL DUMP SCRIPT - DUMPJB       "
-echo "                            08-30-2017                              "
+echo "                            02-23-2018                              "
 echo "             Start time: `date -u`                                  "
 echo "********************************************************************"
 echo "********************************************************************"
@@ -989,6 +992,7 @@ echo
 [ -z "$DMDX" ]   && DMDX=$DUEX/bufr_dumpmd
 [ -z "$GEOX" ]   && GEOX=$DUEX/bufr_geofil
 [ -z "$CORX" ]   && CORX=$DUEX/bufr_dupcor
+[ -z "$UPRX" ]   && UPRX=$DUEX/bufr_dupupr
 [ -z "$SATX" ]   && SATX=$DUEX/bufr_dupsat
 [ -z "$SSTX" ]   && SSTX=$DUEX/bufr_dupsst
 [ -z "$MRGX" ]   && MRGX=$DUEX/bufr_dupmrg
@@ -1236,6 +1240,7 @@ RADX = $RADX
 DMDX = $DMDX
 GEOX = $GEOX
 CORX = $CORX
+UPRX = $UPRX
 SATX = $SATX
 SSTX = $SSTX
 MRGX = $MRGX
@@ -1723,6 +1728,7 @@ DUPE2=NONE
 [ $mt -eq 000 -a $st -eq 007                               ] && DUPE1=$MARX
 [ $mt -eq 001                                              ] && DUPE1=$MARX
 [ $mt -eq 002 -a \( $st -le 005 -o $st -eq 009 \)          ] && DUPE1=$MRGX
+[ $mt -eq 002 -a $st -eq 101                               ] && DUPE1=$UPRX
 [ $mt -eq 003 -o $mt -eq 005 -o $mt -eq 012 -o $mt -eq 021 ] && DUPE1=$SATX
 [ $mt -eq 012 -a \( $st -ge 010 -a $st -le 012 \)          ] && DUPE1=$SSTX
 [ $mt -eq 012 -a \( $st -ge 017 -a $st -le 018 \)          ] && DUPE1=$SSTX

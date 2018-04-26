@@ -2,7 +2,7 @@
 #  this will only work well if all codes in package need same version of each lib below
 
 w3nco_ver=2.0.6
-bufr_ver=11.1.0
+bufr_ver=11.2.0
 w3emc_ver=2.2.0
 bacio_ver=2.0.1
 sp_ver=2.0.2

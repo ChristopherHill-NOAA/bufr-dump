@@ -44,7 +44,7 @@ OBJS =  edtbfr.o
 FC = ifort
 #LDFLAGS = -Xlinker -t
 #LDFLAGS = -Xlinker -M
-LIBS = $(W3NCO_LIB4) $(BUFR_LIB4)
+LIBS = $(W3NCO_LIB4) $(BUFR_LIB4_DA)
 CMD = bufr_edtbfr
 
 DEBUG =                -g -traceback
