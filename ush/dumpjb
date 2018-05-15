@@ -328,6 +328,8 @@
 #       (/gpfs/hps2 and /gpfs/hps3 in addition to /gpfs/hps).  The default
 #       TMPDIR location for developer runs on Cray-XC40 is now on the /gpfs/hps3
 #       filesystem rather than /gpfs/hps.
+# 2018-05-04  Y. Ling  Added VIIRS SST mesgtyp/subtyp 012/023, 012/024 012/025 for 
+#       setting the DUPE1 and DUPE2 parameters.
 #
 #
 # Usage: dumpjb  yyyymmddhh<.hh> hh<.hh> dgrp1 dgrp2 dgrp3 ... dgrpN
@@ -1726,6 +1728,7 @@ DUPE2=NONE
 [ $mt -eq 003 -o $mt -eq 005 -o $mt -eq 012 -o $mt -eq 021 ] && DUPE1=$SATX
 [ $mt -eq 012 -a \( $st -ge 010 -a $st -le 012 \)          ] && DUPE1=$SSTX
 [ $mt -eq 012 -a \( $st -ge 017 -a $st -le 018 \)          ] && DUPE1=$SSTX
+[ $mt -eq 012 -a \( $st -ge 023 -a $st -le 025 \)          ] && DUPE1=$SSTX
 [ $mt -eq 006                                              ] && DUPE1=$RDWX
 if [ $mt -eq 255 ]; then
    DUPE1=$MARX

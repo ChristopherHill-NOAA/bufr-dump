@@ -17,7 +17,7 @@ proc ModulesHelp { } {
 module-whatis   "Sets environment variables to find dumpjb utility"
 
 set envir     prod
-set ver       4.0.0
+set ver       4.1.0
 
 conflict     dumpjb
 if { [regexp {^/gpfs/hps} [file normalize $ModulesCurrentModulefile]] } {

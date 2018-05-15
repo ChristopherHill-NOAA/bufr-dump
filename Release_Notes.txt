@@ -1,6 +1,6 @@
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-obsproc_dump release X.Y.Z --> released ??? ??, ????
-                           --> implemented ??? ??, ????
+obsproc_dump release 4.1.0 --> released May 15, 2018
+                           --> implemented ??? ??,2018 
 
 files:
    obsproc_dump/fix/bufr_bufrtab.sptrmm
@@ -11,7 +11,7 @@ files:
    obsproc_dump/fix/wave_bufrtab.erscat
    obsproc_dump/fix/wave_bufrtab.quikscat
    obsproc_dump/fix/wave_landchxh
- M obsproc_dump/modulefiles/dumpjb/X.Y.Z  (was 4.0.0)       <--- Remember to change modulefile version for next release
+ M obsproc_dump/modulefiles/dumpjb/4.1.0  (was 4.0.0)
    obsproc_dump/sorc/bufr_chkbfr.fd/chkbfr.f
    obsproc_dump/sorc/bufr_chkbfr.fd/makefile
    obsproc_dump/sorc/bufr_combfr.fd/combfr.f
@@ -34,7 +34,7 @@ files:
    obsproc_dump/sorc/bufr_dupsat.fd/makefile
    obsproc_dump/sorc/bufr_dupshp.fd/dupshp.f
    obsproc_dump/sorc/bufr_dupshp.fd/makefile
-   obsproc_dump/sorc/bufr_dupsst.fd/dupsst.f
+ M obsproc_dump/sorc/bufr_dupsst.fd/dupsst.f
    obsproc_dump/sorc/bufr_dupsst.fd/makefile
    obsproc_dump/sorc/bufr_edtbfr.fd/edtbfr.f
    obsproc_dump/sorc/bufr_edtbfr.fd/makefile
@@ -71,6 +71,8 @@ files:
       (/gpfs/hps2 and /gpfs/hps3 in addition to /gpfs/hps).
     - The default TMPDIR location for developer runs on Cray-XC40 is now on the
       /gpfs/hps3 filesystem rather than /gpfs/hps.
+    - Added VIIRS SST mesgtyp/subtyp 012/023, 012/024 012/025 for setting the 
+      DUPE1 and DUPE2 parameters
    bufr_dump_obs.sh:
     - Fixed bug exposed when fractional center date/time values are provided
       in positional parameter $1 (cendat); various logic tries to parse the
@@ -78,7 +80,7 @@ files:
       fractional values are sent; added new variable icendat variable which
       uses ${variable%pattern} shell syntax to truncate decimal content.
     - added rtma_ru_dump to tests on job name to set run name for status report
-      output); also added leading wildcard ("*") to all job name tests to
+      output; also added leading wildcard ("*") to all job name tests to
       account for implementation parallel runs which include a leading "p" in
       the job names.
     - set default value for imported shell variable prepssmi to NO
@@ -90,9 +92,12 @@ files:
       Note: ERS scatterometer wind reprocessing executables (dcodcloc, dataqc,
        datasort) have not been ported to current WCOSS systems and would fail
        if invoked.
+   dupsst.f:
+    - Modified to add duplicate checking for VIIRS SST (mnemonics 
+      NC012023/024/025). 
 
  Module changes:
-   Updated to X.Y.Z                                     <- update X.Y.Z when version decided
+   Updated to 4.1.0
 
 
  Output changes:
@@ -126,9 +131,33 @@ files:
 
  Dissemination:
  --------------
-   See information about dissemination in the latest release notes for
-   obsproc_<NETWORK> packages which execute this version of obsproc_dump.
+   There are no obsproc_<NETWORK> packages which execute this version
+   of obsproc_dump.  See information about dissemination in the
+   latest release notes for RTG-SST.
 
+
+ Special Instructions:
+ ---------------------
+   This should be implemented on BOTH WCOSS IBM Phase 2, and Cray.
+
+   - Please copy modulefiles/dumpjb/4.1.0 from this release to:
+       /gpfs/hps/nco/ops/nwprod/modulefiles/dumpjb/4.1.0
+     and:
+       /nwprod2/modulefiles/dumpjb/4.1.0
+   - When adding to nwtest or nwpara, please remember to modify the envir
+     variable in the modulefile accordingly.
+
+   This is part of OBSPROC.v8.3.2.
+   This must be implemented simultaneously with the implementation of:
+      obsproc_shared/bufr_dumplist.v1.6.0
+     
+   There are no obsproc_<NETWORK> packages which execute this version
+   of obsproc_dump.  RTG-SST is the initial application to use this
+   version.  Please ensure rtgssthr.ver is updated to point to
+   obsproc_dump.v4.1.0 and obsproc_shared/bufr_dumplist.v1.6.0.
+
+   Since there are no jobs in obsproc_dump, an obsproc_dump.ver file is not
+   needed.
       
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 obsproc_dump release 4.0.0 --> released Feb 09, 2017, updated Feb 20, 2017,
