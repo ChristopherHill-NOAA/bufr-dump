@@ -1,5 +1,5 @@
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-obsproc_dump release 4.1.0 --> released May 15, 2018
+obsproc_dump release 5.0.0 --> released Aug ??, 2018
                            --> implemented ??? ??,2018 
 
 files:
@@ -11,7 +11,8 @@ files:
    obsproc_dump/fix/wave_bufrtab.erscat
    obsproc_dump/fix/wave_bufrtab.quikscat
    obsproc_dump/fix/wave_landchxh
- M obsproc_dump/modulefiles/dumpjb/4.1.0  (was 4.0.0)
+ D obsproc_dump/modulefiles/dumpjb/4.1.0
+ A obsproc_dump/modulefiles/dumpjb/5.0.0
    obsproc_dump/sorc/bufr_chkbfr.fd/chkbfr.f
    obsproc_dump/sorc/bufr_chkbfr.fd/makefile
    obsproc_dump/sorc/bufr_combfr.fd/combfr.f
@@ -34,7 +35,7 @@ files:
    obsproc_dump/sorc/bufr_dupsat.fd/makefile
    obsproc_dump/sorc/bufr_dupshp.fd/dupshp.f
    obsproc_dump/sorc/bufr_dupshp.fd/makefile
- M obsproc_dump/sorc/bufr_dupsst.fd/dupsst.f
+   obsproc_dump/sorc/bufr_dupsst.fd/dupsst.f
    obsproc_dump/sorc/bufr_dupsst.fd/makefile
    obsproc_dump/sorc/bufr_edtbfr.fd/edtbfr.f
    obsproc_dump/sorc/bufr_edtbfr.fd/makefile
@@ -50,14 +51,112 @@ files:
    obsproc_dump/sorc/prepobs_prepssmi.fd/prepssmi.f
    obsproc_dump/sorc/wave_dcodquikscat.fd/dcodquikscat.f
    obsproc_dump/sorc/wave_dcodquikscat.fd/makefile
-   obsproc_dump/sorc/build.sh
+ M obsproc_dump/sorc/build.sh
    obsproc_dump/sorc/clean.sh
    obsproc_dump/sorc/install.sh
-   obsproc_dump/sorc/load_libs.rc
+ A obsproc_dump/sorc/clobber.sh
+ M obsproc_dump/sorc/load_libs.rc
    obsproc_dump/sorc/README.build
    obsproc_dump/sorc/setlibs.rc
- M obsproc_dump/ush/bufr_dump_obs.sh
+   obsproc_dump/ush/bufr_dump_obs.sh
    obsproc_dump/ush/check_tanks.sh
+ M obsproc_dump/ush/dumpjb
+
+( A - added,  M - modified, D - deleted)
+
+
+ USH script changes:
+   dumpjb:
+     - Updated to run on Dell-p3 systems as well as Cray-XC40 & IBM iDataPlex.
+     - added logic to detect Dell-p3 system and initialize Modules
+     - disabled exact matching of Dell-p3 module versions (LMOD_EXACT_MATCH=no)
+     - added default value for TMPDIR on Dell-p3 systems
+     - added checks for Dell-p3 user temporary directory filesystems
+
+ Source code changes:
+   build.sh:
+    - Updated to build codes on Dell-p3, Cray-XC40 or IBM iDataPlex.
+   load_libs.rc:
+    - Updated to load modules for Dell-p3.
+   clobber.sh:
+    - New script to invoke 'make clobber' in all sorc subdirectories.
+
+
+ Module changes:
+ ---------------
+   New modulefile 5.0.0 enhances funtionality of 4.1.0, with trap added to
+   detect running on Dell-p3 systems, and is fully backward compatible.  4.1.0
+   may be removed once all jobs referencing it have migrated to 5.0.0.
+
+
+ Output changes:
+ ---------------
+  (For specific network changes see " Output changes" in Release Notes for that
+   network, if that network executes this version of obsproc_dump.)
+
+
+ Libraries:
+ ----------
+   w3nco   2.0.6 (all codes)
+   w3emc   2.2.0 on IBM Dataplex & Cray-XC40
+           2.3.0 on Dell-p3 
+           (codes: bufr_dcodwindsat, bufr_dupair, bufr_dupcor, bufr_dupmar,
+                  bufr_dupmrg, bufr_duprad, bufr_dupsat, bufr_dupshp,
+                  bufr_dupsst, bufr_supertmi, prepobs_prepssmi,
+                  wave_dcodquikscat)
+   bufr   11.1.0 on IBM Dataplex & Cray-XC40
+          11.2.0 on Dell-p3
+           (all codes)
+   bacio   2.0.1 on IBM Dataplex & Cray-XC40
+           2.0.2 on Dell-p3
+           (codes: bufr_supertmi, prepobs_prepssmi, wave_dcodquikscat)
+   sp      2.0.2 (prepobs_prepssmi)
+
+
+ Build Instructions:
+ -------------------
+   - See sorc/README.build
+
+
+ Preimplementation Testing Requirements:
+ ---------------------------------------
+   There are no jobs in obsproc_dump.  All jobs executing this version of
+   obsproc_dump should be tested.
+
+
+ Dissemination:
+ --------------
+   See information about dissemination in the release notes for
+   obsproc_<NETWORK> packages which execute this version of obsproc_dump.
+
+
+ Special Instructions:
+ ---------------------
+   This is part of OBSPROC.v11.0.0.
+
+   This can be implemented prior to, but no later than, the implementation of:
+      v3.2.0 of obsproc_global.
+   This can be implemented simultaneously with the implementations of:
+      v5.2.0 of obsproc_prep,
+      v3.3.0 of obsproc_dump_post,
+      v3.1.0 of obsproc_prep_post,
+      v2.1.0 of obsproc_shared_bufr_avgdata,
+      v2.0.0 of obsproc_shared_bufr_dumplist,
+      v2.1.0 of obsproc_shared_bufr_remorest.
+   This can also be implemented prior to, but no later than, the FV3 GFS upgrade.
+   This must be installed on all WCOSS systems (IBM iDataPlex, Cray-XC40, Dell-p3).
+
+   Since there are no jobs in obsproc_dump, an obsproc_dump.ver file is not
+   needed.
+      
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+obsproc_dump release 4.1.0 --> released May 15, 2018
+                           --> implemented ??? ??,2018 
+
+files:
+ M obsproc_dump/modulefiles/dumpjb/4.1.0  (was 4.0.0)
+ M obsproc_dump/sorc/bufr_dupsst.fd/dupsst.f
+ M obsproc_dump/ush/bufr_dump_obs.sh
  M obsproc_dump/ush/dumpjb
 
 ( A - added,  M - modified, D - deleted)

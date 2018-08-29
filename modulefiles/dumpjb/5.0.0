@@ -9,6 +9,7 @@
 ##              update to work on ibm or cray
 ## 2017/02/27 - Removed load of bufr_dumplist module. Instead print information
 ##              to stderr if no variables used to find bufr_dumplist are set.
+## 2018/08/29 JWhiting - update to version 5.0.0 (for Dell-p3 use)
 ##
 proc ModulesHelp { } {
 	puts stderr "Set up environment for bufr utility script dumpjb\n"
@@ -17,12 +18,17 @@ proc ModulesHelp { } {
 module-whatis   "Sets environment variables to find dumpjb utility"
 
 set envir     prod
-set ver       4.1.0
+set ver       5.0.0
 
 conflict     dumpjb
 if { [regexp {^/gpfs/hps} [file normalize $ModulesCurrentModulefile]] } {
+  # Cray-XC40
   set base    /gpfs/hps/nco/ops/nw${envir}/obsproc_dump
+} elseif { [regexp {^/gpfs/del} [file normalize $ModulesCurrentModulefile]] } {
+  # Dell-p3
+  set base    /gpfs/dell1/nco/ops/nw${envir}/obsproc_dump
 } else {
+  # IBM-p1/2
   set base    /nw${envir}2/obsproc_dump
 }
 
