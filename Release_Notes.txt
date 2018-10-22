@@ -31,7 +31,7 @@ files:
    obsproc_dump/sorc/bufr_dupmrg.fd/makefile
    obsproc_dump/sorc/bufr_duprad.fd/duprad.f
    obsproc_dump/sorc/bufr_duprad.fd/makefile
-   obsproc_dump/sorc/bufr_dupsat.fd/dupsat.f
+M  obsproc_dump/sorc/bufr_dupsat.fd/dupsat.f
    obsproc_dump/sorc/bufr_dupsat.fd/makefile
    obsproc_dump/sorc/bufr_dupshp.fd/dupshp.f
    obsproc_dump/sorc/bufr_dupshp.fd/makefile
@@ -74,6 +74,9 @@ files:
      - added checks for Dell-p3 user temporary directory filesystems
 
  Source code changes:
+   bufr_dupsat:
+    - Updated dupsat.f to avoid generating RPID for GOES-16 (and higher) types which 
+      do not contain a report id.
    build.sh:
     - Updated to build codes on Dell-p3, Cray-XC40 or IBM iDataPlex.
    load_libs.rc:
