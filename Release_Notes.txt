@@ -1,5 +1,5 @@
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-obsproc_dump release 5.0.0 --> released Aug ??, 2018
+obsproc_dump release 5.0.0 --> released Aug 31, 2018
                            --> implemented ??? ??,2018 
 
 files:
@@ -13,7 +13,7 @@ files:
    obsproc_dump/fix/wave_landchxh
  D obsproc_dump/modulefiles/dumpjb/4.1.0
  A obsproc_dump/modulefiles/dumpjb/5.0.0
-   obsproc_dump/sorc/bufr_chkbfr.fd/chkbfr.f
+ M obsproc_dump/sorc/bufr_chkbfr.fd/chkbfr.f
    obsproc_dump/sorc/bufr_chkbfr.fd/makefile
    obsproc_dump/sorc/bufr_combfr.fd/combfr.f
    obsproc_dump/sorc/bufr_combfr.fd/makefile
@@ -74,6 +74,11 @@ M  obsproc_dump/sorc/bufr_dupsat.fd/dupsat.f
      - added checks for Dell-p3 user temporary directory filesystems
 
  Source code changes:
+   bufr_chkbufr.fd/chkbfr.f:
+    - Updated to add version 8 BUFR OMPS Nadir Profile (NC008017) and version
+      8 BUFR OMPS Total Column (NC008018) to the list of satellite types for
+      which prints of counts by satellite ID are added under total dump
+      count in standard output print and the dump status file.
    bufr_dupsat:
     - Updated dupsat.f to avoid generating RPID for GOES-16 (and higher) types which 
       do not contain a report id.
