@@ -33,10 +33,15 @@ if { [regexp {^/gpfs/hps} [file normalize $ModulesCurrentModulefile]] } {
   set base    /nw${envir}2/obsproc_dump
 }
 
-setenv        obsproc_dump_ver    v$ver
-setenv        HOMEobsproc_dump    $base.$env(obsproc_dump_ver)
-setenv        DUMPJB              $env(HOMEobsproc_dump)/ush/dumpjb
-prepend-path  PATH                $env(HOMEobsproc_dump)/ush
+# setenv        obsproc_dump_ver    v$ver
+# setenv        HOMEobsproc_dump    $base.$env(obsproc_dump_ver)
+set        obsproc_dump_ver    v$ver
+set        HOMEobsproc_dump    $base.${obsproc_dump_ver}
+
+setenv        obsproc_dump_ver    ${obsproc_dump_ver}
+setenv        HOMEobsproc_dump    ${HOMEobsproc_dump}
+setenv        DUMPJB              ${HOMEobsproc_dump}/ush/dumpjb
+prepend-path  PATH                ${HOMEobsproc_dump}/ush
 
 if { [module-info mode load] } {
    if { ![info exists env(LIST)] 
