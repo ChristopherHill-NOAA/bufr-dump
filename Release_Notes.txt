@@ -1,6 +1,6 @@
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 obsproc_dump release 5.0.1 --> released Nov 01, 2018
-                           --> implemented ??? ??, 201?
+                           --> implemented Nov 13, 2018
 
 files:
    obsproc_dump/fix/bufr_bufrtab.sptrmm
@@ -242,7 +242,7 @@ files:
       
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 obsproc_dump release 4.1.0 --> released May 15, 2018
-                           --> implemented ??? ??,2018 
+                           --> implemented Dec 04,2018 
 
 files:
  M obsproc_dump/modulefiles/dumpjb/4.1.0  (was 4.0.0)
