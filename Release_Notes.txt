@@ -1,6 +1,6 @@
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-obsproc_dump release 5.0.1 --> released Nov 01, 2018
-                           --> implemented Nov 13, 2018
+obsproc_dump release 5.0.2 --> released Apr 2?, 2019
+                           --> implemented ??? ??, 2019
 
 files:
    obsproc_dump/fix/bufr_bufrtab.sptrmm
@@ -11,9 +11,9 @@ files:
    obsproc_dump/fix/wave_bufrtab.erscat
    obsproc_dump/fix/wave_bufrtab.quikscat
    obsproc_dump/fix/wave_landchxh
- D obsproc_dump/modulefiles/dumpjb/5.0.0
- A obsproc_dump/modulefiles/dumpjb/5.0.1
- M obsproc_dump/sorc/bufr_chkbfr.fd/chkbfr.f
+ D obsproc_dump/modulefiles/dumpjb/5.0.1
+ A obsproc_dump/modulefiles/dumpjb/5.0.2
+   obsproc_dump/sorc/bufr_chkbfr.fd/chkbfr.f
    obsproc_dump/sorc/bufr_chkbfr.fd/makefile
    obsproc_dump/sorc/bufr_combfr.fd/combfr.f
    obsproc_dump/sorc/bufr_combfr.fd/makefile
@@ -31,7 +31,7 @@ files:
    obsproc_dump/sorc/bufr_dupmrg.fd/makefile
    obsproc_dump/sorc/bufr_duprad.fd/duprad.f
    obsproc_dump/sorc/bufr_duprad.fd/makefile
-M  obsproc_dump/sorc/bufr_dupsat.fd/dupsat.f
+ M obsproc_dump/sorc/bufr_dupsat.fd/dupsat.f
    obsproc_dump/sorc/bufr_dupsat.fd/makefile
    obsproc_dump/sorc/bufr_dupshp.fd/dupshp.f
    obsproc_dump/sorc/bufr_dupshp.fd/makefile
@@ -61,6 +61,77 @@ M  obsproc_dump/sorc/bufr_dupsat.fd/dupsat.f
    obsproc_dump/ush/bufr_dump_obs.sh
    obsproc_dump/ush/check_tanks.sh
    obsproc_dump/ush/dumpjb
+
+( A - added,  M - modified, D - deleted)
+
+
+ Source code changes:
+   bufr_dupsat.fd/dupsat.f:
+    - Updated dupsat.f to assign "S" to first character of RPID for NOAA-20
+      (SAID=225) VIIRS Polar Winds data from message type NC005090. 
+
+ Module changes:
+ ---------------
+   Updated to 5.0.2
+
+ Output changes:
+ ---------------
+  (For specific network changes see " Output changes" in Release Notes for that
+   network, if that network executes this version of obsproc_dump.)
+
+ Libraries:
+ ----------
+   w3nco   2.0.6 (all codes)
+   w3emc   2.2.0 on IBM Dataplex & Cray-XC40
+           2.3.0 on Dell-p3
+           (codes: bufr_dcodwindsat, bufr_dupair, bufr_dupcor, bufr_dupmar,
+                  bufr_dupmrg, bufr_duprad, bufr_dupsat, bufr_dupshp,
+                  bufr_dupsst, bufr_supertmi, prepobs_prepssmi,
+                  wave_dcodquikscat)
+   bufr   11.1.0 on IBM Dataplex & Cray-XC40
+          11.2.0 on Dell-p3
+           (all codes)
+   bacio   2.0.1 on IBM Dataplex & Cray-XC40
+           2.0.2 on Dell-p3
+           (codes: bufr_supertmi, prepobs_prepssmi, wave_dcodquikscat)
+   sp      2.0.2 (prepobs_prepssmi)
+
+ Build Instructions:
+ -------------------
+   - See sorc/README.build
+
+
+ Preimplementation Testing Requirements:
+ ---------------------------------------
+   There are no jobs in obsproc_dump.  All jobs executing this version of
+   obsproc_dump should be tested.
+
+ Dissemination:
+ --------------
+   See information about dissemination in the release notes for
+   obsproc_<NETWORK> packages which execute this version of obsproc_dump.
+
+
+ Special Instructions:
+ ---------------------
+   This is part of OBSPROC.v10.6.1.
+   This can be implemented as soon as possible.
+   This impacts obsproc_global dump jobs only.
+   This must be installed on all WCOSS systems (IBM iDataPlex, Cray-XC40, Dell-p3).
+
+   Since there are no jobs in obsproc_dump, an obsproc_dump.ver file is not
+   needed. But note, please update obsproc_global.ver to set obsproc_dump_ver
+   to 5.0.2.
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+obsproc_dump release 5.0.1 --> released Nov 01, 2018
+                           --> implemented Nov 13, 2018
+
+files:
+ D obsproc_dump/modulefiles/dumpjb/5.0.0
+ A obsproc_dump/modulefiles/dumpjb/5.0.1
+ M obsproc_dump/sorc/bufr_chkbfr.fd/chkbfr.f
+ M obsproc_dump/sorc/bufr_dupsat.fd/dupsat.f
 
 ( A - added,  M - modified, D - deleted)
 

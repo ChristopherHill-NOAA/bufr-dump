@@ -1,7 +1,7 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: BUFR_DUPSAT
-C   PRGMMR: KEYSER           ORG: NP22        DATE: 2018-03-28
+C   PRGMMR: KEYSER/MELCHIOR         ORG: NP22        DATE: 2018-03-28
 C
 C ABSTRACT: PROCESSES SATELLITE DATABASE REPORTS WITH (OPTIONAL)
 C   GEOGRAPHICAL FILTERING, DUPLICATE CHECKING, (OPTIONAL) TRIMMING
@@ -269,6 +269,11 @@ C        had no affect on answers.
 C 2018-03-28  D. Keyser  Changes to handle new GOES-16 & up satellite
 C        winds which do not contain a report id (RPID) - do not call
 C        subroutine SATWND_ID for these.
+C 2019-04-16  S. MELCHIOR  In subr. SATWND_ID: IR (long-wave) NOAA-20
+C        VIIRS POES winds now handled. These have message type NC005090
+C        and BUFR satellite ID 225. Get previously unused character "S"
+C        in 1st character of generated RPID and "9" (meaning NASA is
+C        producer) in 2nd character of RPID.
 C
 C USAGE:
 C   INPUT FILES:
@@ -438,7 +443,7 @@ C$$$
 
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_DUPSAT',2018,0087,0062,'NP22')
+      CALL W3TAGB('BUFR_DUPSAT',2019,0106,0062,'NP22')
 
       print *
       print * ,'---> Welcome to BUFR_DUPSAT - Version 03-28-2018'
@@ -1428,6 +1433,11 @@ C        19 is defined for IR short-wave imager automated winds. This
 C        allows a unique sequential serial index (counter) to be used
 C        to generate characters 3-7 of RPID for each individual
 C        satellite.
+C 2019-04-16  S. MELCHIOR: IR (long-wave) NOAA-20 VIIRS POES winds
+C        now handled. These have message type NC005090 and BUFR
+C        satellite ID 225. Get previously unused character "S" in 1st
+C        character of generated RPID and "9" (meaning NASA is
+C        producer) in 2nd character of RPID.
 C
 C USAGE:    CALL SATWND_ID(LUBFI,LUBFJ,JDUP,NDUP,JLON,NLON,LALO_8,
 C                          LATLON_TYPE,ICOMP)
@@ -1501,8 +1511,8 @@ C---------------------------------------------------------------------
 
       DATA CSAT /  ! character 1 in report id for winds (character
                    ! meaning defined further below)
-                   ! (Note:  unique characters still available for
-                   !         future use: 'S')
+                   ! (Note:  no unique characters remain - must 
+                   !         recycle old ones)
 
 C                 **  METOP **
 C ---- spare(1-2) 3   4   5
@@ -1527,11 +1537,11 @@ C ---- spare(200-205) 206 207 208 209 spare(210-222) 223
      $,    6* '?',    'F','L','M','N',   13* '?',    'G'
 
 C                    ** NPP **
-C ---- 224
-     $,'J'
+C ---- 224 225
+     $,'J','S'
 
-C ---- spare(225-249)
-     $,   25* '?'
+C ---- spare(226-249)
+     $,   24* '?'
 
 C                    **  GOES **
 C ---- 250 251 252 253 254 255 256 257 258 259
@@ -1718,6 +1728,7 @@ C                                        SAT. NO. 208           GET 'M'
 C                                        SAT. NO. 209           GET 'N'
 C                                        SAT. NO. 223           GET 'G'
 C                       -----> NPP:      SAT. NO. 224           GET 'J'
+C                       -----> NOAA:     SAT. NO. 225           GET 'S'
 C    REPROCESSED CHAR 2 -----> WINDS PRODUCED BY NESDIS/NASA:
 C                               RETURNED VALUE IN BUFR FOR 'SWPR'
 C                               (PRODUCER), IF NON-MISSING; OTHERWISE
