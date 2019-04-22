@@ -117,7 +117,7 @@ files:
    This is part of OBSPROC.v10.6.1.
    This can be implemented as soon as possible.
    This impacts obsproc_global dump jobs only.
-   This must be installed on all WCOSS systems (IBM iDataPlex, Cray-XC40, Dell-p3).
+   This must be installed on Dell-p3 WCOSS system.
 
    Since there are no jobs in obsproc_dump, an obsproc_dump.ver file is not
    needed. But note, please update obsproc_global.ver to set obsproc_dump_ver
