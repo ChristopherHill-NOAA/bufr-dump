@@ -1,7 +1,7 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: BUFR_DUPSAT
-C   PRGMMR: KEYSER/MELCHIOR         ORG: NP22        DATE: 2018-03-28
+C   PRGMMR: KEYSER/MELCHIOR         ORG: NP22        DATE: 2019-04-16
 C
 C ABSTRACT: PROCESSES SATELLITE DATABASE REPORTS WITH (OPTIONAL)
 C   GEOGRAPHICAL FILTERING, DUPLICATE CHECKING, (OPTIONAL) TRIMMING
@@ -446,7 +446,7 @@ C-----------------------------------------------------------------------
       CALL W3TAGB('BUFR_DUPSAT',2019,0106,0062,'NP22')
 
       print *
-      print * ,'---> Welcome to BUFR_DUPSAT - Version 03-28-2018'
+      print * ,'---> Welcome to BUFR_DUPSAT - Version 04-16-2019'
       print *
 
       CALL DATELEN(10)
