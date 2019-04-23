@@ -1,5 +1,5 @@
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-obsproc_dump release 5.0.2 --> released Apr 2?, 2019
+obsproc_dump release 5.0.2 --> released Apr 23, 2019
                            --> implemented ??? ??, 2019
 
 files:
