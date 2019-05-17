@@ -1,6 +1,6 @@
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 obsproc_dump release 5.0.2 --> released Apr 23, 2019
-                           --> implemented ??? ??, 2019
+                           --> implemented May 15, 2019
 
 files:
    obsproc_dump/fix/bufr_bufrtab.sptrmm
@@ -60,10 +60,15 @@ files:
    obsproc_dump/sorc/setlibs.rc
    obsproc_dump/ush/bufr_dump_obs.sh
    obsproc_dump/ush/check_tanks.sh
-   obsproc_dump/ush/dumpjb
+ M obsproc_dump/ush/dumpjb
 
 ( A - added,  M - modified, D - deleted)
 
+
+ USH script changes:
+   dumpjb:
+     - Updated to run using $DCOMROOT on Dell-p3.
+       NOTE: As of this release sdmedit still points to phase 1 dcom.
 
  Source code changes:
    bufr_dupsat.fd/dupsat.f:

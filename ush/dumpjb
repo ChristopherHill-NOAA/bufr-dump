@@ -1062,9 +1062,10 @@ echo
 
 [ -z "$LALO" ]   && LALO=0
 [ -z "$DCOMROOT" ] && DCOMROOT=$(module load prod_envir; echo $DCOMROOT)
-[ -z "$TANK" ]   && TANK=${DCOMROOT:?}/us007003
-[ -z "$EPRM" ]   && EPRM=${DCOMROOT:?}/us007003/sdmedit
-[ -z "$QPRM" ]   && QPRM=${DCOMROOT:?}/us007003/quips
+[ -z "$TANK" ]   && TANK=${DCOMROOT:?}/prod
+# JY dcom P3 [ -z "$EPRM" ]   && EPRM=${DCOMROOT:?}/prod/sdmedit
+[ -z "$EPRM" ]   && EPRM=/gpfs/[tg]p1/nco/ops/dcom/us007003/sdmedit
+[ -z "$QPRM" ]   && QPRM=${DCOMROOT:?}/prod/quips
 
 if [ -n "$DATA_DUMPJB" ]; then
   data_dumpjb_imported=YES
