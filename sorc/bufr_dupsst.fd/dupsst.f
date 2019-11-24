@@ -70,6 +70,8 @@ C       ASSIGNMENT OF BMISS W/ GETBMISS() FUNCTION.
 C 2014-11-07  D. KEYSER   DECLARE FUNCTION GETBMISS AND ITS RETURN
 C     VALUE BMISS AS REAL*8 TO GET A RELIABLE VALUE FOR BMISS IN PRINT
 C     STATEMENTS
+C 2018-04-02  Y. LING   MODIFIED TO ADD DUPLICATE CHECKING FOR VIIRS
+C     SST (MNEMONICS NC012023/024/025)
 C
 C USAGE:
 C   INPUT FILES:
@@ -117,7 +119,7 @@ C$$$
       INTEGER,ALLOCATABLE :: JDUP(:)
 
       CHARACTER*500 FILI,FILO
-      CHARACTER*80  TSTR,TSTR1
+      CHARACTER*80  TSTR,TSTR1,TSTR2
       CHARACTER*45  TEXT
       CHARACTER*8   SUBSET
       CHARACTER*3   DUMMY_MSGS
@@ -127,10 +129,11 @@ C$$$
       REAL(8)      ADATE,BDATE,CDATE,DDATE,RDATE,UFBTAB_8
       REAL(8)      BMISS,GETBMISS
 
-      LOGICAL      DUPES,SSTRET
+      LOGICAL      DUPES,SSTRET,SSTRET2
  
       DATA TSTR  /'CLAT CLON SST1 SSTYPE DAYS HOUR MINU SSTSRC'/
       DATA TSTR1 /'CLAT CLON SST1 SSTYPE DAYS HOUR MINU SAID  '/
+      DATA TSTR2 /'CLATH CLONH SST0 DAYS HOUR MINU            '/
 
       DATA ADATE /00000000.00_8/
       DATA BDATE /99999999.00_8/
@@ -140,10 +143,10 @@ C$$$
  
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_DUPSST',2014,0311,0062,'NP22')
+      CALL W3TAGB('BUFR_DUPSST',2018,0092,0005,'NP22')
 
       print *
-      print * ,'---> Welcome to BUFR_DUPSST - Version 11-07-2014'
+      print * ,'---> Welcome to BUFR_DUPSST - Version 04-02-2018'
       print *
 
       CALL DATELEN(10)
@@ -207,9 +210,12 @@ C  -------------------------------------------------------------------
       CALL CLOSBF(LUBFI)
 
       SSTRET=(SUBSET.EQ.'NC012017' .OR. SUBSET.EQ.'NC012018')
-
+      SSTRET2=(SUBSET.EQ.'NC012023' .OR. SUBSET.EQ.'NC012024'
+     + .OR. SUBSET.EQ.'NC012025')!VIIRS SST
       IF(SSTRET)  THEN  ! Physical SST retrievals come here
          TEXT = 'TOLERANCE FOR SATELLITE ID CHECK ........... '
+      ELSE IF(SSTRET2)  THEN  ! VIIRS SST 
+         TEXT = 'TOLERANCE FOR VIIRS SST CHECK ........... '
       ELSE              ! All other SST types come here
          TEXT = 'TOLERANCE FOR SST TYPE CHECK ............... '
       ENDIF
@@ -279,26 +285,46 @@ C  -------------------------------------------------------------------
       OPEN(LUBFI,FILE=FILI(1:NBYTES_FILI),FORM='UNFORMATTED')
       IF(SSTRET) THEN ! Physical SST retrievals come here
          CALL UFBTAB(LUBFI,TAB_8,MXTS,MXTB,NTAB,TSTR1)
+      ELSE IF(SSTRET2) THEN ! VIIRS SST come here
+         CALL UFBTAB(LUBFI,TAB_8,MXTS,MXTB,NTAB,TSTR2)
       ELSE            ! All other SST types come here
          CALL UFBTAB(LUBFI,TAB_8,MXTS,MXTB,NTAB,TSTR)
       ENDIF
  
 C  GET A SORTED INDEX OF THE REPORTS BY:
+C   SST AND LAT/LON FOR VIIRS SST
 C   SATELLITE ID, SST-TYPE, SST, AND LAT/LON FOR SST RETRIEVALS
 C   SST-OBS SOURCE, SST-TYPE, SST, AND LAT/LON FRO ALL OTHER SST TYPES
 C  -------------------------------------------------------------------
- 
-      CALL ORDERS( 2,IWORK,TAB_8(8,1),IORD,NTAB,MXTS,8,2) ! sat.id(retr)
-                                                          ! source(rest)
-      CALL ORDERS(12,IWORK,TAB_8(4,1),IORD,NTAB,MXTS,8,2) ! sst-type
-      CALL ORDERS(12,IWORK,TAB_8(3,1),IORD,NTAB,MXTS,8,2) ! sst
-      CALL ORDERS(12,IWORK,TAB_8(2,1),IORD,NTAB,MXTS,8,2) ! lon
-      CALL ORDERS(12,IWORK,TAB_8(1,1),IORD,NTAB,MXTS,8,2) ! lat
- 
+      IF(SSTRET2) THEN ! VIIRS SST
+         CALL ORDERS(12,IWORK,TAB_8(3,1),IORD,NTAB,MXTS,8,2) !sst0
+         CALL ORDERS(12,IWORK,TAB_8(2,1),IORD,NTAB,MXTS,8,2) ! lon
+         CALL ORDERS(12,IWORK,TAB_8(1,1),IORD,NTAB,MXTS,8,2) ! lat
+      ELSE
+         CALL ORDERS( 2,IWORK,TAB_8(8,1),IORD,NTAB,MXTS,8,2) ! sat.id(retr)
+                                                             ! source(rest)
+         CALL ORDERS(12,IWORK,TAB_8(4,1),IORD,NTAB,MXTS,8,2) ! sst-type
+         CALL ORDERS(12,IWORK,TAB_8(3,1),IORD,NTAB,MXTS,8,2) ! sst
+         CALL ORDERS(12,IWORK,TAB_8(2,1),IORD,NTAB,MXTS,8,2) ! lon
+         CALL ORDERS(12,IWORK,TAB_8(1,1),IORD,NTAB,MXTS,8,2) ! lat
+      ENDIF
+       
 C  GO THROUGH THE REPORTS IN ORDER, MARKING DUPLICATES
 C  ---------------------------------------------------
-
-      DO K=1,NTAB-1
+      IF(SSTRET2) THEN ! VIIRS SST
+       DO K=1,NTAB-1
+         IREC = IORD(K)
+         JREC = IORD(K+1)
+         IF(
+     .    NINT(ABS(TAB_8(1,IREC)-TAB_8(1,JREC))*100.).LE.NINT(DEXY*100.)
+     .    .AND.
+     .    NINT(ABS(TAB_8(2,IREC)-TAB_8(2,JREC))*100.).LE.NINT(DEXY*100.)
+     .    .AND.
+     .   NINT(ABS(TAB_8(3,IREC)-TAB_8(3,JREC))*100.).LE.NINT(DSST*100.))
+     .    JDUP(IREC) = 1
+       ENDDO
+      ELSE
+       DO K=1,NTAB-1
          IREC = IORD(K)
          JREC = IORD(K+1)
          IF(
@@ -312,7 +338,8 @@ C  ---------------------------------------------------
      .    .AND.
      .   NINT(ABS(TAB_8(8,IREC)-TAB_8(8,JREC))*100.).LE.NINT(DTYP*100.))
      .    JDUP(IREC) = 1
-      ENDDO
+       ENDDO
+      ENDIF
  
 C  TRIM THE EXCESS DATA FROM THE EXACT TIME WINDOW (IF REQUESTED)
 C  --------------------------------------------------------------
@@ -321,7 +348,11 @@ C  --------------------------------------------------------------
          CDATE = MOD(ADATE,10000._8)
          DDATE = MOD(BDATE,10000._8)
          DO K=1,NTAB
-            RDATE = TAB_8(5,K)*1E2 + TAB_8(6,K) + TAB_8(7,K)/60.
+            IF(SSTRET2) THEN ! VIIRS SST
+              RDATE = TAB_8(4,K)*1E2 + TAB_8(5,K) + TAB_8(6,K)/60.
+            ELSE
+              RDATE = TAB_8(5,K)*1E2 + TAB_8(6,K) + TAB_8(7,K)/60.
+            ENDIF
             IF(CDATE.LE.DDATE) THEN
                IF(RDATE.LT.CDATE .OR.  RDATE.GT.DDATE) JDUP(K) = 2
             ELSE

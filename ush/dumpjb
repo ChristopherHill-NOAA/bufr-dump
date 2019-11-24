@@ -212,7 +212,7 @@
 #     BUFR_DUMPMD must still be run for all types because it will write the
 #     dummy messages to the dump file since BUFR_COMBFR does not run in this
 #     case); added new script variable DUMPMD which controls the execution of
-#     BUFR_DUMPMD {there may be cases where BUFR_DUMPMD need not run in order
+#     BUFR_DUMPMD (there may be cases where BUFR_DUMPMD need not run in order
 #     to save computation time (e.g., Level 2 radial wind or reflectivity types
 #     in 1-hour tanks) - before BUFR_DUMPMD always ran in every thread), see
 #     comments about script variable DUMPMD in remarks section below; checks to
@@ -330,7 +330,15 @@
 #       filesystem rather than /gpfs/hps.
 # 2018-02-23  D. Keyser  New BUFR-feed land RAOBS (002.101) are dup-checked by
 #      new dup-check code BUFR_DUPUPR.
+# 2018-05-04  Y. Ling  Added VIIRS SST mesgtyp/subtyp 012/023, 012/024 012/025 for 
+#       setting the DUPE1 and DUPE2 parameters.
+# 2018-08-29  JWhiting  Updated to run on Dell-p3 platforms: 
+#     - added logic to detect Dell-p3 system and initialize Modules;
+#     - disabled exact matching of Dell-p3 module versions (LMOD_EXACT_MATCH=no);
+#     - added default value for TMPDIR on Dell-p3 systems;
+#     - added checks for Dell-p3 user temporary directory filesystems.
 #
+###
 #
 # Usage: dumpjb  yyyymmddhh<.hh> hh<.hh> dgrp1 dgrp2 dgrp3 ... dgrpN
 #
@@ -931,7 +939,7 @@ echo
 echo "********************************************************************"
 echo "********************************************************************"
 echo "     STARTING EXECUTION OF THE UNIVERSAL DUMP SCRIPT - DUMPJB       "
-echo "                            02-23-2018                              "
+echo "                            08-29-2018                              "
 echo "             Start time: `date -u`                                  "
 echo "********************************************************************"
 echo "********************************************************************"
@@ -942,10 +950,26 @@ RETG=0
 
 # Initialize the Modules package in case we need to load an environmment module
 #  (update the following lines if this script moves away from ksh)
-if [ -f /usrx/local/Modules/default/init/ksh ]; then
+# -- assumes module init files are unique to each system;
+if [ -f /usrx/local/Modules/default/init/ksh ]; then          # IBM-p1/2
     . /usrx/local/Modules/default/init/ksh > /dev/null
-elif [ -f /opt/modules/default/init/ksh ]; then
+
+elif [ -f /opt/modules/default/init/ksh ]; then               # Cray-XC40
     . /opt/modules/default/init/ksh  > /dev/null
+
+elif [ -f /usrx/local/prod/lmod/lmod/init/profile ] ; then    # Dell-p3 
+    . /usrx/local/prod/lmod/lmod/init/profile > /dev/null
+    . /usrx/local/prod/modulefiles/.defaultmodules > /dev/null
+
+    LMOD_EXACT_MATCH=no
+
+else
+  echo "ERROR: could not initialize module environment"
+  echo
+  echo "ABNORMAL EXIT!!!!!!!!!!!"
+  echo
+  [ $LOUD = on ] && set -x
+  exit 99
 fi
 [ -z "$sys_tp" ] && sys_tp=$(module load prod_util 2>/dev/null;getsystem.pl -tp)
 
@@ -1042,9 +1066,10 @@ echo
 
 [ -z "$LALO" ]   && LALO=0
 [ -z "$DCOMROOT" ] && DCOMROOT=$(module load prod_envir; echo $DCOMROOT)
-[ -z "$TANK" ]   && TANK=${DCOMROOT:?}/us007003
-[ -z "$EPRM" ]   && EPRM=${DCOMROOT:?}/us007003/sdmedit
-[ -z "$QPRM" ]   && QPRM=${DCOMROOT:?}/us007003/quips
+[ -z "$TANK" ]   && TANK=${DCOMROOT:?}/prod
+# JY dcom P3 [ -z "$EPRM" ]   && EPRM=${DCOMROOT:?}/prod/sdmedit
+[ -z "$EPRM" ]   && EPRM=/gpfs/[tg]p1/nco/ops/dcom/us007003/sdmedit
+[ -z "$QPRM" ]   && QPRM=${DCOMROOT:?}/prod/quips
 
 if [ -n "$DATA_DUMPJB" ]; then
   data_dumpjb_imported=YES
@@ -1066,6 +1091,7 @@ else # put DATA_DUMPJB under $TMPDIR
        Cray-XC40) TMPDIR=/gpfs/hps3/stmp/$USER;;
           IBM-p1) TMPDIR=/stmpd1/$USER;;
           IBM-p2) TMPDIR=/stmpd3/$USER;;
+         Dell-p3) TMPDIR=/gpfs/dell2/stmp/$USER;;
         *) 
       set +x
       echo "*******************************************************************"
@@ -1101,7 +1127,9 @@ else # put DATA_DUMPJB under $TMPDIR
 #  This will help to minimize the number of subdirectories directly under 
 #  the root scrub dir.
     case ${TMPDIR%\/} in     # a trailing slash is ignored
-      /stmp | /stmp?? | /ptmp | /ptmp?? | /gpfs/???/[sp]tmp | /gpfs/????/[sp]tmp )
+      /stmp | /stmp?? | /ptmp | /ptmp?? | \
+      /gpfs/???/[sp]tmp | /gpfs/????/[sp]tmp | \
+      /gfps/dell?/[sp]tmp )
           [ -n "$USER" ] && TMPDIR=${TMPDIR%\/}/$USER;;
     esac
   fi
@@ -1732,6 +1760,7 @@ DUPE2=NONE
 [ $mt -eq 003 -o $mt -eq 005 -o $mt -eq 012 -o $mt -eq 021 ] && DUPE1=$SATX
 [ $mt -eq 012 -a \( $st -ge 010 -a $st -le 012 \)          ] && DUPE1=$SSTX
 [ $mt -eq 012 -a \( $st -ge 017 -a $st -le 018 \)          ] && DUPE1=$SSTX
+[ $mt -eq 012 -a \( $st -ge 023 -a $st -le 025 \)          ] && DUPE1=$SSTX
 [ $mt -eq 006                                              ] && DUPE1=$RDWX
 if [ $mt -eq 255 ]; then
    DUPE1=$MARX
