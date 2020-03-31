@@ -335,6 +335,8 @@
 #     - disabled exact matching of Dell-p3 module versions (LMOD_EXACT_MATCH=no);
 #     - added default value for TMPDIR on Dell-p3 systems;
 #     - added checks for Dell-p3 user temporary directory filesystems.
+# 2020-03-09  SPA Update to have TANK, EPRM, QPRM default to Dell-p3 directory
+#       structure
 #
 ###
 #
@@ -712,7 +714,7 @@
 #   DCOMROOT - default root directory path to $TANK, $EPRM and $QPRM
 #                                            (default: set by prod_envir module)
 #
-#   TANK   -  directory path to database          (default:${DCOMROOT}/us007003)
+#   TANK   -  directory path to database          (default:${DCOMROOT}/prod)
 #                        (NOTE: This can be overidden for any individual BUFR
 #                                type/subtype in the list - see variable
 #                                "TANK_<TTTSSS>" below
@@ -737,9 +739,9 @@
 #
 #   DATA   -  directory path to user data destination              (default:pwd)
 #   EPRM   -  directory path/filename of edtbfr sdmedit/reject/list file
-#                                         (default:${DCOMROOT}/us007003/sdmedit)
+#                                         (default:${DCOMROOT}/prod/sdmedit)
 #   QPRM   -  directory path/filename of QUIPS flag file
-#                                           (default:${DCOMROOT}/us007003/quips)
+#                                           (default:${DCOMROOT}/prod/quips)
 #   FORM   -  if != copy, the suffix qualifier for database dump files in
 #               $DATA {the database dump files for each data group will be
 #                      combined into a single file called $DATA/dgrp.$FORM }
@@ -1063,8 +1065,7 @@ echo
 [ -z "$LALO" ]   && LALO=0
 [ -z "$DCOMROOT" ] && DCOMROOT=$(module load prod_envir; echo $DCOMROOT)
 [ -z "$TANK" ]   && TANK=${DCOMROOT:?}/prod
-# JY dcom P3 [ -z "$EPRM" ]   && EPRM=${DCOMROOT:?}/prod/sdmedit
-[ -z "$EPRM" ]   && EPRM=/gpfs/[tg]p1/nco/ops/dcom/us007003/sdmedit
+[ -z "$EPRM" ]   && EPRM=${DCOMROOT:?}/prod/sdmedit
 [ -z "$QPRM" ]   && QPRM=${DCOMROOT:?}/prod/quips
 
 if [ -n "$DATA_DUMPJB" ]; then

@@ -1,4 +1,20 @@
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+obsproc_dump 5.0.3  --> updated and implemented by SPA on Mar 26, 2020
+
+ M obsproc_dump/ush/dumpjb
+   - now TANK, QPRM and EPRM (sdmedit) all default to use Phase3 prod dcom 
+   - update docblock comments related to TANK, EPRM, QPRM 
+ M obsproc_dump/ush/check_tanks.sh
+   - update TANK default to use phase 3 prod dcom directory 
+ D obsproc_dump/modulefiles/dumpjb/5.0.2
+ A obsproc_dump/modulefiles/dumpjb/5.0.3
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+Also in v5.0.2 on Dell: the following script is updated to use Phase3 dcom:
+  ush/dumpjb 
+Please note that the sdmedit still points to phase1 dcom, will switch to
+p3 dcom when it is ready!
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 obsproc_dump release 5.0.2 --> released Apr 23, 2019
                            --> implemented May 15, 2019
 

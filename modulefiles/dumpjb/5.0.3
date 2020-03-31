@@ -12,6 +12,7 @@
 ## 2018/08/29 JWhiting  - update to version 5.0.0 (for Dell-p3 use)
 ## 2018/11/01 SMelchior - update to version 5.0.1
 ## 2019/04/19 SMelchior - update to version 5.0.2
+## 2020/03/11 SPA       - update to version 5.0.3
 ##
 proc ModulesHelp { } {
 	puts stderr "Set up environment for bufr utility script dumpjb\n"
@@ -20,7 +21,7 @@ proc ModulesHelp { } {
 module-whatis   "Sets environment variables to find dumpjb utility"
 
 set envir     prod
-set ver       5.0.2
+set ver       5.0.3
 
 conflict     dumpjb
 if { [regexp {^/gpfs/hps} [file normalize $ModulesCurrentModulefile]] } {
