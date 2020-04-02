@@ -999,7 +999,7 @@ if [[ -z "$DUEX" ]]; then
     if [ "$sys_tp" = 'Cray-XC40' -o "$SITE" = SURGE -o "$SITE" = LUNA ]; then
       HOMEobsproc_dump=${NWROOThps:-/gpfs/hps/nco/ops/nwprod}/obsproc_dump.${obsproc_dump_ver}
     else
-      HOMEobsproc_dump=${NWROOTp2:-/nwprod2}/obsproc_dump.${obsproc_dump_ver}
+      HOMEobsproc_dump=${NWROOT:-/gpfs/dell1/nco/ops/nwprod}/obsproc_dump.${obsproc_dump_ver}
     fi
   fi
   DUEX=$HOMEobsproc_dump/exec
@@ -1046,7 +1046,7 @@ HOMEobsproc_shared_bufr_dumplist, DFIX, or LIST must be defined."
       if [ "$sys_tp" = 'Cray-XC40' -o "$SITE" = SURGE -o "$SITE" = LUNA ]; then
         dumplistroot=${NWROOThps:-/gpfs/hps/nco/ops/nwprod}/obsproc_shared
       else
-        dumplistroot=${NWROOTp2:-/nwprod2}/obsproc_shared
+        dumplistroot=${NWROOT:-/gpfs/dell1/nco/ops/nwprod}/obsproc_shared
       fi
       HOMEobsproc_shared_bufr_dumplist=\
 $dumplistroot/bufr_dumplist.${obsproc_shared_bufr_dumplist_ver}
