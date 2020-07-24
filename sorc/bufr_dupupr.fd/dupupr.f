@@ -29,11 +29,17 @@ C PROGRAM HISTORY LOG:
 C 2018-02-20  D.A. KEYSER --  ORIGINAL VERSION FOR IMPLEMENTATION
 C
 C 2018-12-21  C. Hill
-C             - Included additional station block numbers based on
+C             - Included additional (13) station block numbers based on
 C               verified quality of the station data.
 C
 C 2019-11-21  C. Hill
 C             - Verified program function on Dell machines (no changes).
+C
+C 2020-03-20  C. Hill
+C             - Added (15) more station block numbers based on verified
+C               data quality and their significance; includes
+C               China stations {5[0-9]} and some West Africa stations
+C               {6[0-1]}.
 C     
 C USAGE:
 C   INPUT FILES:
@@ -126,7 +132,7 @@ c processing here (=1) and which will be rejected (=0)
 
 C -> BLK #: 00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19
 C           -----------------------------------------------------------
-     .       0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+     .       0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0,
 
 C -> BLK #: 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39
 C           -----------------------------------------------------------
@@ -134,11 +140,11 @@ C           -----------------------------------------------------------
 
 C -> BLK #: 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59
 C           -----------------------------------------------------------
-     .       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+     .       0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 
 C -> BLK #: 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79
 C           -----------------------------------------------------------
-     .       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,
+     .       1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0,
 
 C -> BLK #: 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99
 C           -----------------------------------------------------------
@@ -149,10 +155,10 @@ C-----------------------------------------------------------------------
 
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_DUPUPR',2018,0051,0054,'NP22') 
+      CALL W3TAGB('BUFR_DUPUPR',2020,0080,0054,'NP22') 
 
       print *
-      print * ,'---> Welcome to BUFR_DUPUPR - Version 02-20-2018'
+      print * ,'---> Welcome to BUFR_DUPUPR - Version 03-20-2020'
       print *
 
 
