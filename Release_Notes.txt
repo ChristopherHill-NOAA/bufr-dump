@@ -1,6 +1,6 @@
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 obsproc_dump release 5.1.0 --> released Aug 28, 2020
-                           --> implemented ??? ??, 2020
+                           --> implemented Oct 22, 2020
 
 files:
    obsproc_dump/fix/bufr_bufrtab.sptrmm
