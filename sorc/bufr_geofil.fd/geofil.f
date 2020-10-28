@@ -1,7 +1,7 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: BUFR_GEOFIL
-C   PRGMMR: KEYSER           ORG: NP22        DATE: 2014-11-07
+C   PRGMMR: DONG             ORG: NP22        DATE: 2020-08-20
 C
 C ABSTRACT: GEOGRAPHICALLY FILTERS BUFR DATABASE DUMP FILES BY EITHER
 C   A LAT/LON BOX FILTER, A CENTER POINT LAT/LON AND RADIUS FILTER OR A
@@ -68,7 +68,8 @@ C     ASSIGNMENT OF BMISS W/ GETBMISS() FUNCTION.
 C 2014-11-07  D. KEYSER   DECLARE FUNCTION GETBMISS AND ITS RETURN
 C     VALUE BMISS AS REAL*8 TO GET A RELIABLE VALUE FOR BMISS IN PRINT
 C     STATEMENTS
-C
+C 2020-08-20  J. DONG  --  ADDED SETBMISS CALL TO SET BMISS TO 10E8
+C     TO AVOID INTEGER OVERFLOW
 C USAGE:
 C   INPUT FILES:
 C     UNIT 05  - STANDARD INPUT - FIRST RECORD CONTAINS INPUT FILE
@@ -170,10 +171,10 @@ C$$$
 
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_GEOFIL',2014,0311,0062,'NP22')
+      CALL W3TAGB('BUFR_GEOFIL',2020,0233,0062,'NP22')
 
       print *
-      print * ,'---> Welcome to BUFR_GEOFIL - Version 11-07-2014'
+      print * ,'---> Welcome to BUFR_GEOFIL - Version 08-20-2020'
       print *
 
       CALL DATELEN(10)
@@ -183,6 +184,7 @@ ccccc CALL OPENBF(0,'QUIET',2) ! Uncomment for extra print from bufrlib
 C  ASSIGN DEFAULT VALUE FOR 'MISSING' TO LOCAL BMISS VARIABLE
 C  ----------------------------------------------------------
 
+      CALL SETBMISS(10E8_8)
       BMISS = GETBMISS()     ! assign default value for "missing"
       print *
       print *, 'BUFRLIB value for missing is: ',bmiss

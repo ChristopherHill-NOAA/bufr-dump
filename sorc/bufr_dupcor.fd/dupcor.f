@@ -1,7 +1,7 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: BUFR_DUPCOR
-C   PRGMMR: MELCHIOR/KEYSER  ORG: NP22        DATE: 2016-08-09
+C   PRGMMR: DONG             ORG: NP22        DATE: 2020-08-20
 C
 C ABSTRACT: PROCESSES NON PROFILE DATABASE REPORTS WITH CORRECTION
 C   CHOOSING, DUPLICATE CHECKING (DEPENDING UPON TYPE) AND
@@ -250,6 +250,8 @@ C                    allows for future changes in setting of
 C                    KEEP_NEARDUP_ACFT without any need to change this
 C                    source code.  Also removes clumsy temporary date
 C                    setting (1/1/3000) to retain old logic.
+C 2020-08-20  J. DONG  --  ADDED SETBMISS CALL TO SET BMISS TO 10E8
+C           TO AVOID INTEGER OVERFLOW
 C     
 C USAGE:
 C   INPUT FILES:
@@ -339,10 +341,10 @@ C$$$
  
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_DUPCOR',2016,0222,0054,'NP22') 
+      CALL W3TAGB('BUFR_DUPCOR',2020,0233,0054,'NP22') 
 
       print *
-      print * ,'---> Welcome to BUFR_DUPCOR - Version 08-09-2016'
+      print * ,'---> Welcome to BUFR_DUPCOR - Version 08-20-2020'
       print *
 
       CALL DATELEN(10)
@@ -352,6 +354,7 @@ ccccc CALL OPENBF(0,'QUIET',2) ! Uncomment for extra print from bufrlib
 C  ASSIGN DEFAULT VALUE FOR 'MISSING' TO LOCAL BMISS VARIABLE
 C  ----------------------------------------------------------
 
+      CALL SETBMISS(10E8_8)
       BMISS = GETBMISS()     ! assign default value for "missing"
 
 C  SET THE COUNTERS TO INITIAL VALUES

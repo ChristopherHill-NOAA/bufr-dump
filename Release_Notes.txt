@@ -1,4 +1,227 @@
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+obsproc_dump release 5.1.0 --> released Aug 28, 2020
+                           --> implemented ??? ??, 2020
+
+files:
+   obsproc_dump/fix/bufr_bufrtab.sptrmm
+   obsproc_dump/fix/bufr_bufrtab.windsat
+   obsproc_dump/fix/nam_expdomain_guam_halfdeg_imask.gbl
+   obsproc_dump/fix/nam_expdomain_halfdeg_imask.gbl
+   obsproc_dump/fix/wave_bufrtab.ascat
+   obsproc_dump/fix/wave_bufrtab.erscat
+   obsproc_dump/fix/wave_bufrtab.quikscat
+   obsproc_dump/fix/wave_landchxh
+ D obsproc_dump/modulefiles/dumpjb/5.0.3
+ A obsproc_dump/modulefiles/dumpjb/5.1.0
+   obsproc_dump/sorc/bufr_chkbfr.fd/chkbfr.f
+   obsproc_dump/sorc/bufr_chkbfr.fd/makefile
+   obsproc_dump/sorc/bufr_combfr.fd/combfr.f
+   obsproc_dump/sorc/bufr_combfr.fd/makefile
+ M obsproc_dump/sorc/bufr_dcodwindsat.fd/dcodwindsat.f
+   obsproc_dump/sorc/bufr_dcodwindsat.fd/makefile
+ M obsproc_dump/sorc/bufr_dumpmd.fd/dumpmd.f
+   obsproc_dump/sorc/bufr_dumpmd.fd/makefile
+ M obsproc_dump/sorc/bufr_dupair.fd/dupair.f
+   obsproc_dump/sorc/bufr_dupair.fd/makefile
+ M obsproc_dump/sorc/bufr_dupcor.fd/dupcor.f
+   obsproc_dump/sorc/bufr_dupcor.fd/makefile
+ M obsproc_dump/sorc/bufr_dupmar.fd/dupmar.f
+   obsproc_dump/sorc/bufr_dupmar.fd/makefile
+ M obsproc_dump/sorc/bufr_dupmrg.fd/dupmrg.f
+   obsproc_dump/sorc/bufr_dupmrg.fd/makefile
+ M obsproc_dump/sorc/bufr_duprad.fd/duprad.f
+   obsproc_dump/sorc/bufr_duprad.fd/makefile
+ M obsproc_dump/sorc/bufr_dupsat.fd/dupsat.f
+   obsproc_dump/sorc/bufr_dupsat.fd/makefile
+ M obsproc_dump/sorc/bufr_dupshp.fd/dupshp.f
+   obsproc_dump/sorc/bufr_dupshp.fd/makefile
+ M obsproc_dump/sorc/bufr_dupsst.fd/dupsst.f
+   obsproc_dump/sorc/bufr_dupsst.fd/makefile
+ A obsproc_dump/sorc/bufr_dupsyp.fd/dupsyp.f
+ A obsproc_dump/sorc/bufr_dupsyp.fd/makefile
+ A obsproc_dump/sorc/bufr_duptac.fd/duptac.f
+ A obsproc_dump/sorc/bufr_duptac.fd/makefile
+ M obsproc_dump/sorc/bufr_edtbfr.fd/edtbfr.f
+   obsproc_dump/sorc/bufr_edtbfr.fd/makefile
+ M obsproc_dump/sorc/bufr_geofil.fd/geofil.f
+   obsproc_dump/sorc/bufr_geofil.fd/makefile
+   obsproc_dump/sorc/bufr_quipc.fd/makefile
+ M obsproc_dump/sorc/bufr_quipc.fd/quipc.f
+   obsproc_dump/sorc/bufr_raddate.fd/makefile
+   obsproc_dump/sorc/bufr_raddate.fd/raddate.f
+   obsproc_dump/sorc/bufr_supertmi.fd/makefile
+   obsproc_dump/sorc/bufr_supertmi.fd/supertmi.f
+   obsproc_dump/sorc/prepobs_prepssmi.fd/makefile
+ M obsproc_dump/sorc/prepobs_prepssmi.fd/prepssmi.f
+   obsproc_dump/sorc/wave_dcodquikscat.fd/dcodquikscat.f
+   obsproc_dump/sorc/wave_dcodquikscat.fd/makefile
+ M obsproc_dump/sorc/build.sh
+   obsproc_dump/sorc/clean.sh
+   obsproc_dump/sorc/install.sh
+   obsproc_dump/sorc/clobber.sh
+ M obsproc_dump/sorc/load_libs.rc
+   obsproc_dump/sorc/README.build
+   obsproc_dump/sorc/setlibs.rc
+   obsproc_dump/ush/bufr_dump_obs.sh
+   obsproc_dump/ush/check_tanks.sh
+ M obsproc_dump/ush/dumpjb
+
+( A - added,  M - modified, D - deleted)
+
+
+ USH script changes:
+   dumpjb:
+    - Per SPA request, updated to copy bufr_dumplist to $COMROOT for each
+      dump cycle for all networks. 
+    - Added call to new bufr_dupsyp, to check for duplicate TAC and BUFR
+      synoptic reports in tanks b000/xx000, b000/xx001, b000/xx002,
+      b000/xx100, b000/xx101, b000/xx102.
+      BENEFIT: enables removal of duplicate TAC reports relative to their
+               BUFR-feed equivalents.
+    - Added call to new program, bufr_duptac, to check for duplicate TAC and
+      BUFR buoy reports in tanks b001/xx002 vs b001/xx102, and
+      b001/xx003 vs b001/xx103.
+      BENEFIT: enables removal of duplicate TAC reports relative to their
+               BUFR-feed equivalents.
+
+
+ Source code changes:
+   bufr_dcodwindsat.fd/dcodwindsat.f:
+    - changed BUFR missing value from 10E10 to 10E8. 
+      BENEFIT: avoids potential integer overflow errors.
+   bufr_dumpmd.fd/dumpmd.f:
+    - changed print statement formatting to enable larger integer
+      output.
+   bufr_dupair.fd/dupair.f,
+   bufr_dupcor.fd/dupcor.f,
+   bufr_dupmar.fd/dupmar.f,
+   bufr_dupmrg.fd/dupmrg.f,
+   bufr_duprad.fd/duprad.f,
+   bufr_dupsat.fd/dupsat.f,
+   bufr_dupshp.fd/dupshp.f,
+   bufr_dupsst.fd/dupsst.f,
+   bufr_edtbfr.fd/edtbfr.f,
+   bufr_geofil.fd/geofil.f,
+   bufr_quipc.fd/quipc.f,
+   prepobs_prepssmi.fd/prepssmi.f:
+    - BUFR missing value set to 10E8.  Minor adjustments made 
+      to prevent integer overflow errors. Adujustments made
+      to fix an output conversion error.
+      BENEFIT: avoids potential integer overflow errors.
+   build.sh
+    - modified various informative echo statements.
+    - added importable environment variable, debug, to enable
+      additional compiler options.
+      BENEFIT: allows for easier invocation of extended compiler
+               options that should be applied during development
+               but not for production implementation.
+   load_libs.rc
+    - Incremented the bufrlib version from v11.2.0 to  v11.3.0.
+    - Removed settings specific to IBM-p[12] and Dell.
+ Source code additions:
+   bufr_dupsyp.fd:
+    - New source dupdyp.f performs duplicate checking between synop
+      data streams originating from TAC and BUFR formatted sources;
+      the program reads in TAC and BUFR inputs of restricted, fixed
+      non-restricted, and mobile non-restricted synoptic observations
+      and cross checks them, discarding any TAC reports that are
+      duplicated by a BUFR equivalent, unless the BUFR report has
+      missing station height and PMSL, in which case the TAC report
+      is retained and the BUFR report is discarded.
+      BENEFIT: allows for BUFR-feed observations to be used without
+               causing over sampling by the TAC duplicate.
+   bufr_duptac.fd:
+    - New source duptac.f performs duplicate checking between buoy
+      data streams originating from TAC (Traditional Alphanumeric
+      Format) and BUFR formatted sources; the program reads in TAC and
+      BUFR inputs of fixed (moored) and drifting buoy observations and
+      cross checks them, discarding any TAC reports that are duplicated
+      by a BUFR equivalent.
+      BENEFIT: allows for BUFR-feed observations to be used without
+               causing over sampling by the TAC duplicate.
+
+
+ Module changes:
+ ---------------
+   Updated to 5.1.0
+
+
+ Output changes:
+ ---------------
+  (For specific network changes see " Output changes" in Release Notes for that
+   network, if that network executes this version of obsproc_dump.)
+  - Even though there are no code changes to obsproc_cdas, obsproc_nam,
+    obsproc_rap, obsproc_rtma, and obsproc_urma, there are output changes for
+    these networks.
+    - The adpsfc and sfcshp dump files will be slightly larger than production:
+      - *.tCCz.adpsfc.tm00.bufr_d
+      - *.tCCz.sfcshp.tm00.bufr_d
+    - The J*_DUMP job processes will run slightly longer than production (< ~10s inc).
+
+
+ Libraries:
+ ----------
+   w3nco   2.0.6 (all codes)
+   w3emc   2.3.0 
+           (codes: bufr_dcodwindsat, bufr_dupair, bufr_dupcor, bufr_dupmar,
+                  bufr_dupmrg, bufr_duprad, bufr_dupsat, bufr_dupshp,
+                  bufr_dupsst, bufr_supertmi, prepobs_prepssmi,
+                  wave_dcodquikscat)
+   bufr   11.3.0 (all codes)
+   bacio   2.0.2
+           (codes: bufr_supertmi, prepobs_prepssmi, wave_dcodquikscat)
+   sp      2.0.2 (prepobs_prepssmi)
+
+
+ Build Instructions:
+ -------------------
+   - See sorc/README.build
+
+
+ Preimplementation Testing Requirements:
+ ---------------------------------------
+   There are no jobs in obsproc_dump.  All jobs executing this version of
+   obsproc_dump should be tested.
+
+ Dissemination:
+ --------------
+   See information about dissemination in the release notes for
+   obsproc_<NETWORK> packages which execute this version of obsproc_dump.
+
+
+ Special Instructions:
+ ---------------------
+   This is part of OBSPROC.v14.0.0.
+   This can be implemented as soon as possible.
+   This must be implemented on Dell-p3 & Cray.
+ 
+   This must be implemented simultaneously with the implementations of:
+      v4.2.0 of decod_dcelrw,
+      v2.5.2 of obsproc_cdas,
+      v3.3.0 of obsproc_global,
+      v3.1.2 of obsproc_rap,
+      v3.3.1 of obsproc_rtma,
+      v3.2.1 of obsproc_urma,
+      v2.4.0 of obsproc_dump_monitor,
+      v3.4.0 of obsproc_dump_post,
+      v5.3.0 of obsproc_prep,
+      v3.1.1 of obsproc_prep_post,
+      v2.2.0 of obsproc_shared_bufr_dumplist - previously released to support RTOFS,
+      v2.1.1 of obsproc_shared_bufr_remorest.
+
+   Since there are no jobs in obsproc_dump, an obsproc_dump.ver file is not
+   needed. But note, please update: 
+     obsproc_cdas.ver,
+     obsproc_global.ver,
+     obsproc_nam.ver,
+     obsproc_rap.ver,
+     obsproc_rtma.ver,
+     obsproc_urma.ver,
+     obsproc_dump_monitor.ver,
+   to set obsproc_dump_ver to v5.1.0.
+
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 obsproc_dump 5.0.3  --> updated and implemented by SPA on Mar 26, 2020
 
  M obsproc_dump/ush/dumpjb
@@ -19,63 +242,9 @@ obsproc_dump release 5.0.2 --> released Apr 23, 2019
                            --> implemented May 15, 2019
 
 files:
-   obsproc_dump/fix/bufr_bufrtab.sptrmm
-   obsproc_dump/fix/bufr_bufrtab.windsat
-   obsproc_dump/fix/nam_expdomain_guam_halfdeg_imask.gbl
-   obsproc_dump/fix/nam_expdomain_halfdeg_imask.gbl
-   obsproc_dump/fix/wave_bufrtab.ascat
-   obsproc_dump/fix/wave_bufrtab.erscat
-   obsproc_dump/fix/wave_bufrtab.quikscat
-   obsproc_dump/fix/wave_landchxh
  D obsproc_dump/modulefiles/dumpjb/5.0.1
  A obsproc_dump/modulefiles/dumpjb/5.0.2
-   obsproc_dump/sorc/bufr_chkbfr.fd/chkbfr.f
-   obsproc_dump/sorc/bufr_chkbfr.fd/makefile
-   obsproc_dump/sorc/bufr_combfr.fd/combfr.f
-   obsproc_dump/sorc/bufr_combfr.fd/makefile
-   obsproc_dump/sorc/bufr_dcodwindsat.fd/dcodwindsat.f
-   obsproc_dump/sorc/bufr_dcodwindsat.fd/makefile
-   obsproc_dump/sorc/bufr_dumpmd.fd/dumpmd.f
-   obsproc_dump/sorc/bufr_dumpmd.fd/makefile
-   obsproc_dump/sorc/bufr_dupair.fd/dupair.f
-   obsproc_dump/sorc/bufr_dupair.fd/makefile
-   obsproc_dump/sorc/bufr_dupcor.fd/dupcor.f
-   obsproc_dump/sorc/bufr_dupcor.fd/makefile
-   obsproc_dump/sorc/bufr_dupmar.fd/dupmar.f
-   obsproc_dump/sorc/bufr_dupmar.fd/makefile
-   obsproc_dump/sorc/bufr_dupmrg.fd/dupmrg.f
-   obsproc_dump/sorc/bufr_dupmrg.fd/makefile
-   obsproc_dump/sorc/bufr_duprad.fd/duprad.f
-   obsproc_dump/sorc/bufr_duprad.fd/makefile
  M obsproc_dump/sorc/bufr_dupsat.fd/dupsat.f
-   obsproc_dump/sorc/bufr_dupsat.fd/makefile
-   obsproc_dump/sorc/bufr_dupshp.fd/dupshp.f
-   obsproc_dump/sorc/bufr_dupshp.fd/makefile
-   obsproc_dump/sorc/bufr_dupsst.fd/dupsst.f
-   obsproc_dump/sorc/bufr_dupsst.fd/makefile
-   obsproc_dump/sorc/bufr_edtbfr.fd/edtbfr.f
-   obsproc_dump/sorc/bufr_edtbfr.fd/makefile
-   obsproc_dump/sorc/bufr_geofil.fd/geofil.f
-   obsproc_dump/sorc/bufr_geofil.fd/makefile
-   obsproc_dump/sorc/bufr_quipc.fd/makefile
-   obsproc_dump/sorc/bufr_quipc.fd/quipc.f
-   obsproc_dump/sorc/bufr_raddate.fd/makefile
-   obsproc_dump/sorc/bufr_raddate.fd/raddate.f
-   obsproc_dump/sorc/bufr_supertmi.fd/makefile
-   obsproc_dump/sorc/bufr_supertmi.fd/supertmi.f
-   obsproc_dump/sorc/prepobs_prepssmi.fd/makefile
-   obsproc_dump/sorc/prepobs_prepssmi.fd/prepssmi.f
-   obsproc_dump/sorc/wave_dcodquikscat.fd/dcodquikscat.f
-   obsproc_dump/sorc/wave_dcodquikscat.fd/makefile
-   obsproc_dump/sorc/build.sh
-   obsproc_dump/sorc/clean.sh
-   obsproc_dump/sorc/install.sh
-   obsproc_dump/sorc/clobber.sh
-   obsproc_dump/sorc/load_libs.rc
-   obsproc_dump/sorc/README.build
-   obsproc_dump/sorc/setlibs.rc
-   obsproc_dump/ush/bufr_dump_obs.sh
-   obsproc_dump/ush/check_tanks.sh
  M obsproc_dump/ush/dumpjb
 
 ( A - added,  M - modified, D - deleted)

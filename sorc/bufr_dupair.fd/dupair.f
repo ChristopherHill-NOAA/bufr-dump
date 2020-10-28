@@ -1,7 +1,7 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: BUFR_DUPAIR
-C   PRGMMR: MELCHIOR/KEYSER  ORG: NP22        DATE: 2016-08-18
+C   PRGMMR: DONG             ORG: NP22        DATE: 2020-08-20
 C
 C ABSTRACT: PROCESSES ANY COMBINATION UP TO TEN DUMP FILES CONTAINING
 C   TYPES THAT ULTIMATELY GO INTO EITHER THE "AIRCFT" DUMP {BUFR
@@ -211,11 +211,13 @@ C                 need to change this source code.  Also removes clumsy
 C                 temporary date setting (1/1/3000) to retain old logic.
 C 2016-08-18  D. Keyser   Added requirement to toss any report with a
 C     missing report identifier when it duplicates any type of aircraft
-C     report {"Catch-all AMDAR BUFR reports with bulletin header
+C     report {"Catch-all" AMDAR BUFR reports with bulletin header
 C     "IUAS02 NZKL" are actually re-encoded AIREPS with missing tail
 C     number (AIREPS have missing tail number and use flight number as
 C     report identifier) - AMDAR reports use only tail number for
 C     report identifier}.
+C 2020-08-20  J. DONG  --  ADDED SETBMISS CALL TO SET BMISS TO 10E8 AND
+C     CHANGE THE CODE TO AVOID INTEGER OVERFLOW
 C
 C USAGE:
 C   INPUT FILES:
@@ -359,10 +361,10 @@ C  -------------------------------------
  
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_DUPAIR',2016,0231,0054,'NP22')
+      CALL W3TAGB('BUFR_DUPAIR',2020,0233,0054,'NP22')
 
       print *
-      print * ,'---> Welcome to BUFR_DUPAIR - Version 08-18-2016'
+      print * ,'---> Welcome to BUFR_DUPAIR - Version 08-20-2020'
       print *
 
       CALL DATELEN(10)
@@ -372,6 +374,7 @@ ccccc CALL OPENBF(0,'QUIET',2) ! Uncomment for extra print from bufrlib
 C  ASSIGN DEFAULT VALUE FOR 'MISSING' TO LOCAL BMISS VARIABLE
 C  ----------------------------------------------------------
 
+      CALL SETBMISS(10E8_8)
       BMISS = GETBMISS()     ! assign default value for "missing"
       print *
       print *, 'BUFRLIB value for missing is: ',bmiss
@@ -785,8 +788,10 @@ ccc  .    '; RPRT DD HH.hhhhh ',I2.2,F8.5,'; ALT: ',I6,
 ccc  .    '; RCPT YYYYMMDDHHMM: ',I4,4I2.2,'; file #',I2,'; AFWA:',I2,
 ccc  .    '}')
 cpppppppppp
-         DO WHILE(NINT(ABS(TAB_8(2,I)-TAB_8(2,J))*10000.).LE.
-     .    NINT(DEXY*10000.) .AND. JDUP(I).EQ.0)
+CDONG         DO WHILE(NINT(ABS(TAB_8(2,I)-TAB_8(2,J))*10000.).LE.
+CDONG     .    NINT(DEXY*10000.) .AND. JDUP(I).EQ.0)
+         DO WHILE(ABS(TAB_8(2,I)-TAB_8(2,J)).LE.DEXY
+     .    .AND. JDUP(I).EQ.0)
 cpppppppppp
 ccc         print'("Record (J) may have been changed to",i6," - '//
 ccc  .      'compare against unchanged record (I)",i6)', j,i
@@ -808,11 +813,16 @@ cpppppppppp
               DELV = DELVO
               dell = max(dexyo,dexyoa*max(tab_8(7,i),tab_8(7,j)))
             endif
-      IF(NINT(ABS(TAB_8(2,I)-TAB_8(2,J))*10000.).LE.NINT(DELL*10000.)
-     ..AND.NINT(ABS(TAB_8(3,I)-TAB_8(3,J))*10000.).LE.NINT(DELL*10000.)
-     ..AND.NINT(ABS(TAB_8(4,I)-TAB_8(4,J))*100.).LE.NINT(DDAY*100.)
-     ..AND.NINT(ABS(TAB_8(5,I)-TAB_8(5,J))*10000.).LE.NINT(DRHR*10000.)
-     ..AND.NINT(ABS(TAB_8(6,I)-TAB_8(6,J))*100.).LE.NINT(DELV*100.))
+CDONG      IF(NINT(ABS(TAB_8(2,I)-TAB_8(2,J))*10000.).LE.NINT(DELL*10000.)
+CDONG     ..AND.NINT(ABS(TAB_8(3,I)-TAB_8(3,J))*10000.).LE.NINT(DELL*10000.)
+CDONG     ..AND.NINT(ABS(TAB_8(4,I)-TAB_8(4,J))*100.).LE.NINT(DDAY*100.)
+CDONG     ..AND.NINT(ABS(TAB_8(5,I)-TAB_8(5,J))*10000.).LE.NINT(DRHR*10000.)
+CDONG     ..AND.NINT(ABS(TAB_8(6,I)-TAB_8(6,J))*100.).LE.NINT(DELV*100.))
+      IF(ABS(TAB_8(2,I)-TAB_8(2,J)).LE.DELL
+     ..AND.ABS(TAB_8(3,I)-TAB_8(3,J)).LE.DELL
+     ..AND.ABS(TAB_8(4,I)-TAB_8(4,J)).LE.DDAY
+     ..AND.ABS(TAB_8(5,I)-TAB_8(5,J)).LE.DRHR
+     ..AND.ABS(TAB_8(6,I)-TAB_8(6,J)).LE.DELV)
      .THEN
 cpppppppppp
 ccc            print 1799, i,ctab1_i,(tab_8(ii,i),ii=2,3),

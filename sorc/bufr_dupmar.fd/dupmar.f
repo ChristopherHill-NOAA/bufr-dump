@@ -1,7 +1,7 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: BUFR_DUPMAR
-C   PRGMMR: KEYSER           ORG: NP22        DATE: 2014-11-07
+C   PRGMMR: DONG             ORG: NP22        DATE: 2020-08-20
 C
 C ABSTRACT: PROCESSES NON-PROFILE DATABASE REPORT PARTS WITH CORRECTION
 C   CHOOSING (SEE REMARKS-1), DUPLICATE CHECKING, REPORT PART MERGING
@@ -222,6 +222,8 @@ C     NON-BLANK CHARACTERS IN STRINGS.
 C 2014-11-07  D. KEYSER   DECLARE FUNCTION GETBMISS AND ITS RETURN
 C     VALUE BMISS AS REAL*8 TO GET A RELIABLE VALUE FOR BMISS IN PRINT
 C     STATEMENTS
+C 2020-08-20  J. DONG   ADDED SETBMISS CALL TO SET BMISS TO 10E8 AND
+C     CHANGE THE CODE TO AVOID INTEGER OVERFLOW
 C
 C USAGE:
 C   INPUT FILES:
@@ -337,10 +339,10 @@ C$$$
  
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_DUPMAR',2014,0311,0062,'NP22')
+      CALL W3TAGB('BUFR_DUPMAR',2020,0233,0062,'NP22')
 
       print *
-      print * ,'---> Welcome to BUFR_DUPMAR - Version 11-07-2014'
+      print * ,'---> Welcome to BUFR_DUPMAR - Version 08-20-2020'
       print *
 
       CALL DATELEN(10)
@@ -350,6 +352,7 @@ ccccc CALL OPENBF(0,'QUIET',2) ! Uncomment for extra print from bufrlib
 C  ASSIGN DEFAULT VALUE FOR 'MISSING' TO LOCAL BMISS VARIABLE
 C  ----------------------------------------------------------
 
+      CALL SETBMISS(10E8_8)
       BMISS = GETBMISS()     ! assign default value for "missing"
       print *
       print *, 'BUFRLIB value for missing is: ',bmiss
@@ -616,11 +619,9 @@ ccc  $    F7.2,'; BTBL: ',I3,'; RPRT DDHHMM: ',3I2.2,'; CORN: ',I3,
 ccc  $    '; RCPT YYYYMMDDHHMM: ',I4,4I2.2,' }; RCTS: ',I2)
 cpppp
          IDUP=
-     .    NINT(ABS(TAB_8(1,IREC)-TAB_8(1,JREC))*SCALE).LE.
-     .    NINT(DEXY*SCALE)
+     .    ABS(TAB_8(1,IREC)-TAB_8(1,JREC)).LE.DEXY
      .    .AND.
-     .    NINT(ABS(TAB_8(2,IREC)-TAB_8(2,JREC))*SCALE).LE.
-     .    NINT(DEXY*SCALE)
+     .    ABS(TAB_8(2,IREC)-TAB_8(2,JREC)).LE.DEXY
      .    .AND.
      .    NINT(ABS(TAB_8(3,IREC)-TAB_8(3,JREC))*100.).LE.NINT(DDAY*100.)
      .    .AND.

@@ -1,7 +1,7 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: BUFR_EDTBFR
-C   PRGMMR: KEYSER           ORG: NP22        DATE: 2016-11-10
+C   PRGMMR: DONG             ORG: NP22        DATE: 2020-08-20
 C
 C ABSTRACT: APPLIES REAL-TIME INTERACTIVE QUALITY CONTROL FLAGS,
 C   GENERATED FROM EITHER A "REJECT" LIST MAINTAINED BY NCEP/NCO OR
@@ -227,6 +227,8 @@ C     header had ended up matching this entry and their quality markers
 C     were updated based on those specified in this flag file entry
 C     (currently only mesonet and TAMDAR aircraft reports have a missing
 C     WMO bulletin header). These no longer match.
+C 2020-08-20  J. DONG   ADDED SETBMISS CALL TO SET BMISS TO 10E8 AND
+C     CHANGE THE CODE TO FIX FLOATING INVALID ERROR.
 C
 C USAGE
 C   INPUT FILES:
@@ -856,15 +858,16 @@ C$$$
 
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_EDTBFR',2016,0315,0067,'NP22')
+      CALL W3TAGB('BUFR_EDTBFR',2020,0233,0067,'NP22')
 
       print *
-      print * ,'---> Welcome to BUFR_EDTBFR - Version 11-10-2016'
+      print * ,'---> Welcome to BUFR_EDTBFR - Version 08-20-2020'
       print *
 
 C  ASSIGN DEFAULT VALUE FOR 'MISSING' TO LOCAL BMISS VARIABLE
 C  ----------------------------------------------------------
 
+      CALL SETBMISS(10E8_8)
       BMISS = GETBMISS()     ! assign default value for "missing"
       print'(1X)'
       print'(" BUFRLIB value for missing is: ",G0)', bmiss
@@ -882,7 +885,7 @@ C     DEYT  = 0.25 FOR TYPES REPORTING LOW-ACCURACY LAT (0.01)
 C           = 0.01 FOR TYPES REPORTING HIGH-ACCURACY LAT (>/= 0.001)
 C               TOLERANCE FOR LAT CHECKS IN DEGREES (UNLESS LAT NOT
 C               SPECIFIED FOR A REPORT ENTRY IN SDMEDIT FILE,
-C               THEN = 10E10)
+C               THEN = 10E8)
 C     DEXT  = 0.25 * COS(LAT * 0.0174532) FOR TYPES REPORTING LOW-
 C             ACCURACY LON (0.01)
 C           = 0.01 * COS(LAT * 0.0174532) FOR TYPES REPORTING HIGH-
@@ -890,12 +893,12 @@ C             ACCURACY LON (>/= 0.001)
 C               TOLERANCE FOR LON CHECKS IN DEGREES (WHERE LAT IS
 C               REPORT LAT ENTRY IN SDMEDIT FILE) (UNLESS LON NOT
 C               SPECIFIED FOR A REPORT ENTRY IN SDMEDIT FILE,
-C               THEN = 10E10) (NOTE: IF LON IS SPECIFIED BUT LAT IS NOT
+C               THEN = 10E8) (NOTE: IF LON IS SPECIFIED BUT LAT IS NOT
 C               FOR AN ENTRY IN SDMEDIT FLAG FILE, THEN DEXT = 0.25)
 C     DTMT  = 0.01 (FOR ALL TYPES EXCEPT SATELLITE-DERIVED WINDS)
 C             2.01 (FOR SATELLITE-DERIVED WINDS)
 C               TOLERANCE FOR TIME CHECK IN HOURS (UNLESS DATE/TIME NOT
-C               SPECIFIED, THEN = 10E10)
+C               SPECIFIED, THEN = 10E8)
 C  ------------------------------------------------------------------
 
       NREP = 0
@@ -2361,7 +2364,8 @@ C  Read back report data from aircraft BUFR file
      .             REAL(IQMAT)
                ELSE
                   print'("    ... QMAT set to ",F3.0," on ALL pressure",
-     .             " levels between",I5," and",I5," mb, inclusive")',
+CDONG     .             " levels between",I5," and",I5," mb, inclusive")',
+     .             " levels between",I12," and",I5," mb, inclusive")',
      .             REAL(IQMAT),NINT(PMAX(M)),NINT(PMIN(M))
                ENDIF
             ENDIF

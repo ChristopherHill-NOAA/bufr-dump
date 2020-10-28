@@ -1,7 +1,7 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: PREPOBS_PREPSSMI
-C   PRGMMR: KEYSER           ORG: NP22        DATE: 2011-08-04
+C   PRGMMR: DONG             ORG: NP22        DATE: 2020-08-20
 C
 C ABSTRACT: READS SSM/I SCAN LINES FROM NCEP SSM/I BUFR DUMP FILE
 C   (EITHER DERIVED PRODUCTS FILE OR BRIGHTNESS TEMPERATURE FILE) AND
@@ -164,6 +164,7 @@ C        THAT IN SEC. 1 OF THE BUFR MESSAGE, IT KEEPS THE OUTPUT FILE
 C        MORE COMPACT AND CAUSES NO HARM SINCE ONLY PREPOBS_PREPDATA
 C        ENDS UP READING THIS FILE)
 C 2012-11-20  J. WOOLLEN  INITIAL PORT TO WCOSS 
+C 2020-08-20 J. DONG  - CHANGED MISSING VALUE TO 10E8 FROM 10E10.
 C
 C
 C USAGE:
@@ -467,7 +468,7 @@ CC
      $             'CALCULATED IN-LINE VIA NEURAL NETWORK ALGORITHM',
      $             '  CALCULATED IN-LINE VIA GOODBERLET ALGORITHM  '/
 
-      CALL W3TAGB('PREPOBS_PREPSSMI',2011,0216,0057,'NP22')
+      CALL W3TAGB('PREPOBS_PREPSSMI',2020,0233,0057,'NP22')
 
 C  CALL W3FI04 TO DETERMINE MACHINE WORD LENGTH (BYTES)
 C   AND TO TEST FOR ASCII(ICHTP=0) OR EBCDIC(ICHTP=1) CHARACTERS
@@ -971,7 +972,7 @@ cdak     PRINT 116, NOBS
 C-----------------------------------------------------------------------
 
   100 FORMAT(//20X,'*****  WELCOME TO THE SSM/I RETRIEVAL PROCESSOR: ',
-     $ 'Y2K/F90 VERSION 04 AUG 2011  *****'/50X,'CENTER TIME:',I5,4I3/
+     $ 'Y2K/F90 VERSION 20 AUG 2020  *****'/50X,'CENTER TIME:',I5,4I3/
      $ 31X,'TIME WINDOW IS +/-',I5,' (HOURS X 100 PLUS MINUTES) ABOUT ',
      $ 'CENTER TIME'///43X,'THE FOLLOWING PRODUCTS HAVE BEEN ',
      $ 'SPECIFIED:'/)
@@ -1151,7 +1152,7 @@ C$$$
       DATA  TEXT1/'  WIND SPEED   ','  PREC. WATER  ','RAINFALL RATE  ',
      $            '  SFC. TEMP.   ','  CLOUD WATER  ','SOIL MOISTURE  ',
      $            '  SNOW DEPTH   ','SEA-SFC. TEMP. '/
-      DATA BMISS/10E10/,IMISS/99999/
+      DATA BMISS/10E8/,IMISS/99999/
 
 C***********************************************************************
 C      LOOP THROUGH THE 64 RETRIEVALS THAT MAKE UP THE SCAN
@@ -1515,7 +1516,7 @@ C$$$
       DATA  TEXT1/' 19 GHZ V BT   ',' 19 GHZ H BT   ',' 22 GHZ V BT   ',
      $            ' 37 GHZ V BT   ',' 37 GHZ H BT   ',' 85 GHZ V BT   ',
      $            ' 85 GHZ H BT   '/
-      DATA  BMISS/10E10/,IMISS/99999/
+      DATA  BMISS/10E8/,IMISS/99999/
 
 C***********************************************************************
 C      LOOP THROUGH THE 64 RETRIEVALS THAT MAKE UP THE SCAN
@@ -1821,7 +1822,7 @@ C$$$
      $            '    ICE EDGE   ',' CALC SFC TYP  '/
       DATA  TEXT2/' CF  ','  %  ',' CF  ',' CF  ',' CF  '/
       DATA  L/4,9,10,11,16/
-      DATA  BMISS/10E10/,IMISS/99999/
+      DATA  BMISS/10E8/,IMISS/99999/
 
       IWLON = MOD((36000-IDAT(2,IRTV)),36000)
       ITOT = 0
@@ -2089,7 +2090,7 @@ C                           **  DMSP  **
 C --------------- 240  241  242  243  244  245  246  247  248  249
      $           /'A', 'B', 'C', 'D', 'A', 'B', 'C', 'D', 'A', 'B' /
 
-      DATA  BMISS/10E10/
+      DATA  BMISS/10E8/
 
       IF(K.LT.9)  THEN
 
@@ -2393,7 +2394,7 @@ C$$$
 C          IVAR:    1   2   3   4   5   6   7   8   9  10
       DATA CPRD   /'A','E','I','M','Q','S','U','Z','W','Y'/
 
-      DATA  BMISS/10E10/
+      DATA  BMISS/10E8/
 
       IF(K.LT.9)  THEN
 
@@ -2598,7 +2599,7 @@ C$$$
       COMMON/CENTER/IDATE(8)
 
       DATA SCALE/ 10., 10.,1000000., 100., 100., 1000., 1000.,100./
-      DATA BMISS/10E10/
+      DATA BMISS/10E8/
 
 C***********************************************************************
 C            LOOP THRU THE PRODUCT TYPES AS SPECIFIED BY USER
@@ -2780,7 +2781,7 @@ C$$$
       COMMON/REPT/XDATA(36),YDATA(3,7)
       COMMON/CENTER/IDATE(8)
 
-      DATA  BMISS/10E10/
+      DATA  BMISS/10E8/
 
 C***********************************************************************
 C   LOOP THRU BOXES: CONSTRUCT MEANS & WRITE SUPEROB TO XDATA ARRAY

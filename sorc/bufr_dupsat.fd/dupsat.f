@@ -1,7 +1,7 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: BUFR_DUPSAT
-C   PRGMMR: KEYSER/MELCHIOR         ORG: NP22        DATE: 2019-04-16
+C   PRGMMR: DONG                    ORG: NP22        DATE: 2020-08-20
 C
 C ABSTRACT: PROCESSES SATELLITE DATABASE REPORTS WITH (OPTIONAL)
 C   GEOGRAPHICAL FILTERING, DUPLICATE CHECKING, (OPTIONAL) TRIMMING
@@ -274,6 +274,8 @@ C        VIIRS POES winds now handled. These have message type NC005090
 C        and BUFR satellite ID 225. Get previously unused character "S"
 C        in 1st character of generated RPID and "9" (meaning NASA is
 C        producer) in 2nd character of RPID.
+C 2020-08-20  J. DONG   ADDED SETBMISS CALL TO SET BMISS TO 10E8 AND
+C        CHANGE THE CODE TO FIX OUTPUT CONVERSION ERROR
 C
 C USAGE:
 C   INPUT FILES:
@@ -443,10 +445,10 @@ C$$$
 
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_DUPSAT',2019,0106,0062,'NP22')
+      CALL W3TAGB('BUFR_DUPSAT',2020,0233,0062,'NP22')
 
       print *
-      print * ,'---> Welcome to BUFR_DUPSAT - Version 04-16-2019'
+      print * ,'---> Welcome to BUFR_DUPSAT - Version 08-20-2020'
       print *
 
       CALL DATELEN(10)
@@ -456,6 +458,7 @@ ccccc CALL OPENBF(0,'QUIET',2) ! Uncomment for extra print from bufrlib
 C  ASSIGN DEFAULT VALUE FOR 'MISSING' TO LOCAL BMISS VARIABLE
 C  ----------------------------------------------------------
 
+      CALL SETBMISS(10E8_8)
       BMISS = GETBMISS()     ! assign default value for "missing"
       print *
       print *, 'BUFRLIB value for missing is: ',bmiss
@@ -880,10 +883,10 @@ C  ------------------------------------
             ENDIF
             IFIRST_M = IFIRST_M + 1
             IF(IFIRST_M.LE.100.OR.K.EQ.NTAB) THEN
-               PRINT 857, K,TAB_8(1,IREC),TAB_8(2,IREC),
-     $          (NINT(TAB_8(II,IREC)),II=3,6)
+               PRINT 857, K,(NINT(TAB_8(II,IREC)),II=3,6)
   857 FORMAT('##WARNING: REPORT NUMBER ',I10,' HAS EITHER A MISSING ',
-     $ 'LAT (=',F7.2,') OR LON (=',F7.2,') - DATE (DDHHMMSS): ',4I2.2)
+CDONG     $ 'LAT (=',F7.2,') OR LON (=',F7.2,') - DATE (DDHHMMSS): ',4I2.2)
+     $ 'LAT (=*******) OR LON (=*******) - DATE (DDHHMMSS): ',4I2.2)
                IF(K.EQ.NTAB) PRINT *,'--> above report is the last one',
      $          ' in the sort'
             ENDIF
@@ -1024,12 +1027,12 @@ C  -------------------------------------------------------------------
          JREC = IORD(K+1)
 
          IF(
-     .    NINT(ABS(TAB_8(1,IREC)-TAB_8(1,JREC))*100000.).LE.
-     .                                                NINT(DEXY*100000.)
-     .    .AND.
-     .    NINT(ABS(TAB_8(2,IREC)-TAB_8(2,JREC))*100000.).LE.
-     .                                                NINT(DEXY*100000.)
-     .    .AND.
+CDONG     .    NINT(ABS(TAB_8(1,IREC)-TAB_8(1,JREC))*100000.).LE.
+CDONG     .                                                NINT(DEXY*100000.)
+     .    ABS(TAB_8(1,IREC)-TAB_8(1,JREC)).LE.DEXY .AND.
+CDONG     .    NINT(ABS(TAB_8(2,IREC)-TAB_8(2,JREC))*100000.).LE.
+CDONG     .                                                NINT(DEXY*100000.)
+     .    ABS(TAB_8(2,IREC)-TAB_8(2,JREC)).LE.DEXY .AND.
      .    NINT(ABS(TAB_8(3,IREC)-TAB_8(3,JREC))*100.).LE.NINT(DDAY*100.)
      .    .AND.
      .    NINT(ABS(TAB_8(4,IREC)-TAB_8(4,JREC))*100.).LE.NINT(DOUR*100.)
