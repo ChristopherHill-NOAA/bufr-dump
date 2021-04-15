@@ -14,6 +14,7 @@
 ## 2019/04/19 SMelchior - update to version 5.0.2
 ## 2020/03/11 SPA       - update to version 5.0.3
 ## 2020/08/12 SMelchior - update to version 5.1.0
+## 2021/03/09 SMelchior - update to version 5.1.1
 ##
 proc ModulesHelp { } {
 	puts stderr "Set up environment for bufr utility script dumpjb\n"
@@ -22,7 +23,7 @@ proc ModulesHelp { } {
 module-whatis   "Sets environment variables to find dumpjb utility"
 
 set envir     prod
-set ver       5.1.0
+set ver       5.1.1
 
 conflict     dumpjb
 if { [regexp {^/gpfs/hps} [file normalize $ModulesCurrentModulefile]] } {

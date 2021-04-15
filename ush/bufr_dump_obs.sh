@@ -211,6 +211,8 @@
 #      Note: ERS scatterometer wind reprocessing executables (dcodcloc, dataqc,
 #       datasort) have not been ported to current WCOSS systems and would fail
 #       if invoked.
+# 2021-03-09 SMelchior -- Included gpsro among the data types whose dump files
+#    are restricted.
 #
 # Usage: bufr_dump_obs.sh  yyyymmddhh hh<.hh> ntype dgrp1 dgrp2 ... dgrpN
 #
@@ -1551,7 +1553,8 @@ do
 
    if [ "$CHGRP_RSTPROD" = 'YES' ]; then
       if [ $n = adpsfc -o $n = aircar -o $n = aircft -o $n = msonet -o \
-           $n = sfcshp -o $n = lghtng -o $n = gpsipw -o $n = saphir ]; then
+           $n = sfcshp -o $n = lghtng -o $n = gpsipw -o $n = saphir -o \
+           $n = gpsro ]; then
          chgrp rstprod ${COMSP}${n}.${tmmark}.bufr_d
          errch=$?
          if [ $errch -eq 0 ]; then
