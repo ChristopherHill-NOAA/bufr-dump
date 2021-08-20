@@ -351,6 +351,22 @@
 #       and is enabled by DUPC_TAC (default:on; import DUPC_TAC!=on to disable).
 #       Duplicate checking is set up to support fixed and drifting buoy data
 #       streams (ie, msg/sub types 001/003 vs 001/103; & 001/002 vs 001/102).
+# 2021-04-12  J. Dong  Updated to run on Dell-p3 as well as Cray-XC40 and IBM
+#       iDataPlex.  BACK=on is disapbled for Dell-p3 runs.  MPMD=on is allowed
+#       for Dell-p3 runs that utilize computer notes, but will be changed to
+#       MPMD=off if dumpjb was called by a process already running under ALPS.
+#     - Added cross-tank duplicate checking logic to remove the duplications
+#       among the TAC-feed and BUFR-feed observations; calls updated FORTRAN
+#       program bufr_dupshp (SHPX). Duplicate checking is set up to support
+#       restricted/unrestricted ship reports (msg/sub types 001/001 vs
+#       001/013 vs 001/101 vs 001/113).
+#     - Added cross-tank duplicate checking logic to remove the duplications
+#       among the TAC-feed and BUFR-feed observations; calls new FORTRAN
+#       program bufr_dupcman (CMANX). Duplicate checking is set up to support
+#       Land-based C-MAN reports (msg/sub types 001/004 vs 001/104).
+#     - Moved logic to copy bufr_dumplist to $COMROOT for each dump cycle run 
+#       to network specific dump scripts.  Added diagnostic print to dump log
+#       file to indicate which bufr_dumplist file was used.
 #
 ###
 #
@@ -457,7 +473,7 @@
 #                   bufr_dupsst  bufr_dupmrg bufr_edtbfr bufr_quipc
 #                   bufr_chkbfr  bufr_combfr bufr_dupair bufr_dupshp
 #                   bufr_dupmar  bufr_geofil bufr_duprad bufr_dupsyp
-#                   bufr_duptac
+#                   bufr_duptac bufr_dupcman
 #
 # Remarks:
 #
@@ -581,6 +597,7 @@
 #   RDWX   -  path to DUPRAD executable             (default:$DUEX/bufr_duprad)
 #   AIRX   -  path to DUPAIR executable             (default:$DUEX/bufr_dupair)
 #   SHPX   -  path to DUPSHP executable             (default:$DUEX/bufr_dupshp)
+#   CMANX  -  path to DUPCMAN executable            (default:$DUEX/bufr_dupcman)
 #   SYPX   -  path to DUPSYP executable             (default:$DUEX/bufr_dupsyp)
 #   TACX   -  path to DUPTAC executable             (default:$DUEX/bufr_duptac)
 #   EDTX   -  path to EDTBFR executable             (default:$DUEX/bufr_edtbfr)
@@ -1039,6 +1056,7 @@ echo
 [ -z "$RDWX" ]   && RDWX=$DUEX/bufr_duprad
 [ -z "$AIRX" ]   && AIRX=$DUEX/bufr_dupair
 [ -z "$SHPX" ]   && SHPX=$DUEX/bufr_dupshp
+[ -z "$CMANX" ]  && CMANX=$DUEX/bufr_dupcman
 [ -z "$SYPX" ]   && SYPX=$DUEX/bufr_dupsyp
 [ -z "$TACX" ]   && TACX=$DUEX/bufr_duptac
 [ -z "$EDTX" ]   && EDTX=$DUEX/bufr_edtbfr
@@ -1078,6 +1096,12 @@ set +x
 echo
 echo "The bufr_dumplist file used in this run of DUMPJB is found in path"
 echo "$LIST"
+echo "********************************************************************"
+echo "********************************************************************"
+echo "  THIS EXECUTION OF DUMPJB USED THIS BUFR_DUMPLIST FILE             "
+echo "  $LIST                                                             "
+echo "********************************************************************"
+echo "********************************************************************"
 echo
 [ $LOUD = on ] && set -x
 
@@ -1195,6 +1219,16 @@ if [ "$sys_tp" = 'Cray-XC40' -o "$SITE" = SURGE -o "$SITE" = LUNA ]; then
       [ $LOUD = on ] && set -x
    fi
    BACK=off
+elif [ "$sys_tp" = 'Dell-p3' -o "$SITE" = VENUS -o "$SITE" = MARS ]; then
+   if [ "$BACK" = 'on' ]; then
+      set +x
+      echo
+      echo "===> W A R N I N G : Option to use background threads is disabled on Dell-p3."
+      echo "     BACK=on will be changed to BACK=off."
+      echo
+      [ $LOUD = on ] && set -x
+   fi
+   BACK=off
 else  # for now, keep the default for IBM as it was
    [ -z "$BACK" ] && BACK=on
 fi
@@ -1293,6 +1327,7 @@ MARX = $MARX
 RDWX = $RDWX
 AIRX = $AIRX
 SHPX = $SHPX
+CMANX = $CMANX
 SYPX = $SYPX
 TACX = $TACX
 EDTX = $EDTX
@@ -2030,7 +2065,22 @@ if [ -s $DATA_DUMPJB/mpmd.cmd ]; then
          aprun -n1 -N1 ksh $DATA_DUMPJB/mpmd.cmd
          errmpmd=$?
       fi
-   else
+   elif [ "$sys_tp" = Dell-p3 -o "$SITE" = VENUS -o "$SITE" = MARS ]; then
+      if [ $ntasks -gt 1 ]; then
+         if [ $which_cfp_err -eq 0 ]; then
+            mpirun -l cfp $DATA_DUMPJB/mpmd.cmd 2>&1
+            errmpmd=$?
+         else
+            set +x
+            echo -e "\n ** cfp command not found.  exit 99   **\n"
+            set -x
+            exit 99
+         fi
+      else # $ntasks=<1
+         mpirun -n1 -N1 ksh $DATA_DUMPJB/mpmd.cmd
+         errmpmd=$?
+      fi
+   else  # for now, keep the default for IBM as it was
       if [ $ntasks -gt 1 ]; then
          if [ $which_cfp_err -eq 0 ]; then
             export MP_CSS_INTERRUPT=yes
@@ -2047,7 +2097,7 @@ if [ -s $DATA_DUMPJB/mpmd.cmd ]; then
          $DATA_DUMPJB/mpmd.cmd 2>&1
          errmpmd=$?
       fi
-   fi
+   fi # close of CRAY/DELL_P3/IBM
    [ $errmpmd -ne 0 ]  &&  exit 99
 else
    echo
@@ -2206,14 +2256,13 @@ NOT PERFORMED (turned off by user)"
 fi
 rc_dupshp=0
 dupshp_run=no
-grep -q "001.001" $FILES
-errgrep1=$?
-grep -q "001.013" $FILES
-errgrep2=$?
-if [ $errgrep1 -eq 0 -a $errgrep2 -eq 0 ]; then
+grep -q -e "001.001" -e "001.013" -e "001.101" -e "001.113" $FILES
+errgreps=$?
+if [ $errgreps -eq 0 ]; then
    if [ $DUPC = on ]; then
      echo "--------------------------------------------------------------------"
-      echo "Duplicate check combined ship reports in 001.001 and 001.013"
+      echo "Duplicate check combined ship reports in 001.001, 001.013"
+      echo ",001.101 and 001.113"
       echo "Duplicate check program: $SHPX"
      echo "--------------------------------------------------------------------"
       time cat $FILES | $SHPX
@@ -2225,13 +2274,39 @@ if [ $errgrep1 -eq 0 -a $errgrep2 -eq 0 ]; then
       rm fort.60 2>/dev/null
    else
      echo "--------------------------------------------------------------------"
-      echo "Duplicate check of combined ship reports in 001.001 and 001.013 \
+      echo "Duplicate check of combined ship reports in 001.001, 001.013, \
+001.101 and 001.113\
 NOT PERFORMED (turned off by user)"
      echo "--------------------------------------------------------------------"
    fi
    echo "--------------------------------------------------------------------"
 fi
 
+rc_dupcman=0
+dupcman_run=no
+grep -q -e "001.004" -e "001.104" $FILES
+errgreps=$?
+if [ $errgreps -eq 0 ]; then
+   if [ $DUPC = on ]; then
+     echo "--------------------------------------------------------------------"
+      echo "Duplicate check combined cman reports in 001.004, 001.104"
+      echo "Duplicate check program: $CMANX"
+     echo "--------------------------------------------------------------------"
+      time cat $FILES | $CMANX
+      if [ ! -s fort.60 ]; then
+         rc_dupcman=99
+      else
+         dupcman_run=yes
+      fi
+      rm fort.60 2>/dev/null
+   else
+     echo "--------------------------------------------------------------------"
+      echo "Duplicate check of combined cman reports in 001.004, 001.104 \
+NOT PERFORMED (turned off by user)"
+     echo "--------------------------------------------------------------------"
+   fi
+   echo "--------------------------------------------------------------------"
+fi
 
 # run cross tank duplicate check, TAC v BUFR data streams
 # -------------------------------------------------------
@@ -2319,7 +2394,12 @@ fi
 if [ $dupshp_run = yes ]; then
    echo
    echo "Duplicate checking completed for combined ship reports in 001.001 \
-and 001.013"
+001.013 001.101 and 001.113"
+fi
+if [ $dupcman_run = yes ]; then
+   echo
+   echo "Duplicate checking completed for combined cman reports in 001.004 \
+and 001.104"
 fi
 if [ "$duptac_run_mbuoy" = yes ]; then
    echo
@@ -2438,7 +2518,7 @@ NFIN=`ls *.fin 2>/dev/null|wc -w`
 [ $NFIN -lt $NOUT ] && RETG=99
 [ $rc_dupair -eq 99 -o $rc_dupshp -eq 99 -o $rc_dupsyp -eq 99 -o \
   $rc_duptac -eq 99 -o $rc_edtbfr -eq 99 -o $rc_quipc  -eq 99 -o \
-  $rc_chkbfr -eq 99 ]  && RETG=99
+  $rc_chkbfr -eq 99 -o $rc_dupcman -eq 99 ]  && RETG=99
 
 ###########if [ $RETG -ge 22 ]
 if [ $RETG -gt 22 ]; then
@@ -2515,17 +2595,6 @@ if [ ${data_dumpjb_imported} = NO ]; then
    [ $RETC -lt 99 -a $LOUD != on ]  &&  rm -rf $DATA_DUMPJB
 fi
 
-#
-#  copy $LIST to $COMOUT per NCO SPA request
-#  -----------------------------------------
-echo "Copy bufr_dumplist to comout"
-if [ $RUN = 'rtma_ru' ]; then
-   LIST_cp=$COMOUT/${RUN}.t${cyc}${cycM}z.bufr_dumplist.${tmmark}
-else
-   LIST_cp=$COMOUT/${RUN}.t${cyc}z.bufr_dumplist.${tmmark}
-fi
-cp $LIST $LIST_cp
-chmod 644 $LIST_cp
 
 #
 #  the end of the DUMP script - exit with a RETC return code
@@ -2538,7 +2607,7 @@ echo
 echo "********************************************************************"
 echo "********************************************************************"
 echo "                THIS EXECUTION OF DUMPJB IS FINISHED                "
-echo "               End time: `date -u`                                     "
+echo "                End time: `date -u`                                 "
 echo "********************************************************************"
 echo "********************************************************************"
 echo

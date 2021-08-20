@@ -42,7 +42,13 @@ C                 LAT/LON DIFFERENCE BETWEEN TAC AND BUFR FORMAT REPORTS
 C                 IN THE DUPLICATION CHECKS.
 C              -  ADDED SETBMISS CALL TO SET BMISS TO 10E8 AND
 C                 CHANGE THE CODE TO AVOID INTEGER OVERFLOW
-C
+C 2021-04-20  X. Su
+C               -  adding statement for station with missing values
+C 2021-04-20  J. DONG -- 
+C              -  CHANGED DEXY TO 0.005.
+C              -  REMOVED THE UNNESSARY CODES
+C              -  FIXED THE BUGS FOR KEEPING THE REPORTS WITH
+C                 DIFFERENT IDs BUT WITH CLOSE LAT/LON.
 C USAGE:
 C   INPUT FILES:
 C     UNIT 05  - STANDARD INPUT - RECORDS CONTAINING THE WORKING INPUT
@@ -91,7 +97,7 @@ C$$$
       real(8),allocatable :: rab_8(:,:)
       INTEGER,ALLOCATABLE :: IWORK(:)
       INTEGER,ALLOCATABLE :: IORD(:)
-      INTEGER,ALLOCATABLE :: JDUP(:)
+      INTEGER,ALLOCATABLE :: JDUP(:),JJDUP(:)
 
       CHARACTER*80 TSTR,TSTH,rstr,FILE,FILI(NFILES),FILO
       CHARACTER*8  SUBSET,CTAB7,ctab7_i,ctab7_j,c_missing
@@ -128,7 +134,7 @@ C  (exact for the moment, but lat/lon and time might need some
 C  tolearnce)
 C  -------------------------------------
 
-      data dexy    / 0.20/ ! lat/lon
+      data dexy    / 0.005/ ! lat/lon
       data dmon    / 0.0/ ! month
       DATA DDAY    / 0.0/ ! day
       data dour    / 0.0/ ! hour
@@ -140,10 +146,10 @@ C     default of 1 because first eligible synop tank is b000/xx000.
  
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_DUPSYP',2020,0233,0054,'NP22')
+      CALL W3TAGB('BUFR_DUPSYP',2021,0175,0054,'NP22')
 
       print *
-      print * ,'---> Welcome to BUFR_DUPSYP - Version 08-20-2020'
+      print * ,'---> Welcome to BUFR_DUPSYP - Version 06-24-2021'
       print *
 
       CALL DATELEN(10)
@@ -234,6 +240,7 @@ C  ---------------------------------------------------------------
       ALLOCATE(IWORK(MXTB)     ,STAT=I);IF(I.NE.0) GOTO 901
       ALLOCATE(IORD(MXTB)      ,STAT=I);IF(I.NE.0) GOTO 901
       ALLOCATE(JDUP(MXTB)      ,STAT=I);IF(I.NE.0) GOTO 901
+      ALLOCATE(JJDUP(MXTB)     ,STAT=I);IF(I.NE.0) GOTO 901
 
       TAB_8 = BMISS
       rab_8 = bmiss
@@ -299,6 +306,7 @@ C  INITIAL VALUES FOR MARKERS AND COUNTERS
 C  ---------------------------------------
  
       JDUP = 0
+      JJDUP = 0
       IORD = 0
       NDUP = 0
       ndup_file = 0
@@ -355,60 +363,50 @@ C  ---------------------------------------------------
          K = L+1
          I = IORD(L)
          J = IORD(L+1)
-         tab7_i_8 = tab_8(7,i)
-         tab7_j_8 = tab_8(7,j)
-ccc      print *, 'New input report number (L) ',L,' found in ',
-ccc  .    'record (I) ',I
+         tab7_i_8 = tab_8(7,i)  ! rpid
+         tab7_j_8 = tab_8(7,j)  ! rpid
          if(jdup(i).ne.0) then
             print *, '---> this report in record (I) has already been ',
      .       'flagged as a duplicate - cycle'
             cycle LOOP1
          endif
-ccc      print *, 'Next input report number (L+1) ',L+1,' found ',
-ccc  .   'in record (J) ',J
 
-CDONG         DO WHILE(NINT(ABS(TAB_8(2,I)-TAB_8(2,J))*10000.).LE.
-CDONG     .    NINT(DEXY*10000.) .AND. JDUP(I).EQ.0)
-         DO WHILE(ABS(TAB_8(2,I)-TAB_8(2,J)).LE.DEXY 
-     .      .AND. JDUP(I).EQ.0)
-ccc         print'("Record (J) may have been changed to",i6," - '//
-ccc  .      'compare against unchanged record (I)",i6)', j,i
+         DO WHILE(JDUP(I).EQ.0)
             if(jdup(j).ne.0) then
                print *, '---> this report in record (J) has already ',
      .          'been flagged as a duplicate - cycle'
                go to 800
             endif
             dell = dexy
-            IF(ABS(TAB_8(1,I)-TAB_8(1,J)).LE.DELL .AND.
-     .         ABS(TAB_8(2,I)-TAB_8(2,J)).LE.DELL .AND.
-     .         NINT(ABS(TAB_8(3,I)-TAB_8(3,J))*100.).LE.
-     .         NINT(DMON*100.).AND.
-     .         NINT(ABS(TAB_8(4,I)-TAB_8(4,J))*100.).LE.
-     .         NINT(DDAY*100.).AND.
-     .         NINT(ABS(TAB_8(5,I)-TAB_8(5,J))*100.).LE.
-     .         NINT(DOUR*100.).AND.
-     .         NINT(ABS(TAB_8(6,I)-TAB_8(6,J))*100.).LE.
-     .         NINT(DMIN*100.).and.
-     .         ctab7_i.eq.ctab7_j) THEN
-               print 1799, i,ctab7_i,(tab_8(ii,i),ii=1,2),
-     .          (nint(tab_8(ii,i)),ii=4,6),
-     .          (nint(-rab_8(ii,i)),ii=1,5),nint(tab_8(10,i))
-     .          ,tab_8(8,i),tab_8(9,i)
- 1799          format('===> DUPL. FOUND:'/'   --> I: ',I6,';{ ID: ',A8,
-     .          '; LAT: ',F9.5,'; LON: ',F10.5,'; RPRT DD HH:mm ',
-     .          I2.2,I2,':',I2,'; RCPT YYYYMMDDHHMM: ',I4,4I2.2,
-     .          '; file #',I2,'} ELEV=',F15.2,'PMSL=',F15.2)
-               print 1800, j,ctab7_j,(tab_8(ii,j),ii=1,2),
-     .          (nint(tab_8(ii,j)),ii=4,6),
-     .          (nint(-rab_8(ii,j)),ii=1,5),nint(tab_8(10,j))
-     .          ,tab_8(8,j),tab_8(9,j)
- 1800          format('   --> J: ',I6,';{ ID: ',A8,'; LAT: ',F9.5,
-     .          '; LON: ',F10.5,'; RPRT',' DD HH:mm ',I2.2,I2,':',I2,
-     .          '; RCPT YYYYMMDDHHMM: ',I4,4I2.2,
-     .          '; file #',I2,'} ELEV=',F15.2,'PMSL=',F15.2)
+            JJDUP(j)=0
+               if(ctab7_i .eq. ctab7_j  ) then   
+                  if(NINT(ABS(TAB_8(3,I)-TAB_8(3,J))*100.).LE.
+     .               NINT(DMON*100.).AND.
+     .               NINT(ABS(TAB_8(4,I)-TAB_8(4,J))*100.).LE.
+     .               NINT(DDAY*100.).AND.
+     .               NINT(ABS(TAB_8(5,I)-TAB_8(5,J))*100.).LE.
+     .               NINT(DOUR*100.).AND.
+     .               NINT(ABS(TAB_8(6,I)-TAB_8(6,J))*100.).LE.
+     .               NINT(DMIN*100.)) then
+cc                   print 1799, i,ctab7_i,(tab_8(ii,i),ii=1,2),
+cc     .              (nint(tab_8(ii,i)),ii=4,6),
+cc     .              (nint(-rab_8(ii,i)),ii=1,5),nint(tab_8(10,i))
+cc     .              ,tab_8(8,i),tab_8(9,i)
+cc 1799             format('===> DUPL. FOUND:'/'   --> I: ',I6,';{ ID: ',A8,
+cc     .             '; LAT: ',F9.5,'; LON: ',F10.5,'; RPRT DD HH:mm ',
+cc     .             I2.2,I2,':',I2,'; RCPT YYYYMMDDHHMM: ',I4,4I2.2,
+cc     .             '; file #',I2,'} ELEV=',F15.2,'PMSL=',F15.2)
+cc                  print 1800, j,ctab7_j,(tab_8(ii,j),ii=1,2),
+cc     .             (nint(tab_8(ii,j)),ii=4,6),
+cc     .             (nint(-rab_8(ii,j)),ii=1,5),nint(tab_8(10,j))
+cc     .             ,tab_8(8,j),tab_8(9,j)
+cc 1800             format('   --> J: ',I6,';{ ID: ',A8,'; LAT: ',F9.5,
+cc     .             '; LON: ',F10.5,'; RPRT',' DD HH:mm ',I2.2,I2,':',I2,
+cc     .             '; RCPT YYYYMMDDHHMM: ',I4,4I2.2,
+cc     .             '; file #',I2,'} ELEV=',F15.2,'PMSL=',F15.2)
 
-               print *,'lat diff =',ABS(TAB_8(1,I)-TAB_8(1,J))
-               print *,'lon diff =',ABS(TAB_8(2,I)-TAB_8(2,J))
+cc                  print *,'lat diff =',ABS(TAB_8(1,I)-TAB_8(1,J))
+cc                  print *,'lon diff =',ABS(TAB_8(2,I)-TAB_8(2,J))
                ! when reports "I" and "J" satisfy the duplicate
                ! check, the default is to set report "J"'s
                ! duplicate flag to 1 in order to throw it out
@@ -416,8 +414,11 @@ ccc  .      'compare against unchanged record (I)",i6)', j,i
                ! overridden in the following cases {whereby
                ! report "I"'s duplicate flag is set to 1 in order
                ! to throw it out (thus instead retaining report "J")}:
-
-               IF(ctab7_i.eq.'missing-') then
+                     JJDUP(j)=1
+                  endif
+               endif
+            if(JJDUP(J) .EQ.1) then
+               if(ctab7_i.eq.'missing-') then
                   ! case 1: report "I" has a missing report identifier
                   jdup(i) = 1
                   print *, 'I tossed ==> missing report id'
@@ -433,7 +434,7 @@ ccc  .      'compare against unchanged record (I)",i6)', j,i
                   ! and report "J" has a non-missing report identifier
                   jdup(i) = 1
                   print *, 'I tossed ==> from less-preferred file-type',
-     .             ' than J'
+     .                     ' than J'
                   print *,'I,J:',nint(tab_8(10,i)),nint(tab_8(10,j))
                else if( (tab_8(8,i).ge.bmiss.or.tab_8(9,i).ge.bmiss)
      .            .and. (tab_8(8,j).lt.bmiss)
@@ -444,10 +445,9 @@ ccc  .      'compare against unchanged record (I)",i6)', j,i
                   ! report "I" has a missing PSML or ELEV.
                   jdup(i) = 1
                   print *, 'I tossed ==> from missing ELEV or PMSL',
-     .             ' in report I'
+     .                     ' in report I'
                   print *,'I,J:',nint(tab_8(10,i)),nint(tab_8(10,j))
                end if
-
                ! At this point, if report "I"'s duplicate flag is not
                ! set in one of the above cases, set report "J"'s
                ! duplicate flag to 1 in order to throw it out thus
@@ -456,9 +456,10 @@ ccc  .      'compare against unchanged record (I)",i6)', j,i
                   JDUP(J) = 1
                   print *, 'J tossed'
                   print *,'I,J:',nint(tab_8(10,i)),nint(tab_8(10,j))
-               end if
+               END IF
 
-            ENDIF  ! endif for dupe test/comparison
+             ENDIF  ! endif for dupe test/comparison
+             JJDUP(J)=0
   800       continue
             IF(K+1.GT.NTAB) CYCLE LOOP1
             J = IORD(K+1)
