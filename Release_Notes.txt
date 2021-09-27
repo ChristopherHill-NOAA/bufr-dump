@@ -1,5 +1,6 @@
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 <<<<<<< HEAD
+<<<<<<< HEAD
 obsproc_dump release U.V.W --> released ??? ??, ????                         <- update U.V.W when version decided
                            --> implemented ??? ?, 20??
 
@@ -175,6 +176,10 @@ obsproc_dump release X.Y.Z --> released ??? ??, ????                         <- 
 obsproc_dump release 5.0.2 --> released Apr 23, 2019
                            --> implemented May 15, 2019
 >>>>>>> master
+=======
+obsproc_dump release 5.2.0 --> released Jul 16, 2021
+                           --> implemented Aug 18, 2021
+>>>>>>> master
 
 files:
    obsproc_dump/fix/bufr_bufrtab.sptrmm
@@ -186,11 +191,16 @@ files:
    obsproc_dump/fix/wave_bufrtab.quikscat
    obsproc_dump/fix/wave_landchxh
 <<<<<<< HEAD
+<<<<<<< HEAD
  D obsproc_dump/modulefiles/dumpjb/4.0.0
  A obsproc_dump/modulefiles/dumpjb/X.Y.Z                                     <- update X.Y.Z when version decided
 =======
  D obsproc_dump/modulefiles/dumpjb/5.0.1
  A obsproc_dump/modulefiles/dumpjb/5.0.2
+>>>>>>> master
+=======
+ D obsproc_dump/modulefiles/dumpjb/5.1.1
+ A obsproc_dump/modulefiles/dumpjb/5.2.0
 >>>>>>> master
    obsproc_dump/sorc/bufr_chkbfr.fd/chkbfr.f
    obsproc_dump/sorc/bufr_chkbfr.fd/makefile
@@ -202,6 +212,8 @@ files:
    obsproc_dump/sorc/bufr_dumpmd.fd/makefile
    obsproc_dump/sorc/bufr_dupair.fd/dupair.f
    obsproc_dump/sorc/bufr_dupair.fd/makefile
+ A obsproc_dump/sorc/bufr_dupcman.fd/dupcman.f
+ A obsproc_dump/sorc/bufr_dupcman.fd/makefile
    obsproc_dump/sorc/bufr_dupcor.fd/dupcor.f
    obsproc_dump/sorc/bufr_dupcor.fd/makefile
    obsproc_dump/sorc/bufr_dupmar.fd/dupmar.f
@@ -210,12 +222,16 @@ files:
    obsproc_dump/sorc/bufr_dupmrg.fd/makefile
    obsproc_dump/sorc/bufr_duprad.fd/duprad.f
    obsproc_dump/sorc/bufr_duprad.fd/makefile
- M obsproc_dump/sorc/bufr_dupsat.fd/dupsat.f
+   obsproc_dump/sorc/bufr_dupsat.fd/dupsat.f
    obsproc_dump/sorc/bufr_dupsat.fd/makefile
-   obsproc_dump/sorc/bufr_dupshp.fd/dupshp.f
+ M obsproc_dump/sorc/bufr_dupshp.fd/dupshp.f
    obsproc_dump/sorc/bufr_dupshp.fd/makefile
    obsproc_dump/sorc/bufr_dupsst.fd/dupsst.f
    obsproc_dump/sorc/bufr_dupsst.fd/makefile
+ M obsproc_dump/sorc/bufr_dupsyp.fd/dupsyp.f
+   obsproc_dump/sorc/bufr_dupsyp.fd/makefile
+   obsproc_dump/sorc/bufr_duptac.fd/duptac.f
+   obsproc_dump/sorc/bufr_duptac.fd/makefile
    obsproc_dump/sorc/bufr_edtbfr.fd/edtbfr.f
    obsproc_dump/sorc/bufr_edtbfr.fd/makefile
    obsproc_dump/sorc/bufr_geofil.fd/geofil.f
@@ -240,6 +256,434 @@ files:
    obsproc_dump/ush/bufr_dump_obs.sh
    obsproc_dump/ush/check_tanks.sh
  M obsproc_dump/ush/dumpjb
+( A - added,  M - modified, D - deleted)
+
+
+ USH script changes:
+   dumpjb:
+    - Added call to new bufr_dupcman, to check for duplicate TAC and BUFR
+      cman reports in tanks b001/xx004 and b001/xx104.
+      BENEFIT: enables removal of duplicate TAC reports relative to their
+               BUFR-feed equivalents.
+    - Updated bufr_dupshp usage to include TAC and BUFR format ship data 
+      tanks: b001/xx001, b001/xx013, b001/xx101, and b001/xx113.
+      BENEFIT: enables removal of duplicate TAC reports relative to their
+               BUFR-feed equivalents.
+    - Moved logic to copy bufr_dumplist to $COMOUT to network specific
+      dump scripts.
+      BENEFIT: corrects bug when dumpjb is not run with a network specific
+               wrapper script.
+
+
+ Source code changes:
+   bufr_dupcman.fd/dupcman.f, bufr_dupcman.fd/makefile:
+    - New source dupcman.f performs duplicate checking between 
+      land-based CMAN stations originating from TAC (001.004) and BUFR
+      BUFR (001.104) formatted sources; the program reads in TAC and BUFR
+      inputs of cman platform observations and cross checks them, discarding
+      any TAC reports that are duplicated by a BUFR equivalent.
+      BENEFIT: allows for BUFR-feed observations to be used without
+               causing over sampling by the TAC duplicate.
+   bufr_dupshp.fd/dupshp.f:
+    - Added BUFR format restricted ships (001.101) and BUFR format
+      unrestricted ships (001.113) to the duplicate checking process.
+      BENEFIT: enables removal of duplicate TAC reports relative to their
+               BUFR-feed equivalents.
+   bufr_dupsyp.fd/dupsyp.f:
+    - Changed DEXY to 0.005. Corrected bug for keeping reports with
+      different IDs but with very close lat/lon.
+      BENEFIT: improved duplicate checking processing causes fewer
+               problems downstream in DA.
+
+
+ Module changes:
+ ---------------
+   Updated to 5.2.0
+
+
+ Output changes:
+ ---------------
+  (For specific network changes see " Output changes" in Release Notes for that
+   network, if that network executes this version of obsproc_dump.)
+
+
+ Libraries:
+ ----------
+   w3nco   2.0.6 (all codes)
+   w3emc   2.3.0 
+           (codes: bufr_dcodwindsat, bufr_dupair, bufr_dupcor, bufr_dupmar,
+                  bufr_dupmrg, bufr_duprad, bufr_dupsat, bufr_dupshp,
+                  bufr_dupsst, bufr_supertmi, prepobs_prepssmi,
+                  wave_dcodquikscat)
+   bufr   11.3.0 (all codes)
+   bacio   2.0.2
+           (codes: bufr_supertmi, prepobs_prepssmi, wave_dcodquikscat)
+   sp      2.0.2 (prepobs_prepssmi)
+
+
+ Build Instructions:
+ -------------------
+   - See sorc/README.build
+
+
+ Preimplementation Testing Requirements:
+ ---------------------------------------
+   There are no jobs in obsproc_dump.  All jobs executing this version of
+   obsproc_dump should be tested.
+
+ Dissemination:
+ --------------
+   See information about dissemination in the release notes for
+   obsproc_<NETWORK> packages which execute this version of obsproc_dump.
+
+
+ Special Instructions:
+ ---------------------
+   This can be implemented as soon as possible.
+   This must be implemented on Dell-p3 & Cray.
+ 
+   Please copy modulefiles/dumpjb/5.2.0 from this release to each of:
+     Cray-XC40:
+       /gpfs/hps/nco/ops/nwprod/modulefiles/dumpjb/5.2.0 
+     Dell-p3:
+       /gpfs/dell1/nco/ops/nwprod/modulefiles/*/dumpjb/5.2.0
+       * - compiler_prod/ips/18.0.1
+
+   When adding to nwtest or nwpara, please remember to modify the envir
+   variable in the modulefile accordingly.
+
+   This is part of OBSPROC.v16.1.0.
+   This must be implemented simultaneously with the implementations of:
+      v3.4.2 of obsproc_global,
+      v3.4.3 of obsproc_nam,
+      v3.2.2 of obsproc_rap,
+      v3.3.3 of obsproc_rtma,
+      v3.2.3 of obsproc_urma,
+      v2.5.3 of obsproc_cdas,
+      v2.4.1 of obsproc_dump_monitor,
+      v3.6.0 of obsproc_dump_post,
+      v5.5.0 of obsproc_prep,
+      v2.4.0 of obsproc_shared_bufr_dumplist,
+      v2.1.3 of obsproc_shared_bufr_remorest.
+
+   Since there are no jobs in obsproc_dump, an obsproc_dump.ver file is not
+   needed. But note, please update: 
+     obsproc_global.ver,
+     obsproc_nam.ver,
+     obsproc_rap.ver,
+     obsproc_rtma.ver,
+     obsproc_urma.ver,
+     obsproc_cdas.ver,
+     obsproc_dump_monitor.ver,
+   to set obsproc_dump_ver to v5.2.0.
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+obsproc_dump release 5.1.1 --> released Mar 10, 2021
+                           --> implemented Apr 14, 2021
+
+files:
+ D obsproc_dump/modulefiles/dumpjb/5.1.0
+ A obsproc_dump/modulefiles/dumpjb/5.1.1
+ M obsproc_dump/ush/bufr_dump_obs.sh
+
+( A - added,  M - modified, D - deleted)
+
+
+ USH script changes:
+   bufr_dump_obs.sh:
+    - Included gpsro among the data typse whose dump file are
+      restricted. 
+      BENEFIT: gpsro dump files that contain commercial data will be
+               properly restricted.
+
+
+ Source code changes:
+   NONE
+
+
+ Module changes:
+ ---------------
+   Updated to 5.1.1
+
+
+ Output changes:
+ ---------------
+  (For specific network changes see " Output changes" in Release Notes for that
+   network, if that network executes this version of obsproc_dump.)
+  - Even though there are no code changes to obsproc_cdas and obsproc_rap,
+    there are output changes for these networks in addition to obsproc_global
+    and obsproc_nam:
+    - The gpsro dump files will be slightly larger than production because of
+      the inclusion of commercial data.
+    - The gpsro dump files will belong to group rstprod.
+    - A new non-restricted gpsro dump file will be generated from the original
+      gpsro dump file.  It has all restricted observations removed.
+      - *.tCCz.gpsro.tm00.bufr_d
+      - *.tCCz.gpsro.tm00.bufr_d.nr
+
+
+ Libraries:
+ ----------
+   w3nco   2.0.6 (all codes)
+   w3emc   2.3.0 
+           (codes: bufr_dcodwindsat, bufr_dupair, bufr_dupcor, bufr_dupmar,
+                  bufr_dupmrg, bufr_duprad, bufr_dupsat, bufr_dupshp,
+                  bufr_dupsst, bufr_supertmi, prepobs_prepssmi,
+                  wave_dcodquikscat)
+   bufr   11.3.0 (all codes)
+   bacio   2.0.2
+           (codes: bufr_supertmi, prepobs_prepssmi, wave_dcodquikscat)
+   sp      2.0.2 (prepobs_prepssmi)
+
+
+ Build Instructions:
+ -------------------
+   - See sorc/README.build
+
+
+ Preimplementation Testing Requirements:
+ ---------------------------------------
+   There are no jobs in obsproc_dump.  All jobs executing this version of
+   obsproc_dump should be tested.
+
+ Dissemination:
+ --------------
+   See information about dissemination in the release notes for
+   obsproc_<NETWORK> packages which execute this version of obsproc_dump.
+
+
+ Special Instructions:
+ ---------------------
+   This is part of OBSPROC.v15.1.0.
+   This can be implemented as soon as possible.
+   This must be implemented on Dell-p3 & Cray.
+ 
+   This must be implemented simultaneously with the implementations of:
+      v4.0.0 of decod_dcrocc,
+      v3.4.1 of obsproc_global,
+      v3.4.2 of obsproc_nam,
+      v3.5.0 of obsproc_dump_post,
+      v2.3.1 of obsproc_shared_bufr_dumplist,
+      v2.1.2 of obsproc_shared_bufr_remorest.
+
+   Since there are no jobs in obsproc_dump, an obsproc_dump.ver file is not
+   needed. But note, please update: 
+     obsproc_cdas.ver,
+     obsproc_global.ver,
+     obsproc_nam.ver,
+     obsproc_rap.ver.
+   to set obsproc_dump_ver to v5.1.1.
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+obsproc_dump release 5.1.0 --> released Aug 28, 2020
+                           --> implemented Oct 22, 2020
+
+files:
+ D obsproc_dump/modulefiles/dumpjb/5.0.3
+ A obsproc_dump/modulefiles/dumpjb/5.1.0
+ M obsproc_dump/sorc/bufr_dcodwindsat.fd/dcodwindsat.f
+ M obsproc_dump/sorc/bufr_dumpmd.fd/dumpmd.f
+ M obsproc_dump/sorc/bufr_dupair.fd/dupair.f
+ M obsproc_dump/sorc/bufr_dupcor.fd/dupcor.f
+ M obsproc_dump/sorc/bufr_dupmar.fd/dupmar.f
+ M obsproc_dump/sorc/bufr_dupmrg.fd/dupmrg.f
+ M obsproc_dump/sorc/bufr_duprad.fd/duprad.f
+ M obsproc_dump/sorc/bufr_dupsat.fd/dupsat.f
+ M obsproc_dump/sorc/bufr_dupshp.fd/dupshp.f
+ M obsproc_dump/sorc/bufr_dupsst.fd/dupsst.f
+ A obsproc_dump/sorc/bufr_dupsyp.fd/dupsyp.f
+ A obsproc_dump/sorc/bufr_dupsyp.fd/makefile
+ A obsproc_dump/sorc/bufr_duptac.fd/duptac.f
+ A obsproc_dump/sorc/bufr_duptac.fd/makefile
+ M obsproc_dump/sorc/bufr_edtbfr.fd/edtbfr.f
+ M obsproc_dump/sorc/bufr_geofil.fd/geofil.f
+ M obsproc_dump/sorc/bufr_quipc.fd/quipc.f
+ M obsproc_dump/sorc/prepobs_prepssmi.fd/prepssmi.f
+ M obsproc_dump/sorc/build.sh
+ M obsproc_dump/sorc/load_libs.rc
+ M obsproc_dump/ush/dumpjb
+
+( A - added,  M - modified, D - deleted)
+
+
+ USH script changes:
+   dumpjb:
+    - Per SPA request, updated to copy bufr_dumplist to $COMROOT for each
+      dump cycle for all networks. 
+    - Added call to new bufr_dupsyp, to check for duplicate TAC and BUFR
+      synoptic reports in tanks b000/xx000, b000/xx001, b000/xx002,
+      b000/xx100, b000/xx101, b000/xx102.
+      BENEFIT: enables removal of duplicate TAC reports relative to their
+               BUFR-feed equivalents.
+    - Added call to new program, bufr_duptac, to check for duplicate TAC and
+      BUFR buoy reports in tanks b001/xx002 vs b001/xx102, and
+      b001/xx003 vs b001/xx103.
+      BENEFIT: enables removal of duplicate TAC reports relative to their
+               BUFR-feed equivalents.
+
+
+ Source code changes:
+   bufr_dcodwindsat.fd/dcodwindsat.f:
+    - changed BUFR missing value from 10E10 to 10E8. 
+      BENEFIT: avoids potential integer overflow errors.
+   bufr_dumpmd.fd/dumpmd.f:
+    - changed print statement formatting to enable larger integer
+      output.
+   bufr_dupair.fd/dupair.f,
+   bufr_dupcor.fd/dupcor.f,
+   bufr_dupmar.fd/dupmar.f,
+   bufr_dupmrg.fd/dupmrg.f,
+   bufr_duprad.fd/duprad.f,
+   bufr_dupsat.fd/dupsat.f,
+   bufr_dupshp.fd/dupshp.f,
+   bufr_dupsst.fd/dupsst.f,
+   bufr_edtbfr.fd/edtbfr.f,
+   bufr_geofil.fd/geofil.f,
+   bufr_quipc.fd/quipc.f,
+   prepobs_prepssmi.fd/prepssmi.f:
+    - BUFR missing value set to 10E8.  Minor adjustments made 
+      to prevent integer overflow errors. Adujustments made
+      to fix an output conversion error.
+      BENEFIT: avoids potential integer overflow errors.
+   build.sh
+    - modified various informative echo statements.
+    - added importable environment variable, debug, to enable
+      additional compiler options.
+      BENEFIT: allows for easier invocation of extended compiler
+               options that should be applied during development
+               but not for production implementation.
+   load_libs.rc
+    - Incremented the bufrlib version from v11.2.0 to  v11.3.0.
+    - Removed settings specific to IBM-p[12] and Dell.
+ Source code additions:
+   bufr_dupsyp.fd:
+    - New source dupsyp.f performs duplicate checking between synop
+      data streams originating from TAC and BUFR formatted sources;
+      the program reads in TAC and BUFR inputs of restricted, fixed
+      non-restricted, and mobile non-restricted synoptic observations
+      and cross checks them, discarding any TAC reports that are
+      duplicated by a BUFR equivalent, unless the BUFR report has
+      missing station height and PMSL, in which case the TAC report
+      is retained and the BUFR report is discarded.
+      BENEFIT: allows for BUFR-feed observations to be used without
+               causing over sampling by the TAC duplicate.
+   bufr_duptac.fd:
+    - New source duptac.f performs duplicate checking between buoy
+      data streams originating from TAC (Traditional Alphanumeric
+      Format) and BUFR formatted sources; the program reads in TAC and
+      BUFR inputs of fixed (moored) and drifting buoy observations and
+      cross checks them, discarding any TAC reports that are duplicated
+      by a BUFR equivalent.
+      BENEFIT: allows for BUFR-feed observations to be used without
+               causing over sampling by the TAC duplicate.
+
+
+ Module changes:
+ ---------------
+   Updated to 5.1.0
+
+
+ Output changes:
+ ---------------
+  (For specific network changes see " Output changes" in Release Notes for that
+   network, if that network executes this version of obsproc_dump.)
+  - Even though there are no code changes to obsproc_cdas, obsproc_nam,
+    obsproc_rap, obsproc_rtma, and obsproc_urma, there are output changes for
+    these networks.
+    - The adpsfc and sfcshp dump files will be slightly larger than production:
+      - *.tCCz.adpsfc.tm00.bufr_d
+      - *.tCCz.sfcshp.tm00.bufr_d
+    - The J*_DUMP job processes will run slightly longer than production (< ~10s inc).
+
+
+ Libraries:
+ ----------
+   w3nco   2.0.6 (all codes)
+   w3emc   2.3.0 
+           (codes: bufr_dcodwindsat, bufr_dupair, bufr_dupcor, bufr_dupmar,
+                  bufr_dupmrg, bufr_duprad, bufr_dupsat, bufr_dupshp,
+                  bufr_dupsst, bufr_supertmi, prepobs_prepssmi,
+                  wave_dcodquikscat)
+   bufr   11.3.0 (all codes)
+   bacio   2.0.2
+           (codes: bufr_supertmi, prepobs_prepssmi, wave_dcodquikscat)
+   sp      2.0.2 (prepobs_prepssmi)
+
+
+ Build Instructions:
+ -------------------
+   - See sorc/README.build
+
+
+ Preimplementation Testing Requirements:
+ ---------------------------------------
+   There are no jobs in obsproc_dump.  All jobs executing this version of
+   obsproc_dump should be tested.
+
+ Dissemination:
+ --------------
+   See information about dissemination in the release notes for
+   obsproc_<NETWORK> packages which execute this version of obsproc_dump.
+
+
+ Special Instructions:
+ ---------------------
+   This is part of OBSPROC.v14.0.0.
+   This can be implemented as soon as possible.
+   This must be implemented on Dell-p3 & Cray.
+ 
+   This must be implemented simultaneously with the implementations of:
+      v4.2.0 of decod_dcelrw,
+      v2.5.2 of obsproc_cdas,
+      v3.3.0 of obsproc_global,
+      v3.1.2 of obsproc_rap,
+      v3.3.1 of obsproc_rtma,
+      v3.2.1 of obsproc_urma,
+      v2.4.0 of obsproc_dump_monitor,
+      v3.4.0 of obsproc_dump_post,
+      v5.3.0 of obsproc_prep,
+      v3.1.1 of obsproc_prep_post,
+      v2.2.0 of obsproc_shared_bufr_dumplist - previously released to support RTOFS,
+      v2.1.1 of obsproc_shared_bufr_remorest.
+
+   Since there are no jobs in obsproc_dump, an obsproc_dump.ver file is not
+   needed. But note, please update: 
+     obsproc_cdas.ver,
+     obsproc_global.ver,
+     obsproc_nam.ver,
+     obsproc_rap.ver,
+     obsproc_rtma.ver,
+     obsproc_urma.ver,
+     obsproc_dump_monitor.ver,
+   to set obsproc_dump_ver to v5.1.0.
+
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+obsproc_dump 5.0.3  --> updated and implemented by SPA on Mar 26, 2020
+
+ M obsproc_dump/ush/dumpjb
+   - now TANK, QPRM and EPRM (sdmedit) all default to use Phase3 prod dcom 
+   - update docblock comments related to TANK, EPRM, QPRM 
+ M obsproc_dump/ush/check_tanks.sh
+   - update TANK default to use phase 3 prod dcom directory 
+ D obsproc_dump/modulefiles/dumpjb/5.0.2
+ A obsproc_dump/modulefiles/dumpjb/5.0.3
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+Also in v5.0.2 on Dell: the following script is updated to use Phase3 dcom:
+  ush/dumpjb 
+Please note that the sdmedit still points to phase1 dcom, will switch to
+p3 dcom when it is ready!
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+obsproc_dump release 5.0.2 --> released Apr 23, 2019
+                           --> implemented May 15, 2019
+
+files:
+ D obsproc_dump/modulefiles/dumpjb/5.0.1
+ A obsproc_dump/modulefiles/dumpjb/5.0.2
+ M obsproc_dump/sorc/bufr_dupsat.fd/dupsat.f
+ M obsproc_dump/ush/dumpjb
+
 ( A - added,  M - modified, D - deleted)
 
 

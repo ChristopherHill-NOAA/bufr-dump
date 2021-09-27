@@ -1,11 +1,11 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
-C MAIN PROGRAM: BUFR_DUPSHP
-C   PRGMMR: DONG             ORG: NP22        DATE: 2020-08-20
+C MAIN PROGRAM: BUFR_DUPCMAN
+C   PRGMMR: DONG             ORG: NP22        DATE: 2021-04-12
 C
-C ABSTRACT: PROCESSES DUMP FILES CONTAINING RESTRICTED AND UNRESTRICTED
-C   SURFACE SHIP REPORTS IN BUFR MESSAGE TYPE 001, SUBTYPES 001 AND
-C   013, RESPECTIVELY, PERFORMING A CROSS SUBTYPE DUP-CHECK BETWEEN THE
+C ABSTRACT: PROCESSES DUMP FILES CONTAINING LAND-BASED CMAN STATIONS
+C   DECODED FROM CMAN FORMAT IN BUFR MESSAGE TYPE 001, SUBTYPES 004 AND
+C   104, RESPECTIVELY, PERFORMING A CROSS SUBTYPE DUP-CHECK BETWEEN THE
 C   DIFFERENT TYPES. INFORMATION IS READ SEPARATELY FROM EACH FILE THAT
 C   IS PRESENT, AND IS THEN COMBINED INTO TABLES USED FOR THE DUP-
 C   CHECK.  VARIOUS OPTIONS ARE EXERCISED IN IDENTIFYING DUPLICATES
@@ -19,30 +19,18 @@ C   ALL OTHER FILE CONNECTIONS ARE MADE THROUGH THE FORTRAN OPEN
 C   STATEMENT.
 C
 C PROGRAM HISTORY LOG:
-C 2009-08-31  D. KEYSER   ORIGINAL VERSION FOR IMPLEMENTATION
-C 2012-11-20  J. WOOLLEN  INITIAL PORT TO WCOSS -- ADAPTED IBM/AIX
-C       GETENV SUBPROGRAM CALL TO INTEL/LINUX SYNTAX
-C 2013-01-13  J. WHITING  FINAL PORT TO WCOSS -- UPDATED DOC BLOCKS;
-C       FIXED BUGS IN PRINT 200 STATEMENT (REMOVED REFERENCE TO
-C       ELEVATION CHECKS, FIXED NAME OF HOUR TOLERANCE VAR DOUR);
-C       REPLACED TESTS VS BMISS W/ IBFMS FUNCTION CALL; REPLACED
-C       EXPLICIT ASSIGNMENT OF BMISS W/ GETBMISS() FUNCTION.
-C 2014-11-07  D. KEYSER   DECLARE FUNCTION GETBMISS AND ITS RETURN
-C     VALUE BMISS AS REAL*8 TO GET A RELIABLE VALUE FOR BMISS IN PRINT
-C     STATEMENTS
-C 2020-08-20  J. DONG  --  ADDED SETBMISS CALL TO SET BMISS TO 10E8 TO
-C     AVOID INTEGER OVERFLOW
-C 2021-04-12  J. DONG  --  ADDED BUFR FORMAT 001.101 (RESTRICTED SHIPS)
-C     AND 001.113 (UNRESTRICTED SHIPS). DO THE DUPLICATION CHECKS. 
+C 2021-04-12  J. DONG  --  ADAPTED FROM BUFR_DUPSHP AND MODIFIED TO CHECK
+c     DUPLICATIONS FOR C-MAN TAC FORMAT 001.004 AND C-MAN BUFR FORMAT
+C     001.104. 
 C
 C USAGE:
 C   INPUT FILES:
 C     UNIT 05  - STANDARD INPUT - RECORDS CONTAINING THE WORKING INPUT
 C                FILE NAMES FOR ALL SURFACE MARINE AIRCRAFT TYPES
 C                EVENTUALLY BEING COMBINED INTO A SINGLE DUMP FILE
-C                (usually called "sfcshp") - THE ONLY FILE NAMES
-C                CONSIDERED BY THIS PROGRAM ARE *001.001 (RESTRICTED
-C                SHIPS) AND *001.013 (UNRESTRICTED SHIPS) - OTHER FILES
+C                (usually called "cman") - THE ONLY FILE NAMES
+C                CONSIDERED BY THIS PROGRAM ARE *001.004 (TAC C-MAN)
+C                AND *001.104 (BUFR CMAN) - OTHER FILES
 C                MAY BE INCLUDED HERE, BUT THEY WILL NOT BE MODIFIED BY
 C                THIS PROGRAM; THE OUTPUT FILE NAMES WILL BE THE SAME
 C                AS THE INPUT NAMES HERE
@@ -72,7 +60,7 @@ C   LANGUAGE: FORTRAN 90
 C   MACHINE:  WCOSS
 C
 C$$$
-      PROGRAM BUFR_DUPSHP
+      PROGRAM BUFR_DUPCMAN
  
       PARAMETER (MXTS=8)
       PARAMETER (NFILES=6)  ! Number of input files being considered
@@ -83,7 +71,7 @@ C$$$
       INTEGER,ALLOCATABLE :: IORD(:)
       INTEGER,ALLOCATABLE :: JDUP(:)
 
-      CHARACTER*80  TSTR,RSTR,FILE,FILI(NFILES),FILO
+      CHARACTER*80  TSTR,TSTH,RSTR,FILE,FILI(NFILES),FILO
       CHARACTER*8   SUBSET,crpidI,crpidJ
       CHARACTER*3   DUMMY_MSGS
 
@@ -91,11 +79,12 @@ C$$$
 
       REAL(8)       UFBTAB_8,rpidI,rpidJ,BMISS,GETBMISS
 
-      LOGICAL       DUPES,SFCSHP
+      LOGICAL       DUPES,CMAN
 
       EQUIVALENCE   (crpidI,rpidI),(crpidJ,rpidJ)
 
       DATA TSTR  /'CLAT  CLON  MNTH DAYS HOUR MINU RPID '/
+      DATA TSTH  /'CLATH CLONH MNTH DAYS HOUR MINU RPID '/
       DATA RSTR  /'RCYR  RCMO  RCDY RCHR RCMI           '/
 
       DATA DEXY  /0.005/
@@ -104,13 +93,13 @@ C$$$
       DATA DOUR  /0/
       DATA DMIN  /0/
 
-      DATA IMST  /  1, 11*-99, 2, 87*-99, 3, 11*-99, 4 /
+      DATA IMST  /  3*-99, 1, 99*-99, 2 /
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_DUPSHP',2021,0175,0050,'NP22')
+      CALL W3TAGB('BUFR_DUPCMAN',2021,0175,0050,'NP22')
 
       print *
-      print * ,'---> Welcome to BUFR_DUPSHP - Version 06-24-2021'
+      print * ,'---> Welcome to BUFR_DUPCMAN - Version 06-24-2021'
       print *
 
       CALL DATELEN(10)
@@ -138,7 +127,7 @@ C  --------------------------------------------------
  
       FILI(1:NFILES)(1:4) = 'NONE'
 
-      SFCSHP = .FALSE.
+      CMAN = .FALSE.
  
 1     CONTINUE
 
@@ -146,10 +135,9 @@ C  --------------------------------------------------
       DO  I=1,10
          IF(FILE(I:I+3).EQ.'001.') THEN
             READ(FILE(I+4:I+6),'(I3)') MST
-            IF(MST.EQ.1.OR.MST.EQ.13.OR.MST.EQ.101.OR.
-     .         MST.EQ.113) THEN
+            IF(MST.EQ.4.OR.MST.EQ.104) THEN
                FILI(IMST(MST)) = FILE
-               SFCSHP = .TRUE.
+               CMAN = .TRUE.
                PRINT *, ' >> WILL CHECK ',FILE(I:I+6)
             ENDIF
             EXIT
@@ -158,15 +146,15 @@ C  --------------------------------------------------
       GOTO 1
 
 2     CONTINUE
-      IF(.NOT.SFCSHP) THEN
+      IF(.NOT.CMAN) THEN
          PRINT*
-         PRINT*,'BUFR_DUPSHP: NO SHIPS TO CHECK'
+         PRINT*,'BUFR_DUPCMAN: NO CMAN TO CHECK'
          PRINT*
-         CALL W3TAGE('BUFR_DUPSHP')
+         CALL W3TAGE('BUFR_DUPCMAN')
          STOP
       ELSE
          PRINT 200, DEXY,DDAY,DOUR
-  200 FORMAT(/'BUFR_DUPSHP PARAMETERS:'/
+  200 FORMAT(/'BUFR_DUPCMAN PARAMETERS:'/
      .        3X,'TOLERANCE FOR LAT/LON CHECKS (IN DEGREES) .. ',F7.3/
      .        3X,'TOLERANCE FOR DAY CHECK (IN DAYS) .......... ',F7.3/
      .        3X,'TOLERANCE FOR HOUR CHECK (IN HOURS) ........ ',F7.3/)
@@ -215,9 +203,9 @@ C  -----------------------------------------------------------------
                PRINT'(/"INPUT BUFR FILE",I2," MESSAGES   '//
      .          'C O M P R E S S E D"/"FIRST MESSAGE TYPE FOUND IS",'//
      .          'I5/)', I,MSGT
-               PRINT'("#####BUFR_DUPSHP (UFBTAB) CANNOT PROCESS '//
+               PRINT'("#####BUFR_DUPCMAN (UFBTAB) CANNOT PROCESS '//
      .            'COMPRESSED BUFR MESSAGES -- FATAL ERROR")'
-               CALL W3TAGE('BUFR_DUPSHP')
+               CALL W3TAGE('BUFR_DUPCMAN')
                CALL ERREXIT(99)
             ELSE  IF(ICOMP.EQ.0) THEN
                PRINT'(/"INPUT BUFR FILE",I2," MESSAGES   '//
@@ -233,6 +221,10 @@ C  -----------------------------------------------------------------
      .          '"FIRST MESSAGE TYPE FOUND IS",I5/)', I,MSGT
             ENDIF
             CALL UFBTAB(LUBFI,TAB_8(1,IPT),MXTS,MXTB-IPT+1,NTAB,TSTR)
+            IF(IBFMS(TAB_8(2,IPT)).EQ.1) THEN             ! CLON missing
+               OPEN(LUBFI,FILE=FILI(I),FORM='UNFORMATTED')
+               CALL UFBTAB(LUBFI,TAB_8(1,IPT),MXTS,MXTB-IPT+1,NTAB,TSTH)
+            ENDIF
             OPEN(LUBFI,FILE=FILI(I),FORM='UNFORMATTED')
             CALL UFBTAB(LUBFI,RAB_8(1,IPT),MXTS,MXTB-IPT+1,NTAB,RSTR)
             IPTR(1,I) = IPT
@@ -250,10 +242,8 @@ C  ------------------------------------------------
          IF(IBFMS(TAB_8(6,N)).EQ.1) TAB_8(6,N) = 0     ! data missing
 
          ! Store input file index in 8th index
-         ! TAB_8(8,N) = 1  --> b001/xx001 (SHIP RES/TAC)
-         !            = 2  --> b001/xx013 (SHIP UNRES/TAC)
-         !            = 3  --> b001/xx101 (SHIP RES/BUFR)
-         !            = 4  --> b001/xx113 (SHIP UNRES/BUFR)
+         ! TAB_8(8,N) = 1  --> b001/xx004 (CMAN/TAC)
+         !            = 2  --> b001/xx104 (CMAN/BUFR)
 
          DO I=1,NFILES
             IF(N.GE.IPTR(1,I) .AND. N.LE.IPTR(2,I)) THEN
@@ -327,20 +317,15 @@ cc     .          '; LON: ',F10.5,'; RPRT',' DD HH:mm ',I2.2,I2,':',I2,
 cc     .          '; RCPT YYYYMMDDHHMM: ',I4,4I2.2,
 cc     .          '; file #',I2,'}' )
 CDONG            JDUP_I_ORIG = JDUP(I)
-            IF(tab_8(1,J).gt.9999.9 .or. tab_8(2,J).gt.9999.9) then
-               JDUP(J) = 1
-               print *, 'J tossed ==> from missing lat/lon'
-            ELSE
+            IF(TAB_8(8,I).EQ.1 .AND. TAB_8(8,J).EQ.2) then
                JDUP(I) = 1
                print *, 'I tossed ==> from either receipt time '
      .                 ,'or less-preferred file-type'
+            ELSE
+               JDUP(J) = 1
+               print *, 'J tossed ==> from either receipt time '
+     .                 ,'or less-preferred file-type'
             ENDIF
-CDONG            IF(TAB_8(8,I).EQ.1 .AND. TAB_8(8,J).EQ.2) THEN
-CDONG               IF(JDUP(J).EQ.0) THEN
-CDONG                  JDUP(J) = 1
-CDONG                  JDUP(I) = JDUP_I_ORIG
-CDONG               ENDIF
-CDONG            ENDIF
          ENDIF
 cpppppppppp
 cc       if(dupes) then
@@ -503,10 +488,10 @@ C  GENERATE REPORT
 C  ---------------
  
       PRINT 300, ISUB,NDUP(2),MXTB,NTAB,NDUP(0),NDUP(1)
-  300 FORMAT(/'BUFR_DUPSHP READ IN A TOTAL OF',I8,' REPORTS'/
+  300 FORMAT(/'BUFR_DUPCMAN READ IN A TOTAL OF',I8,' REPORTS'/
      .        ' A TOTAL OF ',I7,' REPORTS WERE SKIPPED DUE TO BEING ',
      .        'OVER THE LIMIT OF ',I7/
-     .        'BUFR_DUPSHP CHECKED A TOTAL OF',I8,' REPORTS'//
+     .        'BUFR_DUPCMAN CHECKED A TOTAL OF',I8,' REPORTS'//
      .        'NUMBER OF UNIQUE REPORTS WRITTEN OUT ...........',I7/
      .        'NUMBER OF REPORTS SKIPPED DUE TO:'/
      .        '   FAILING DUPLICATE CHECK .....................',I7/)
@@ -515,7 +500,7 @@ C  END OF PROGRAM
 C  --------------
 
       WRITE(60,'("ALL DONE")')
-      CALL W3TAGE('BUFR_DUPSHP')
+      CALL W3TAGE('BUFR_DUPCMAN')
       STOP
 
 C  ERROR EXITS
@@ -523,8 +508,8 @@ C  -----------
 
   901 CONTINUE
 
-      PRINT *, '#####BUFR_DUPSHP - UNABLE TO ALLOCATE ARRAYS'
-      CALL W3TAGE('BUFR_DUPSHP')
+      PRINT *, '#####BUFR_DUPCMAN - UNABLE TO ALLOCATE ARRAYS'
+      CALL W3TAGE('BUFR_DUPCMAN')
       CALL ERREXIT(99)
 
       END

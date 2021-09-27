@@ -1,7 +1,7 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: BUFR_DUPSST
-C   PRGMMR: KEYSER           ORG: NP22        DATE: 2014-11-07
+C   PRGMMR: DONG             ORG: NP22        DATE: 2020-08-20
 C
 C ABSTRACT: PROCESSES SEA-SURFACE TEMPERATURE DATABASE REPORTS WITH
 C   DUPLICATE CHECKING AND TRIMMING TO EXACT TIME WINDOW (DAY DOWN TO
@@ -72,6 +72,8 @@ C     VALUE BMISS AS REAL*8 TO GET A RELIABLE VALUE FOR BMISS IN PRINT
 C     STATEMENTS
 C 2018-04-02  Y. LING   MODIFIED TO ADD DUPLICATE CHECKING FOR VIIRS
 C     SST (MNEMONICS NC012023/024/025)
+C 2020-08-20  J. DONG  ADDED SETBMISS CALL TO SET BMISS TO 10E8 TO
+C     AVOID INTEGER OVERFLOW
 C
 C USAGE:
 C   INPUT FILES:
@@ -143,10 +145,10 @@ C$$$
  
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_DUPSST',2018,0092,0005,'NP22')
+      CALL W3TAGB('BUFR_DUPSST',2020,0233,0005,'NP22')
 
       print *
-      print * ,'---> Welcome to BUFR_DUPSST - Version 04-02-2018'
+      print * ,'---> Welcome to BUFR_DUPSST - Version 08-20-2020'
       print *
 
       CALL DATELEN(10)
@@ -156,6 +158,7 @@ ccccc CALL OPENBF(0,'QUIET',2) ! Uncomment for extra print from bufrlib
 C  ASSIGN DEFAULT VALUE FOR 'MISSING' TO LOCAL BMISS VARIABLE
 C  ----------------------------------------------------------
 
+      CALL SETBMISS(10E8_8)
       BMISS = GETBMISS()     ! assign default value for "missing"
       print *
       print *, 'BUFRLIB value for missing is: ',bmiss

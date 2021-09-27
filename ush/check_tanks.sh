@@ -31,7 +31,7 @@
 #         (NO DEFAULT - MUST BE PASSED INTO THIS SCRIPT)
 #         (working direct. in this script is $DATA/check_tanks_<dump mnemonic>)
 #  TANK - path to database tanks up to the YYYYMMDD
-#         (default is /dcom/us007003)
+#         (default is $DCOMROOT/prod)
 #  LIST - complete path to bufr_dumplist fixed file
 #         (default is $FIXobsproc_shared_bufr_dumplist/bufr_dumplist)
 #         (If $LIST not imported, then $FIXobsproc_shared_bufr_dumplist MUST
@@ -66,7 +66,7 @@ mkdir -p $DATA/check_tanks_${name}
 cd $DATA/check_tanks_${name}
 rm *
 
-TANK=${TANK:-/dcom/us007003}
+TANK=${TANK:-${DCOMROOT:?}/prod}
 
 LIST=${LIST:-$FIXobsproc_shared_bufr_dumplist/bufr_dumplist}
 

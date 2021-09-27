@@ -1,7 +1,7 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: BUFR_DUMPMD
-C   PRGMMR: KEYSER           ORG: NP22        DATE: 2013-01-13
+C   PRGMMR: DONG             ORG: NP22        DATE: 2020-08-20
 C
 C ABSTRACT: DUMPS DATA FROM A DATABASE FILE OR FILES WHICH FALL WITHIN
 C   A USER SUPPLIED TIME WINDOW, BY LOOKING ONLY AT THE MESSAGE DATE
@@ -60,6 +60,7 @@ C 2012-11-20  J. WOOLLEN  INITIAL PORT TO WCOSS -- ADAPTED IBM/AIX
 C       GETENV SUBPROGRAM CALL TO INTEL/LINUX SYNTAX;
 C 2013-01-13  J. WHITING  READIED FOR IMPLEMENTATION ON WCOSS LINUX
 C       (UPDATED DOC-BLOCK, ETC.; NO LOGIC CHANGES)
+C 2020-08-20  J. DONG   CHANGE THE CODE TO FIX OUTPUT CONVERSION ERROR
 C
 C USAGE:
 C   INPUT FILES:
@@ -119,10 +120,10 @@ C$$$
  
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_DUMPMD',2013,0013,0062,'NP22') 
+      CALL W3TAGB('BUFR_DUMPMD',2020,0233,0062,'NP22') 
 
       print *
-      print * ,'---> Welcome to BUFR_DUMPMD - Version 01-13-2013'
+      print * ,'---> Welcome to BUFR_DUMPMD - Version 08-20-2020'
       print *
 
       CALL DATELEN(10)
@@ -315,8 +316,8 @@ C  -------------------------------------------------------------------
 C  CLOSE THE OUTPUT FILE AND REPORT ON NORMAL EXIT
 C  -----------------------------------------------
  
-      PRINT'(/I7," MESSAGES READ IN  FROM DATABASE"//
-     .        I7," MESSAGES WINDOWED FROM DATABASE"/)', ITOT,ICPY
+      PRINT'(/I9," MESSAGES READ IN  FROM DATABASE"//
+     .        I9," MESSAGES WINDOWED FROM DATABASE"/)', ITOT,ICPY
 
       CALL CLOSBF(LUNOT)
       OPEN(LUNOT,FILE=FILO(1:NBYTES_FILO),FORM='UNFORMATTED')

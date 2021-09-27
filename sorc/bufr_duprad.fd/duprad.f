@@ -1,7 +1,7 @@
 C$$$  MAIN PROGRAM DOCUMENTATION BLOCK
 C
 C MAIN PROGRAM: BUFR_DUPRAD
-C   PRGMMR: WHITING          ORG: EMC         DATE: 2013-02-01
+C   PRGMMR: DONG             ORG: EMC         DATE: 2020-08-20
 C
 C ABSTRACT: PROCESSES LEVEL 3, 2.5 AND 2 WSR-88D NEXRAD RADAR RADIAL
 C   WIND DATABASE REPORTS AND LEVEL 2 WSR-88D NEXRAD REFLECTIVITY
@@ -126,6 +126,7 @@ C 2013-02-01  J. WHITING  PORT TO WCOSS -- UPDATED DUPES VARIABLE
 C       ASSIGNMENT STATEMENT WITH 8-BYTE INTEGER INTRINSIC FUNCTIONS 
 C       (KIDNNT) SO AS TO PROPERLY HANDLE LARGE (GLOBAL MISSING) 
 C       VALUES;  DECLARED BMISS AND GETBMISS AS 8-BYTE REALS.
+C 2020-08-20  J. DONG  CHANGED MISSING VALUE TO 10E8 FROM 10E10.
 C
 C USAGE:
 C   INPUT FILES:
@@ -202,10 +203,10 @@ C$$$
  
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-      CALL W3TAGB('BUFR_DUPRAD',2013,0029,0062,'NP22')
+      CALL W3TAGB('BUFR_DUPRAD',2020,0233,0062,'NP22')
 
       print *
-      print * ,'---> Welcome to BUFR_DUPRAD - Version 01-29-2013'
+      print * ,'---> Welcome to BUFR_DUPRAD - Version 08-20-2020'
       print *
 
       CALL DATELEN(10)
@@ -215,6 +216,7 @@ ccccc CALL OPENBF(0,'QUIET',2) ! Uncomment for extra print from bufrlib
 C  ASSIGN DEFAULT VALUE FOR 'MISSING' TO LOCAL BMISS VARIABLE
 C  ----------------------------------------------------------
 
+      CALL SETBMISS(10E8_8)
       BMISS = GETBMISS()     ! assign default value for "missing"
 
 C  SET THE COUNTERS TO INITIAL VALUES
